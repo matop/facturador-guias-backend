@@ -1,0 +1,442 @@
+{
+  "info": {
+    "name": "Guias Middleware",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3334" },
+    { "key": "empkey", "value": "1163" },
+    { "key": "periodo", "value": "2026-06" },
+    { "key": "rut", "value": "76407930-2" },
+    { "key": "gfackey", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "Reglas",
+      "item": [
+        {
+          "name": "GET todas las reglas",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/reglas",
+              "host": ["{{baseUrl}}"],
+              "path": ["reglas"]
+            }
+          }
+        },
+        {
+          "name": "GET regla por ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/reglas/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["reglas", ":id"],
+              "variable": [{ "key": "id", "value": "mi-regla" }]
+            }
+          }
+        },
+        {
+          "name": "GET reglas de empresa",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/reglas/empresa/:empkey",
+              "host": ["{{baseUrl}}"],
+              "path": ["reglas", "empresa", ":empkey"],
+              "variable": [{ "key": "empkey", "value": "{{empkey}}" }]
+            }
+          }
+        },
+        {
+          "name": "POST crear regla",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/reglas",
+              "host": ["{{baseUrl}}"],
+              "path": ["reglas"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reglaidl\": \"por_comuna\",\n  \"regladescripcion\": \"Agrupar por comuna de destino\",\n  \"fn\": \"extraeTagLista\",\n  \"reglaTags\": [\"CmnaRecep\", \"DirRecep\"]\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "PUT actualizar regla",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/reglas/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["reglas", ":id"],
+              "variable": [{ "key": "id", "value": "por_comuna" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"regladescripcion\": \"Nueva descripcion\",\n  \"fn\": \"extraeTagLista\",\n  \"reglaTags\": [\"CmnaRecep\"]\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "DELETE eliminar regla",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/reglas/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["reglas", ":id"],
+              "variable": [{ "key": "id", "value": "por_comuna" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Empresas",
+      "item": [
+        {
+          "name": "POST sync backoffice",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/empresas/:empkey/sync?periodo={{periodo}}&rut={{rut}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["empresas", ":empkey", "sync"],
+              "variable": [{ "key": "empkey", "value": "{{empkey}}" }],
+              "query": [
+                { "key": "periodo", "value": "{{periodo}}" },
+                { "key": "rut", "value": "{{rut}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET clientes con guias",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/empresas/:empkey/clientes?periodo={{periodo}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["empresas", ":empkey", "clientes"],
+              "variable": [{ "key": "empkey", "value": "{{empkey}}" }],
+              "query": [{ "key": "periodo", "value": "{{periodo}}" }]
+            }
+          }
+        },
+        {
+          "name": "GET guias agrupadas",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/empresas/:empkey/guias/agrupadas?periodo={{periodo}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["empresas", ":empkey", "guias", "agrupadas"],
+              "variable": [{ "key": "empkey", "value": "{{empkey}}" }],
+              "query": [
+                { "key": "periodo", "value": "{{periodo}}" },
+                { "key": "rut", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "PUT asignar regla a cliente",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/empresas/:empkey/clientes/:rut/regla",
+              "host": ["{{baseUrl}}"],
+              "path": ["empresas", ":empkey", "clientes", ":rut", "regla"],
+              "variable": [
+                { "key": "empkey", "value": "{{empkey}}" },
+                { "key": "rut", "value": "{{rut}}" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reglaIdl\": \"mi-regla\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Facturas",
+      "item": [
+        {
+          "name": "POST sync facturas tipo 33",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/empresas/:empkey/facturas/sync?periodo={{periodo}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["empresas", ":empkey", "facturas", "sync"],
+              "variable": [{ "key": "empkey", "value": "{{empkey}}" }],
+              "query": [{ "key": "periodo", "value": "{{periodo}}" }]
+            }
+          }
+        },
+        {
+          "name": "GET listar facturas",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/empresas/:empkey/facturas?periodo={{periodo}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["empresas", ":empkey", "facturas"],
+              "variable": [{ "key": "empkey", "value": "{{empkey}}" }],
+              "query": [{ "key": "periodo", "value": "{{periodo}}" }]
+            }
+          }
+        },
+        {
+          "name": "GET guias de factura",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/empresas/:empkey/facturas/:gfackey/guias",
+              "host": ["{{baseUrl}}"],
+              "path": ["empresas", ":empkey", "facturas", ":gfackey", "guias"],
+              "variable": [
+                { "key": "empkey", "value": "{{empkey}}" },
+                { "key": "gfackey", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST generar proformas",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/empresas/:empkey/facturas/proforma/generar?periodo={{periodo}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["empresas", ":empkey", "facturas", "proforma", "generar"],
+              "variable": [{ "key": "empkey", "value": "{{empkey}}" }],
+              "query": [{ "key": "periodo", "value": "{{periodo}}" }]
+            }
+          }
+        },
+        {
+          "name": "POST limpiar proformas",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/empresas/:empkey/facturas/proforma/limpiar?periodo={{periodo}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["empresas", ":empkey", "facturas", "proforma", "limpiar"],
+              "variable": [{ "key": "empkey", "value": "{{empkey}}" }],
+              "query": [{ "key": "periodo", "value": "{{periodo}}" }]
+            }
+          }
+        },
+        {
+          "name": "POST crear proforma manual",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/empresas/:empkey/facturas/proforma",
+              "host": ["{{baseUrl}}"],
+              "path": ["empresas", ":empkey", "facturas", "proforma"],
+              "variable": [{ "key": "empkey", "value": "{{empkey}}" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"periodo\": \"{{periodo}}\",\n  \"gclirut\": \"{{rut}}\",\n  \"reglaidl\": \"mi-regla\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "GET listar proformas",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/empresas/:empkey/facturas/proforma?periodo={{periodo}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["empresas", ":empkey", "facturas", "proforma"],
+              "variable": [{ "key": "empkey", "value": "{{empkey}}" }],
+              "query": [
+                { "key": "periodo", "value": "{{periodo}}" },
+                { "key": "estado", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "PATCH aprobar proforma",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/empresas/:empkey/facturas/proforma/:gfackey/aprobar",
+              "host": ["{{baseUrl}}"],
+              "path": ["empresas", ":empkey", "facturas", "proforma", ":gfackey", "aprobar"],
+              "variable": [
+                { "key": "empkey", "value": "{{empkey}}" },
+                { "key": "gfackey", "value": "{{gfackey}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "PATCH anular proforma",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/empresas/:empkey/facturas/proforma/:gfackey/anular",
+              "host": ["{{baseUrl}}"],
+              "path": ["empresas", ":empkey", "facturas", "proforma", ":gfackey", "anular"],
+              "variable": [
+                { "key": "empkey", "value": "{{empkey}}" },
+                { "key": "gfackey", "value": "{{gfackey}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET preview mensaje (V5)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/empresas/:empkey/facturas/proforma/:gfackey/preview-mensaje",
+              "host": ["{{baseUrl}}"],
+              "path": ["empresas", ":empkey", "facturas", "proforma", ":gfackey", "preview-mensaje"],
+              "variable": [
+                { "key": "empkey", "value": "{{empkey}}" },
+                { "key": "gfackey", "value": "{{gfackey}}" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Clientes",
+      "item": [
+        {
+          "name": "GET todos los clientes",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/clientes?empkey={{empkey}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["clientes"],
+              "query": [{ "key": "empkey", "value": "{{empkey}}" }]
+            }
+          }
+        },
+        {
+          "name": "GET cliente por RUT",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/clientes/:gclirut?empkey={{empkey}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["clientes", ":gclirut"],
+              "variable": [{ "key": "gclirut", "value": "{{rut}}" }],
+              "query": [{ "key": "empkey", "value": "{{empkey}}" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Guias",
+      "item": [
+        {
+          "name": "GET todas las guias",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/guias?empkey={{empkey}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["guias"],
+              "query": [{ "key": "empkey", "value": "{{empkey}}" }]
+            }
+          }
+        },
+        {
+          "name": "GET guias por RUT",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/guias/rut/:gclirut?empkey={{empkey}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["guias", "rut", ":gclirut"],
+              "variable": [{ "key": "gclirut", "value": "{{rut}}" }],
+              "query": [{ "key": "empkey", "value": "{{empkey}}" }]
+            }
+          }
+        },
+        {
+          "name": "GET guia por tipo y folio",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/guias/:guitipo/:guifolio?empkey={{empkey}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["guias", ":guitipo", ":guifolio"],
+              "variable": [
+                { "key": "guitipo", "value": "52" },
+                { "key": "guifolio", "value": "1001" }
+              ],
+              "query": [{ "key": "empkey", "value": "{{empkey}}" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Facturacion",
+      "item": [
+        {
+          "name": "GET grupos de facturacion",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/facturacion?empkey={{empkey}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["facturacion"],
+              "query": [{ "key": "empkey", "value": "{{empkey}}" }]
+            }
+          }
+        },
+        {
+          "name": "GET grupo por ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/facturacion/:gfackey?empkey={{empkey}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["facturacion", ":gfackey"],
+              "variable": [{ "key": "gfackey", "value": "1" }],
+              "query": [{ "key": "empkey", "value": "{{empkey}}" }]
+            }
+          }
+        },
+        {
+          "name": "GET guias del grupo",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/facturacion/:gfackey/guias",
+              "host": ["{{baseUrl}}"],
+              "path": ["facturacion", ":gfackey", "guias"],
+              "variable": [{ "key": "gfackey", "value": "1" }]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

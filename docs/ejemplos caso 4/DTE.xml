@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml-stylesheet type="text/xsl" href="http://webapp.enternet.cl/enternetearly/Estatico/Config/DTEPlantilla-PANADERIAS.xsl"?>
+<Document Domain="enternet" Type="Factura">
+	<Issuer>
+		<PI Type="Rut">76234818-7</PI>
+	</Issuer>
+	<Signers>
+		<Signer>
+			<PI Type="Rut">10509709-3</PI>
+		</Signer>
+	</Signers>
+<Recipients>
+<Recipient>
+  <PI Type="Role">Funcionario</PI>
+</Recipient>
+</Recipients>
+	<Attributes>
+		<Attribute Type="FOLIO">10878</Attribute>
+		<Attribute Type="TIPODTE">33</Attribute>
+		<Attribute Type="FECHAEMISION">2026-06-30</Attribute>
+		<Attribute Type="RUTRECEPTOR">78100523-1</Attribute>
+		<Attribute Type="NOMBRERECEPTOR">VENTA AL POR MENOR DE ALIMENTOS EN COMERCIO ESPECIALIZADO DANIELA FRANCISCA LEIV</Attribute>
+		<Attribute Type="DIRECCIONRECEPTOR">AV. LAS NIEVES OTE 3869, PUENTE ALTO</Attribute>
+		<Attribute Type="VENDEDOR">Victor Manuel Godoy Pavez</Attribute>
+		<Attribute Type="RUTEMISOR">76234818-7</Attribute>
+		<Attribute Type="NOMBREEMISOR">SOCIEDAD COMERCIAL GODOY PAVEZ LIMITADA</Attribute>
+	</Attributes>
+	<Content>
+<DTE xmlns="http://www.sii.cl/SiiDte" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0">		<Documento ID="EMI762348187F10878T33">
+			<Encabezado>
+				<IdDoc>
+					<TipoDTE>33</TipoDTE>
+					<Folio>10878</Folio>
+					<FchEmis>2026-06-30</FchEmis>
+				</IdDoc>
+				<Emisor>
+					<RUTEmisor>76234818-7</RUTEmisor>
+					<RznSoc>SOCIEDAD COMERCIAL GODOY PAVEZ LIMITADA</RznSoc>
+					<GiroEmis>FABRICACION DE PAN, PRODUCTOS DE PANADERIA Y PASTELERIA</GiroEmis>
+					<Telefono>222888024</Telefono>
+					<Acteco>107100</Acteco>
+					<Acteco>107100</Acteco>
+					<Acteco>107100</Acteco>
+					<Acteco>107100</Acteco>
+					<DirOrigen>AVDA GABRIELA ORIENTE 01330, Ciudad SANTIAGO, Comuna PU</DirOrigen>
+					<CmnaOrigen>PUENTE ALTO</CmnaOrigen>
+					<CdgVendedor>10509709-3</CdgVendedor>
+				</Emisor>
+				<Receptor>
+					<RUTRecep>78100523-1</RUTRecep>
+					<RznSocRecep>VENTA AL POR MENOR DE ALIMENTOS EN COMERCIO ESPECIALIZADO DANIELA FRANCISCA LEIV</RznSocRecep>
+					<GiroRecep>ALMACEN</GiroRecep>
+					<Contacto>Fono .</Contacto>
+					<DirRecep>AV. LAS NIEVES OTE 3869, PUENTE ALTO</DirRecep>
+					<CmnaRecep>PUENTE ALTO</CmnaRecep>
+					<CiudadRecep>Santiago</CiudadRecep>
+				</Receptor>
+				<Totales>
+					<MntNeto>1670000</MntNeto>
+					<TasaIVA>19.00</TasaIVA>
+					<IVA>317300</IVA>
+					<MntTotal>1987300</MntTotal>
+				</Totales>
+			</Encabezado>
+			<Detalle>
+				<NroLinDet>1</NroLinDet>
+				<NmbItem>Segun Guias:</NmbItem>
+				<DscItem>483335 483336 483348 483482 483483 483629 483630 483642 483776 483777 483923 483924 484156 484157 484169 484303 484304 484452 484453 484581 484582 484750 484751 484763 484850 484986 484987 485135 485136 485284 485285 485433 485434 485446 485582 485583 485836 485837 485849 485985 485986 486134 486135 486147 486275 486276 486288 486424 486425 486444 486688 486689</DscItem>
+				<MontoItem>1670000</MontoItem>
+			</Detalle>
+			<Referencia>
+				<NroLinRef>1</NroLinRef>
+				<TpoDocRef>52</TpoDocRef>
+				<IndGlobal>1</IndGlobal>
+				<FolioRef>0</FolioRef>
+				<FchRef>2026-06-30</FchRef>
+			</Referencia>
+<TED version="1.0">
+  <DD>
+    <RE>76234818-7</RE>
+    <TD>33</TD>
+    <F>10878</F>
+    <FE>2026-06-30</FE>
+    <RR>78100523-1</RR>
+    <RSR>VENTA AL POR MENOR DE ALIMENTOS EN COMER</RSR>
+    <MNT>1987300</MNT>
+    <IT1>Segun Guias:</IT1>
+    <CAF version="1.0">
+      <DA>
+        <RE>76234818-7</RE>
+        <RS>SOCIEDAD COMERCIAL GODOY PAVEZ LIMITADA</RS>
+        <TD>33</TD>
+        <RNG>
+          <D>10648</D>
+          <H>10957</H>
+        </RNG>
+        <FA>2026-03-25</FA>
+        <RSAPK>
+          <M>pTjef2CXB7XhyJOh7lCPhaD0rKxgSHE1T40ALKt5EpJmNZUuz/YswCLR4sIN0CHc/fgrmOteFG4uHwgjKchRlQ==</M>
+          <E>Aw==</E>
+        </RSAPK>
+        <IDK>300</IDK>
+      </DA>
+      <FRMA algoritmo="SHA1withRSA">aujgw+00uoEzImsfZeFS7E+gcmh8Q5v0YWILqF6YLqLaLBkbj38a0MoLQapqvP90zXcAJ6fiCyZiljcuXsxw2A==</FRMA>
+    </CAF>
+    <TSTED>2026-06-30T16:49:52</TSTED>
+  </DD>
+  <FRMT algoritmo="SHA1withRSA">IOdxTpFmu8fJmnWuzLQYyE6FWF+GZOV6Ar0/qPybRTayyC32HB9C6QQYeQYxqzA4iplDvR4me+gVvwF9pMiKMw==</FRMT>
+</TED>			<TmstFirma>2026-06-30T16:49:52</TmstFirma>
+		</Documento>
+<Signature xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><Reference URI="#EMI762348187F10878T33"><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><DigestValue>rMWiuVa05mEOTHOs0coa2eifgcQ=</DigestValue></Reference></SignedInfo><SignatureValue>KlE3rD/cFTOvZk2YO4FtAJ7j9oExIwcOEphTW6xbLFqTLwpYWFP+bBU84cmUbrt7AR4p639fy4gI
+edZ7YCIQvXJ4zwT6DQ59YNwZgex9YQCjGktdkxUem9R2DolojDa5cCuW7oFb67dbYwwsr3d9MPwf
+zimErrrxlYYuePWL7GKdI3Qp+fJ393mTs8JN1bgcosSuDfyxrfjt3hEEuOGgcTe/9l8RpcMP849M
+NeysQZF6SvXjMrpWh/KALX4MP7NV7wqfmJYRusQX7UDZyIx4EAue0yN41qCMj5C5a6GaPaPUR8eW
+/fO3TPEXZseqUK2S5ROuYnFus9cCV31ns1B4bg==</SignatureValue><KeyInfo><KeyValue><RSAKeyValue><Modulus>qv0Ui21SP7cPo9a1ibrO0rcOTF05Rs/FiQXr3zkQmIHGhC7wD2L8Ol84Qi/fIdGl8QiZAj4Wdd9/
+a6aLdIuhuw73tJa3+oDjVmve09IXZ5Rw6K1IdQtPnzYnnAr3uT3Z1U91of6FJ6Oeh3KP7R04TQDb
+f81thuG4cTdhO1cPc9+O72o8UaafMbFsGK+v+FocVyhvXkqyV3fTp00UpihCoZWcLjVR1NbXAY7G
+NPso8V5ee7iO5TjxIek9tfkixkCU+ioXDtmOPUgdHq4M/tcehk6ihbSP3F9ElPV5W3C6H/EMsmf9
+RMe6XF2WmDm3OsoCraBhd6uLJKwR3XEgGZ1MLQ==</Modulus><Exponent>AQAB</Exponent></RSAKeyValue></KeyValue><X509Data><X509Certificate>MIIH0DCCBbigAwIBAgIKQo0MLwABABMNTTANBgkqhkiG9w0BAQsFADCBvzELMAkGA1UEBhMCQ0wx
+HTAbBgNVBAgTFFJlZ2lvbiBNZXRyb3BvbGl0YW5hMREwDwYDVQQHEwhTYW50aWFnbzEUMBIGA1UE
+ChMLRS1DRVJUQ0hJTEUxIDAeBgNVBAsTF0F1dG9yaWRhZCBDZXJ0aWZpY2Fkb3JhMR4wHAYDVQQD
+ExVFLUNFUlRDSElMRSBDQSBGRVMgMDIxJjAkBgkqhkiG9w0BCQEWF3NjbGllbnRlQGUtY2VydGNo
+aWxlLmNsMB4XDTI2MDYxMTE0MDMxNVoXDTI3MDYxMTE0MDMxNVowgcwxCzAJBgNVBAYTAkNMMSIw
+IAYDVQQIExlNRVRST1BPTElUQU5BIERFIFNBTlRJQUdPMRMwEQYDVQQHEwpDT1JESUxMRVJBMS0w
+KwYDVQQKEyRTT0NJRURBRCBDT01FUkNJQUwgIEdPRE9ZIFBBVkVaIExUREExCjAIBgNVBAsMASox
+IjAgBgNVBAMTGVZJQ1RPUiBNQU5VRUwgR09ET1kgUEFWRVoxJTAjBgkqhkiG9w0BCQEWFlZNR09E
+T1lQQVZFWkBHTUFJTC5DT00wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCq/RSLbVI/
+tw+j1rWJus7Stw5MXTlGz8WJBevfORCYgcaELvAPYvw6XzhCL98h0aXxCJkCPhZ1339rpot0i6G7
+Dve0lrf6gONWa97T0hdnlHDorUh1C0+fNiecCve5PdnVT3Wh/oUno56Hco/tHThNANt/zW2G4bhx
+N2E7Vw9z347vajxRpp8xsWwYr6/4WhxXKG9eSrJXd9OnTRSmKEKhlZwuNVHU1tcBjsY0+yjxXl57
+uI7lOPEh6T21+SLGQJT6KhcO2Y49SB0ergz+1x6GTqKFtI/cX0SU9XlbcLof8QyyZ/1Ex7pcXZaY
+Obc6ygKtoGF3q4skrBHdcSAZnUwtAgMBAAGjggK9MIICuTCCAV8GA1UdIASCAVYwggFSMIIBTgYI
+KwYBBAHDUgUwggFAMD0GCCsGAQUFBwIBFjFodHRwczovL3d3dy5lLWNlcnRjaGlsZS5jbC9wb2xp
+dGljYXMteS1wcmFjdGljYXMvMIH+BggrBgEFBQcCAjCB8R6B7gBFAGwAIAByAGUAcwBwAG8AbgBk
+AGUAcgAgAGUAcwB0AGUAIABmAG8AcgBtAHUAbABhAHIAaQBvACAAZQBzACAAdQBuACAAcgBlAHEA
+dQBpAHMAaQB0AG8AIABpAG4AZABpAHMAcABlAG4AcwBhAGIAbABlACAAcABhAHIAYQAgAGQAYQBy
+ACAAaQBuAGkAYwBpAG8AIABhAGwAIABwAHIAbwBjAGUAcwBvACAAZABlACAAYwBlAHIAdABpAGYA
+aQBjAGEAYwBpAPMAbgAuACAAUABvAHMAdABlAHIAaQBvAHIAbQBlAG4AdABlACwwHQYDVR0OBBYE
+FMI+rPqZ8xqKDpU0t7qWA+prkx2dMAsGA1UdDwQEAwIE8DAjBgNVHREEHDAaoBgGCCsGAQQBwQEB
+oAwWCjEwNTA5NzA5LTMwHwYDVR0jBBgwFoAUdNYhs/Ra6C18u1kGY0PvabQ6kwQwQAYDVR0fBDkw
+NzA1oDOgMYYvaHR0cDovL2NybC5lY2VydGNoaWxlLmNsL0UtQ0VSVENISUxFQ0FGRVMwMi5jcmww
+PQYIKwYBBQUHAQEEMTAvMC0GCCsGAQUFBzABhiFodHRwOi8vb2NzcGZlcy5lY2VydGNoaWxlLmNs
+L29jc3AwPAYJKwYBBAGCNxUHBC8wLQYlKwYBBAGCNxUIgd3STZfUOoaJnQaHiM5vg6/MYEWFpL44
+gp6fbQIBZAIBAjAjBgNVHRIEHDAaoBgGCCsGAQQBwQECoAwWCjk2OTI4MTgwLTUwDQYJKoZIhvcN
+AQELBQADggIBAIQTTdkh7rDMj5rRmmDnK3FyNEJEhV3H61Pj0gLPUv8SpA6LwLmmryJAz7mf3sUA
+OqyBxxVVVM/fwNpo7z+j8yiq/k68mBLfMMjL4DkjjLaoRi7UFPQS4KzBrMN2F1d8b8aCvJtS28i5
+FQaOqop8ngF0ykHs2HLldj0umQ/0EP58BFxUFrgyLC8YO9wxT1jsOeHS2FD6cLO/CxLiAXJ78Jvy
+ezvjM3dlll2TkGLkTfDVSo691gc8ss8jd9SIB/iPbyQNPJjwnb3k7dbZDwE3gpdbdRk3jyGG3K5C
+dUTZKQeVCnBx5m+S5Al7izixQLFv/WG/dzDXjB6S0gLtP/dG86Sw+5S6sSxU6pibgPeuv7pVNkkJ
+PjL7ZzLCNXywNX0qFz04A8/OUXUHr30Yrqh88Ydgg/oXz7IXlxEMMLtjnLme5Ok6j8AgkeqCsjIa
+rM24PGr+OQD6S8XT61OWFZ1dhASObiP1T/NMmT50pfV+Zbgc8iaNFdw+84tyr897c3D+C7UIFtYo
+YmLs96qL4Vm0aFXLymz/oKMC9BdoGlfU4uTmy68FWnt/jWqeUlNhftu98geMDFySn35EvYrWnD0v
++IGDIoBWyC8jAPfkcKMgiVX1+uxkqGbkj4ToGQXb/g+ZaPduXD/zDKnCJ9kGn/SiGlA3pzRakO/l
+oARmzzFzu/Kg</X509Certificate></X509Data></KeyInfo></Signature></DTE><DatosAdjuntos><NombreDA>Nro_Empresa</NombreDA><ValorDA>458</ValorDA></DatosAdjuntos><DatosAdjuntos><NombreDA>Tipo_Fact</NombreDA><ValorDA>        33</ValorDA></DatosAdjuntos><DatoAdjunto nombre="Pago">Contado</DatoAdjunto><DatoAdjunto nombre="eti7"/><DatoAdjunto nombre="eti8"/><DatoAdjunto nombre="FonoEmisor">222888024</DatoAdjunto>
+<DatoAdjunto nombre="MailEmisor">tpvz2000@hotmail.com</DatoAdjunto>
+<DatoAdjunto nombre="Logo">http://webapp.enternet.cl/enternetearly/Estatico/Config/202603/SociedadComercialGodoyPavez.png</DatoAdjunto>
+<DatoAdjunto nombre="Agencia_SII">LA FLORIDA</DatoAdjunto>
+<DatoAdjunto nombre="NumRes_SII">80</DatoAdjunto>
+		<DatoAdjunto nombre="FechRes_SII">2014</DatoAdjunto>
+		<DatoAdjunto nombre="IDDOC">E458K482509TFEEF10878</DatoAdjunto>
+<DatosAnexos/>
+<DatosAdicionales>
+		<DatoAdicional nombre="TelefonoReceptor">.</DatoAdicional>
+		<DatoAdicional nombre="CondicionPago">Contado</DatoAdicional>
+		<DatoAdicional nombre="OrdenCompra"/>
+		<DatoAdicional nombre="GuiaDespacho"/>
+<DatoAdicional nombre="HIDETBLPAGO">TRUE</DatoAdicional>
+</DatosAdicionales>	</Content>
+</Document>

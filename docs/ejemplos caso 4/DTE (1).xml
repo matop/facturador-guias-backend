@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml-stylesheet type="text/xsl" href="http://webapp.enternet.cl/enternetearly/Estatico/Config/DTEPlantilla-PANADERIAS.xsl"?>
+<Document Domain="enternet" Type="Factura Electronica Afecta">
+<Issuer><PI Type="Rut">8673062-6</PI></Issuer>
+<Signers><Signer><PI Type="Rut"></PI></Signer></Signers>
+<Recipients>
+<Recipient>
+<PI Type="Role">Funcionario</PI>
+</Recipient>
+</Recipients>
+<Attributes>
+	<Attribute Type="FOLIO">8227</Attribute>
+	<Attribute Type="TIPODTE">33</Attribute>
+	<Attribute Type="FECHAEMISION">2026-06-30</Attribute>
+	<Attribute Type="RUTRECEPTOR">7000699-5</Attribute>
+	<Attribute Type="NOMBRERECEPTOR">BRAVO MORALES HECTOR</Attribute>
+	<Attribute Type="DIRECCIONRECEPTOR">SERAFIN GUTIERREZ # 12</Attribute>
+	<Attribute Type="VENDEDOR">ALVARO DIEGUEZ</Attribute>
+	<Attribute Type="RUTEMISOR">8673062-6</Attribute>
+	<Attribute Type="NOMBREEMISOR">ALVARO ROBERTO DIEGUEZ ANGULO</Attribute>
+</Attributes>
+<Content>
+
+<DTE xmlns="http://www.sii.cl/SiiDte" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0">			<Documento ID="EMI086730626F8227T33">
+				<Encabezado>
+					<IdDoc>
+						<TipoDTE>33</TipoDTE>
+						<Folio>8227</Folio>
+						<FchEmis>2026-06-30</FchEmis>
+						<MntBruto>1</MntBruto>
+						<FchVenc>2026-06-30</FchVenc>
+					</IdDoc>
+					<Emisor>
+						<RUTEmisor>8673062-6</RUTEmisor>
+						<RznSoc>ALVARO ROBERTO DIEGUEZ ANGULO</RznSoc>
+						<GiroEmis>PANADERIA, ROTISERIA Y  SUPER. DE BEBIDAS ALCOHOLICAS</GiroEmis>
+						<Telefono>732381373</Telefono>
+						<Acteco>107100</Acteco>
+						<Acteco>107100</Acteco>
+						<Acteco>107100</Acteco>
+						<Acteco>107100</Acteco>
+						<DirOrigen>AV ABATE MOLINA 920, VILLA ALEGRE</DirOrigen>
+						<CmnaOrigen>LINARES</CmnaOrigen>
+						<CdgVendedor>8673062-6</CdgVendedor>
+					</Emisor>
+					<Receptor>
+						<RUTRecep>7000699-5</RUTRecep>
+						<RznSocRecep>BRAVO MORALES HECTOR</RznSocRecep>
+						<GiroRecep>ALMACEN</GiroRecep>
+						<Contacto>BRAVO MORALES HECTOR</Contacto>
+						<DirRecep>SERAFIN GUTIERREZ # 12</DirRecep>
+						<CmnaRecep>VILLA ALEGRE</CmnaRecep>
+						<CiudadRecep>VILLA ALEGRE</CiudadRecep>
+					</Receptor>
+					<Totales>
+						<MntNeto>563294</MntNeto>
+						<TasaIVA>19.00</TasaIVA>
+						<IVA>107026</IVA>
+						<MntTotal>670320</MntTotal>
+					</Totales>
+				</Encabezado>
+				<Detalle>
+					<NroLinDet>1</NroLinDet>
+					<NmbItem>Segun Guias:</NmbItem>
+					<DscItem>360954 362075 360964 361116 361836 361013 360181 361073 359999 361064 360027 361033 361121 360043 360081 360105 360335 361901 360119 361137 362037 361820 361794 360185 360157 361745 361717 360201 360238 361606 360278 360268 360313 361678 360339 360354 358138 361668 361646 361756 360425 361600 361525 361566 360662 360492 361514 360481 360501 358730 360571 361486 359215 360585 360626 361417 360540 361444 360651 361304 361373 360700 360738 360726 361388 360776 359952 361344 361291 360396 361263 360814 360852 361224 361187 360889 360803 361214 361148</DscItem>
+					<MontoItem>670320</MontoItem>
+				</Detalle>
+				<Referencia>
+					<NroLinRef>1</NroLinRef>
+					<TpoDocRef>52</TpoDocRef>
+					<IndGlobal>1</IndGlobal>
+					<FolioRef>0</FolioRef>
+					<FchRef>2026-06-30</FchRef>
+				</Referencia>
+			<TED version="1.0">
+  <DD>
+    <RE>8673062-6</RE>
+    <TD>33</TD>
+    <F>8227</F>
+    <FE>2026-06-30</FE>
+    <RR>7000699-5</RR>
+    <RSR>BRAVO MORALES HECTOR</RSR>
+    <MNT>670320</MNT>
+    <IT1>Segun Guias:</IT1>
+    <CAF version="1.0">
+      <DA>
+        <RE>8673062-6</RE>
+        <RS>ALVARO ROBERTO DIEGUEZ ANGULO</RS>
+        <TD>33</TD>
+        <RNG>
+          <D>8201</D>
+          <H>8400</H>
+        </RNG>
+        <FA>2026-05-31</FA>
+        <RSAPK>
+          <M>3ChK4U6fPrtUeoc61up36ooLE+pE0HsgEl+J6aKGRk7n4P/u8OJD+nAtjsRoBmrkba3KOgznkZDdNevM2wkOvQ==</M>
+          <E>Aw==</E>
+        </RSAPK>
+        <IDK>300</IDK>
+      </DA>
+      <FRMA algoritmo="SHA1withRSA">mWAlkLMElW/Flgf1JthLXhNViD299j9/cKM/ijAvqT3XFjlHVA9fjceCvKNBGvNYQwaYWFkgXrXZrD2XBgCTGg==</FRMA>
+    </CAF>
+    <TSTED>2026-06-30T09:50:06</TSTED>
+  </DD>
+  <FRMT algoritmo="SHA1withRSA">nKWgkrtBN/W3UQ7klzio2CgVcZYm+cmqew4GKSY52mFOLa1V6mWdNgWluU6s4F8IMcbbc2ujdSp8KiytgW2mHA==</FRMT>
+</TED><TmstFirma>2026-06-30T09:50:06</TmstFirma>
+			</Documento>
+<Signature xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><Reference URI="#EMI086730626F8227T33"><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><DigestValue>kszyJMA8i3SPQ6H+kvhiBaF/IIA=</DigestValue></Reference></SignedInfo><SignatureValue>Ihy2+cbbJjy5VvHrvW+gjuFkTVgxxcxTOwb8PSif8PmUqZ39WshiY5EK51R0fK5F16wZMjvfejD8
+KFO596rNIcAU1TZUynmi0Ruo0XRm9H6bha3ujLIwhAuxI0/Xcd1gAIXAJwS1JibtDTvxT/PFW/bY
+XDZx2CL3nboEYt0TWEj7My9B91J6SdSdbFcZ3YEADqBG/xan4I8qEy25D3KRJ4UH2wsYlJvTBhNS
+qGkZCDn4Ug4te/u6VCdDOh/6CjPaC0eEjei9zc6ZbCjHu9fEYAC5vPWucRw6Na7kqK7Gl5Kh3ylp
+Xd5cI8EmgQG9ggUtSK0/tnjmR+UpPtShy5BaVw==</SignatureValue><KeyInfo><KeyValue><RSAKeyValue><Modulus>wgQBWUwL9jF4gnfroDB18KyMSKS9l4pmALCtG0ko0TyzM6QHGuGlpCMsihUos70E06b+CSSvybfX
+iepFjwj2hhZ3bKj7APiW3dIOHDW4cP+PVQEzj5U/Ca0qS5S1YVzJr11L6krPIWwHoSJFHM1JP5bs
+VXnmCh7Lj89+uP6bndr6UmEybg96MYLB6/KoTrAjk2ByamF6dN22vpj3SR8VwQQwRNsM76V0pSdD
+4DlHnXlxhigv9hVvi93C2WlrtFib/9PryE9n8sLIg30qkKE7/mSkdiGCM3bBeFqs0FLN08h1Y1D8
+HsfYGl5ohCHkw87uVAE1onsgwayIE+fYJOIBzw==</Modulus><Exponent>AQAB</Exponent></RSAKeyValue></KeyValue><X509Data><X509Certificate>MIIFTDCCBDSgAwIBAgIIB38HXx7kTHAwDQYJKoZIhvcNAQELBQAwgboxHjAcBgkqhkiG9w0BCQEW
+D3NvcG9ydGVAaWRvay5jbDEiMCAGA1UEAwwZSURPSyBGSVJNQSBFTEVDVFJPTklDQSBWNDEXMBUG
+A1UECwwOUlVULTc2NjEwNzE4LTQxIDAeBgNVBAsMF0F1dG9yaWRhZCBDZXJ0aWZpY2Fkb3JhMRkw
+FwYDVQQKDBBCUE8gQWR2aXNvcnMgU3BBMREwDwYDVQQHDAhTYW50aWFnbzELMAkGA1UEBhMCQ0ww
+HhcNMjYwNjIyMjE1MjQ4WhcNMjgwNTI2MTMwMTMxWjCBgzEmMCQGA1UEAwwdQUxWQVJPIFJPQkVS
+VE8gRElFR1VFWiBBTkdVTE8xKzApBgkqhkiG9w0BCQEWHGFsdmFyby5yLmRpZWd1ZXouYUBnbWFp
+bC5jb20xEjAQBgNVBAUTCTg2NzMwNjItNjELMAkGA1UEBhMCQ0wxCzAJBgNVBAcMAlJNMIIBIjAN
+BgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwgQBWUwL9jF4gnfroDB18KyMSKS9l4pmALCtG0ko
+0TyzM6QHGuGlpCMsihUos70E06b+CSSvybfXiepFjwj2hhZ3bKj7APiW3dIOHDW4cP+PVQEzj5U/
+Ca0qS5S1YVzJr11L6krPIWwHoSJFHM1JP5bsVXnmCh7Lj89+uP6bndr6UmEybg96MYLB6/KoTrAj
+k2ByamF6dN22vpj3SR8VwQQwRNsM76V0pSdD4DlHnXlxhigv9hVvi93C2WlrtFib/9PryE9n8sLI
+g30qkKE7/mSkdiGCM3bBeFqs0FLN08h1Y1D8HsfYGl5ohCHkw87uVAE1onsgwayIE+fYJOIBzwID
+AQABo4IBiTCCAYUwCQYDVR0TBAIwADAfBgNVHSMEGDAWgBS73UrbfxA3iHRnRbLKuRKE4MZ4FjCB
+mAYDVR0gBIGQMIGNMIGKBgorBgEEAYOMHgEEMHwwLAYIKwYBBQUHAgEWIGh0dHBzOi8vcHNjLmlk
+b2suY2wvb3Blbi9jcHMucGRmMEwGCCsGAQUFBwICMEAePgBDAGUAcgB0AGkAZgBpAGMAYQBkAG8A
+IABwAGEAcgBhACAAdQBzAG8AIABUAHIAaQBiAHUAdABhAHIAaQBvMEYGA1UdHwQ/MD0wO6A5oDeG
+NWh0dHBzOi8vcHNjLmlkb2suY2wvb3Blbi9JRE9LX0ZJUk1BX0VMRUNUUk9OSUNBXzQuY3JsMB0G
+A1UdDgQWBBQN7QtS1ttTWr8XXVOSihpcmxV0TTALBgNVHQ8EBAMCBJAwIwYDVR0SBBwwGqAYBggr
+BgEEAcEBAqAMFgo3NjYxMDcxOC00MCMGA1UdEQQcMBqgGAYIKwYBBAHBAQGgDBYKMDg2NzMwNjIt
+NjANBgkqhkiG9w0BAQsFAAOCAQEAA4V2XAF3AeFjpBn7wCV/xNVTqn4IdVKxgFh/iWEipB01XLGz
+VM3OIFN30dnD+XcWeYGzMazYSMx/UByaPxBu3cZW0PFGPBO3HmcfXqwJYAH+fR85fZkF2crd1SLR
+zNFk8x79be+YjVG7v+qVFIFYrlDSk8x0wLEzuDgi9mT8OzEp4ZmVtLGRPvV2tytnOjAqGn8B5s5Y
+uoL5zh/hT6R+gulacltlMRppoBlpA/dnSqo1q0dQTyw2wLk9Q00BP+8sXjpAg9+slRAZ8QUK9cgm
+8xXAt/++fMvWx1ahJYpbMjNPRFX1d1UxMfQLNUIcSji7WO6pVPrK7wEybLN/lYbdbw==</X509Certificate></X509Data></KeyInfo></Signature></DTE><DatosAdjuntos><NombreDA>Nro_Empresa</NombreDA><ValorDA>609</ValorDA></DatosAdjuntos><DatosAdjuntos><NombreDA>Tipo_Fact</NombreDA><ValorDA>        33</ValorDA></DatosAdjuntos><DatoAdjunto nombre="Pago">Contado</DatoAdjunto><DatoAdjunto nombre="eti7"></DatoAdjunto><DatoAdjunto nombre="eti8"></DatoAdjunto><DatoAdjunto nombre="FonoEmisor">732381373</DatoAdjunto>
+<DatoAdjunto nombre="MailEmisor">adieguez.a@hotmail.com</DatoAdjunto>
+<DatoAdjunto nombre="Logo">http://webapp.enternet.cl/enternetearly/Estatico/Config/201612/8673062-6_AlvaroRobertoDieguez.png</DatoAdjunto>
+<DatoAdjunto nombre="Agencia_SII">LINARES</DatoAdjunto>
+<DatoAdjunto nombre="NumRes_SII">80</DatoAdjunto>
+			<DatoAdjunto nombre="FechRes_SII">2014</DatoAdjunto>
+			<DatoAdjunto nombre="IDDOC">E609K391039TFEEF8227</DatoAdjunto>
+<DatosAnexos></DatosAnexos>
+<DatosAdicionales>
+			<DatoAdicional nombre="TelefonoReceptor"/>
+			<DatoAdicional nombre="CondicionPago">Contado</DatoAdicional>
+			<DatoAdicional nombre="OrdenCompra"/>
+			<DatoAdicional nombre="GuiaDespacho"/>
+<DatoAdicional nombre="HIDETBLPAGO">TRUE</DatoAdicional>
+</DatosAdicionales>		
+</Content>
+</Document>
+

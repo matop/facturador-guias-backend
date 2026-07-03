@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GDE · Sistema de Guías de Despacho</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sidebar: #0f1623;
+  --sidebar-border: #1a2840;
+  --accent: #0d9488;
+  --accent-glow: rgba(13,148,136,0.35);
+  --pending-color: #f59e0b;
+}
+* { box-sizing: border-box; }
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  margin: 0;
+  background: #f1f5f9;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+}
+.mono { font-family: 'JetBrains Mono', monospace; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
+
+/* === SIDEBAR === */
+.sidebar {
+  width: 232px;
+  flex-shrink: 0;
+  background: var(--sidebar);
+  border-right: 1px solid var(--sidebar-border);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+.sidebar-top {
+  padding: 20px 18px 18px;
+  border-bottom: 1px solid var(--sidebar-border);
+}
+.empresa-key {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: #2a6b60;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 4px;
+}
+.empresa-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent-glow);
+}
+.empresa-name {
+  color: #e2e8f0;
+  font-weight: 700;
+  font-size: 13.5px;
+  line-height: 1.3;
+}
+.empresa-sub {
+  color: #334e68;
+  font-size: 11px;
+  margin-top: 2px;
+}
+.sidebar-nav {
+  flex: 1;
+  padding: 16px 10px;
+}
+.nav-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #253347;
+  padding: 0 8px;
+  margin-bottom: 8px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #64748b;
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: all 0.15s;
+  margin-bottom: 2px;
+}
+.nav-item:hover { color: #cbd5e1; background: rgba(255,255,255,0.04); }
+.nav-item.active {
+  color: #2dd4bf;
+  background: rgba(13,148,136,0.1);
+  border: 1px solid rgba(13,148,136,0.15);
+}
+.nav-item .nav-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: #2a3d52;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.nav-item.active .nav-dot {
+  background: #2dd4bf;
+  box-shadow: 0 0 6px rgba(45,212,191,0.6);
+}
+.sidebar-footer {
+  padding: 14px 18px;
+  border-top: 1px solid var(--sidebar-border);
+}
+
+/* === MAIN === */
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+.topbar {
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0 24px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.topbar-title { font-weight: 800; color: #0f172a; font-size: 17px; }
+.topbar-sep { color: #cbd5e1; font-size: 20px; font-weight: 300; }
+.topbar-period { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; color: #64748b; }
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+
+.period-sel {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 5px 10px;
+  color: #1e293b;
+  background: #f8fafc;
+  cursor: pointer;
+  outline: none;
+}
+.period-sel:focus { border-color: var(--accent); }
+
+.btn-sync {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+.btn-sync:hover { background: #0f9e92; box-shadow: 0 0 12px var(--accent-glow); }
+.btn-sync:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #94a3b8;
+  font-size: 12.5px;
+  font-weight: 500;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 3px 0;
+  transition: color 0.15s;
+}
+.back-btn:hover { color: #475569; }
+
+/* === CONTENT AREA === */
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+}
+
+/* === STATS BAR === */
+.stats-bar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+.stat-item {
+  padding: 14px 20px;
+  flex: 0 0 auto;
+}
+.stat-item + .stat-item { border-left: 1px solid #f1f5f9; }
+.stat-label { font-size: 11px; color: #94a3b8; font-weight: 500; margin-bottom: 3px; }
+.stat-val { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #0f172a; font-size: 20px; }
+.stat-val.pending-val { color: var(--pending-color); }
+
+/* === SECTION LABEL === */
+.section-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.section-label .warn-icon { color: var(--pending-color); font-size: 13px; }
+
+/* === CLIENT ROW === */
+.client-rows { display: flex; flex-direction: column; gap: 6px; }
+.client-row {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  padding: 14px 18px;
+  cursor: pointer;
+  transition: all 0.14s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.client-row:hover {
+  border-color: #94a3b8;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+  transform: translateY(-1px);
+}
+.client-row.pending-row {
+  border-left: 3px solid var(--pending-color);
+  background: #fffcf5;
+}
+.client-row.pending-row:hover { border-color: var(--pending-color); }
+.client-left { display: flex; align-items: center; gap: 12px; }
+.client-avatar {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.client-name { font-weight: 700; color: #1e293b; font-size: 13.5px; }
+.client-rut { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #94a3b8; margin-top: 1px; }
+.badge-pending {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 100px;
+  letter-spacing: 0.02em;
+  margin-left: 6px;
+}
+.client-right { display: flex; align-items: center; gap: 24px; }
+.client-stat { text-align: right; }
+.client-stat-label { font-size: 10.5px; color: #94a3b8; }
+.client-stat-val { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #1e293b; font-size: 14px; }
+.chevron-icon { color: #cbd5e1; margin-left: 4px; }
+
+/* === GUIDE GROUPS === */
+.guide-group {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.guide-group.sin-regla {
+  border-style: dashed;
+  background: #fafafa;
+  border-color: #d1d5db;
+}
+.group-header {
+  padding: 13px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #f8fafc;
+}
+.guide-group.sin-regla .group-header { border-bottom-color: #f1f5f9; }
+.group-title-wrap { display: flex; align-items: center; gap: 8px; }
+.group-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+.group-dot.muted { background: #cbd5e1; }
+.group-name { font-weight: 700; color: #1e293b; font-size: 13.5px; }
+.group-name.muted { color: #94a3b8; font-style: italic; font-weight: 500; }
+.group-reglaidl { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #cbd5e1; }
+.group-right { display: flex; align-items: center; gap: 16px; }
+.group-count { font-size: 12px; color: #64748b; }
+.group-monto { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #0f172a; font-size: 13.5px; }
+.group-body { padding: 10px 18px 14px; }
+.folios-label { font-size: 10.5px; color: #94a3b8; font-weight: 500; margin-bottom: 7px; }
+.folios-wrap { display: flex; flex-wrap: wrap; gap: 5px; }
+.folio-chip {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  background: #f1f5f9;
+  color: #475569;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+}
+.guide-group.sin-regla .folio-chip { background: #f8fafc; color: #94a3b8; }
+
+/* === MINI STATS === */
+.mini-stats { display: flex; gap: 10px; margin-bottom: 18px; }
+.mini-stat {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 16px;
+}
+.mini-stat-label { font-size: 10.5px; color: #94a3b8; margin-bottom: 2px; }
+.mini-stat-val { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #0f172a; font-size: 16px; }
+
+/* === CLIENT SECTION (guias-all) === */
+.client-section {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.client-section-hdr {
+  padding: 13px 18px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.client-section-inner { padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+
+.compact-group {
+  background: white;
+  border: 1px solid #e8ecf2;
+  border-radius: 7px;
+  padding: 10px 14px;
+}
+.compact-group.sin-regla {
+  border-style: dashed;
+  background: #fafafa;
+}
+.compact-group-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
+.compact-group-title { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: #334155; }
+.compact-group-title.muted { color: #94a3b8; font-weight: 500; font-style: italic; }
+.compact-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+.compact-dot.muted { background: #cbd5e1; }
+.compact-right { display: flex; gap: 12px; align-items: center; }
+.compact-count { font-size: 11px; color: #94a3b8; }
+.compact-monto { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; color: #1e293b; }
+
+/* === ANIMATIONS === */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-in { animation: fadeIn 0.18s ease-out both; }
+.fade-in:nth-child(1) { animation-delay: 0ms; }
+.fade-in:nth-child(2) { animation-delay: 28ms; }
+.fade-in:nth-child(3) { animation-delay: 56ms; }
+.fade-in:nth-child(4) { animation-delay: 84ms; }
+.fade-in:nth-child(5) { animation-delay: 112ms; }
+.fade-in:nth-child(6) { animation-delay: 140ms; }
+.fade-in:nth-child(7) { animation-delay: 168ms; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin 0.7s linear infinite; display: inline-block; }
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 22px;
+  right: 22px;
+  background: #0f1623;
+  color: #e2e8f0;
+  border: 1px solid #1a2840;
+  border-radius: 8px;
+  padding: 11px 16px;
+  font-size: 12.5px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.28);
+  animation: fadeIn 0.22s ease-out;
+  z-index: 999;
+}
+.toast-ok { color: #2dd4bf; font-size: 14px; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-top">
+    <div class="empresa-key">
+      <span class="empresa-dot"></span>
+      968880004-K
+    </div>
+    <div class="empresa-name">Empresa Demo S.A.</div>
+    <div class="empresa-sub">Sistema GDE · Tipo 52</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Navegación</div>
+    <button class="nav-item active" id="nav-clientes" onclick="navigate('clientes')">
+      <span class="nav-dot"></span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Clientes
+    </button>
+    <button class="nav-item" id="nav-guias" onclick="navigate('guias-all')">
+      <span class="nav-dot"></span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Guías
+    </button>
+  </nav>
+  <div class="sidebar-footer">
+    <div style="font-size:11px;color:#253347;">v1.0.0 · QA</div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-left" id="topbar-left">
+      <span class="topbar-title">Clientes</span>
+      <span class="topbar-sep">·</span>
+      <span class="topbar-period" id="topbar-period">Mayo 2026</span>
+    </div>
+    <div class="topbar-right">
+      <select class="period-sel" id="period-sel" onchange="changePeriod(this.value)">
+        <option value="2026-05" selected>2026-05</option>
+        <option value="2026-04">2026-04</option>
+        <option value="2026-03">2026-03</option>
+      </select>
+      <button class="btn-sync" id="btn-sync" onclick="doSync()">
+        <svg id="sync-svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+        <span id="sync-txt">Sincronizar</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content" id="content"></div>
+</div>
+
+<script>
+// ─── DATA ──────────────────────────────────────────────────
+const MONTHS = { '01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo',
+  '06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre','10':'Octubre',
+  '11':'Noviembre','12':'Diciembre' };
+
+const CLIENTS = [
+  { idx:0, rut:'76.543.210-3', nombre:'TRANSPORTES EL CONDOR LTDA', cantidadGuias:8, montoTotal:'4560000', pendiente:true },
+  { idx:1, rut:'77.890.123-4', nombre:'COMERCIAL SAN PEDRO SPA',    cantidadGuias:3, montoTotal:'1230000', pendiente:true },
+  { idx:2, rut:'76.111.222-3', nombre:'DISTRIBUIDORA NORTE SPA',    cantidadGuias:12,montoTotal:'6780000', pendiente:false },
+  { idx:3, rut:'76.444.555-6', nombre:'INVERSIONES COLINA LTDA',    cantidadGuias:5, montoTotal:'2100000', pendiente:false },
+  { idx:4, rut:'76.777.888-9', nombre:'SERVICIOS RENCA SA',         cantidadGuias:7, montoTotal:'3450000', pendiente:false },
+];
+
+const GUIAS = {
+  '76.543.210-3': [
+    { reglaidl:'968880004_CmnaRecep_QUILICURA', label:'Quilicura', cantidadGuias:4, montoTotal:'2100000', folios:['521','522','523','524'] },
+    { reglaidl:'968880004_CmnaRecep_PUDAHUEL',  label:'Pudahuel',  cantidadGuias:2, montoTotal:'1200000', folios:['518','519'] },
+    { reglaidl:'_sin_regla',                    label:null,        cantidadGuias:2, montoTotal:'1260000', folios:['515','516'] },
+  ],
+  '77.890.123-4': [
+    { reglaidl:'968880004_CmnaRecep_SANTIAGO',  label:'Santiago',  cantidadGuias:3, montoTotal:'1230000', folios:['501','502','503'] },
+  ],
+  '76.111.222-3': [
+    { reglaidl:'968880004_CmnaRecep_RENCA',     label:'Renca',     cantidadGuias:7, montoTotal:'3900000', folios:['601','602','603','604','605','606','607'] },
+    { reglaidl:'968880004_CmnaRecep_COLINA',    label:'Colina',    cantidadGuias:5, montoTotal:'2880000', folios:['608','609','610','611','612'] },
+  ],
+  '76.444.555-6': [
+    { reglaidl:'968880004_CmnaRecep_COLINA',    label:'Colina',    cantidadGuias:5, montoTotal:'2100000', folios:['701','702','703','704','705'] },
+  ],
+  '76.777.888-9': [
+    { reglaidl:'968880004_CmnaRecep_RENCA',     label:'Renca',     cantidadGuias:4, montoTotal:'1950000', folios:['801','802','803','804'] },
+    { reglaidl:'_sin_regla',                    label:null,        cantidadGuias:3, montoTotal:'1500000', folios:['805','806','807'] },
+  ],
+};
+
+const AVATAR_PALETTES = [
+  ['#0d9488','#ccfbf1'], ['#7c3aed','#ede9fe'],
+  ['#ea580c','#ffedd5'], ['#0284c7','#e0f2fe'], ['#65a30d','#ecfccb'],
+];
+
+// ─── STATE ─────────────────────────────────────────────────
+let S = { view: 'clientes', clientIdx: null, period: '2026-05', syncing: false };
+
+// ─── UTILS ─────────────────────────────────────────────────
+function clp(v) {
+  return '$ ' + parseInt(v).toLocaleString('es-CL');
+}
+function periodLabel(p) {
+  const [y,m] = p.split('-');
+  return MONTHS[m] + ' ' + y;
+}
+function initials(nombre) {
+  const w = nombre.split(' ').filter(x => x.length > 3);
+  return w.length >= 2 ? (w[0][0]+w[1][0]) : nombre.slice(0,2);
+}
+function palette(idx) { return AVATAR_PALETTES[idx % AVATAR_PALETTES.length]; }
+
+// ─── NAV ───────────────────────────────────────────────────
+function navigate(view, clientIdx) {
+  S.view = view;
+  S.clientIdx = (clientIdx !== undefined) ? clientIdx : null;
+  document.getElementById('nav-clientes').classList.toggle('active', view === 'clientes');
+  document.getElementById('nav-guias').classList.toggle('active', view !== 'clientes');
+  render();
+}
+function changePeriod(v) { S.period = v; render(); }
+
+// ─── SYNC ──────────────────────────────────────────────────
+function doSync() {
+  if (S.syncing) return;
+  S.syncing = true;
+  const btn = document.getElementById('btn-sync');
+  const txt = document.getElementById('sync-txt');
+  const svg = document.getElementById('sync-svg');
+  btn.disabled = true;
+  svg.classList.add('spin');
+  txt.textContent = 'Sincronizando…';
+  setTimeout(() => {
+    S.syncing = false;
+    btn.disabled = false;
+    svg.classList.remove('spin');
+    txt.textContent = 'Sincronizar';
+    toast('Sincronización completada · 38 guías · 5 clientes');
+  }, 2000);
+}
+function toast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.innerHTML = `<span class="toast-ok">✓</span>${msg}`;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+// ─── TOPBAR ────────────────────────────────────────────────
+function setTopbar(html) {
+  document.getElementById('topbar-left').innerHTML = html;
+}
+
+// ─── RENDER DISPATCH ───────────────────────────────────────
+function render() {
+  const { view, clientIdx, period } = S;
+  if (view === 'clientes') {
+    setTopbar(`
+      <span class="topbar-title">Clientes</span>
+      <span class="topbar-sep">·</span>
+      <span class="topbar-period">${periodLabel(period)}</span>
+    `);
+    document.getElementById('content').innerHTML = renderClientes();
+  } else if (view === 'guias-client') {
+    const c = CLIENTS[clientIdx];
+    setTopbar(`
+      <button class="back-btn" onclick="navigate('clientes')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        Clientes
+      </button>
+      <span style="color:#e2e8f0;margin:0 4px">/</span>
+      <span class="topbar-title" style="font-size:15px">${c.nombre.split(' ').slice(0,3).join(' ')}</span>
+      <span class="topbar-period mono" style="font-size:11px">${c.rut}</span>
+    `);
+    document.getElementById('content').innerHTML = renderGuiasClient(c);
+  } else {
+    setTopbar(`
+      <span class="topbar-title">Guías</span>
+      <span class="topbar-sep">·</span>
+      <span class="topbar-period">${periodLabel(period)}</span>
+    `);
+    document.getElementById('content').innerHTML = renderGuiasAll();
+  }
+}
+
+// ─── RENDER CLIENTES ───────────────────────────────────────
+function renderClientes() {
+  const pendientes = CLIENTS.filter(c => c.pendiente);
+  const actuales   = CLIENTS.filter(c => !c.pendiente);
+  const totalGuias = CLIENTS.reduce((s,c)=>s+c.cantidadGuias,0);
+  const totalMonto = CLIENTS.reduce((s,c)=>s+parseInt(c.montoTotal),0);
+
+  let h = `<div class="stats-bar fade-in">
+    <div class="stat-item"><div class="stat-label">Clientes</div><div class="stat-val">${CLIENTS.length}</div></div>
+    <div class="stat-item"><div class="stat-label">Total Guías</div><div class="stat-val">${totalGuias}</div></div>
+    <div class="stat-item"><div class="stat-label">Monto Total</div><div class="stat-val mono" style="font-size:16px">${clp(totalMonto)}</div></div>
+    ${pendientes.length ? `<div class="stat-item"><div class="stat-label" style="color:#92400e">Entrega Pendiente</div><div class="stat-val pending-val">${pendientes.length}</div></div>` : ''}
+  </div>`;
+
+  if (pendientes.length) {
+    h += `<div class="section-label fade-in"><span class="warn-icon">⚠</span> Entregas Pendientes · Abril 2026</div>`;
+    h += `<div class="client-rows" style="margin-bottom:20px">${pendientes.map(clientRow).join('')}</div>`;
+  }
+
+  h += `<div class="section-label fade-in">${periodLabel(S.period)}</div>`;
+  h += `<div class="client-rows">${actuales.map(clientRow).join('')}</div>`;
+  return h;
+}
+
+function clientRow(c) {
+  const [ac, bg] = palette(c.idx);
+  return `
+  <div class="client-row ${c.pendiente?'pending-row':''} fade-in" onclick="navigate('guias-client',${c.idx})">
+    <div class="client-left">
+      <div class="client-avatar" style="background:${bg};color:${ac}">${initials(c.nombre)}</div>
+      <div>
+        <div class="client-name">
+          ${c.nombre}
+          ${c.pendiente ? `<span class="badge-pending">⚠ Entrega Pendiente</span>` : ''}
+        </div>
+        <div class="client-rut">${c.rut}</div>
+      </div>
+    </div>
+    <div class="client-right">
+      <div class="client-stat">
+        <div class="client-stat-label">Guías</div>
+        <div class="client-stat-val">${c.cantidadGuias}</div>
+      </div>
+      <div class="client-stat">
+        <div class="client-stat-label">Monto</div>
+        <div class="client-stat-val">${clp(c.montoTotal)}</div>
+      </div>
+      <svg class="chevron-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+  </div>`;
+}
+
+// ─── RENDER GUÍAS (client) ─────────────────────────────────
+function renderGuiasClient(c) {
+  const grupos = GUIAS[c.rut] || [];
+  const regular = grupos.filter(g => g.reglaidl !== '_sin_regla');
+  const sinRegla = grupos.find(g => g.reglaidl === '_sin_regla');
+  const totalG = grupos.reduce((s,g)=>s+g.cantidadGuias,0);
+  const totalM = grupos.reduce((s,g)=>s+parseInt(g.montoTotal),0);
+
+  let h = `<div class="mini-stats fade-in">
+    <div class="mini-stat"><div class="mini-stat-label">Guías totales</div><div class="mini-stat-val">${totalG}</div></div>
+    <div class="mini-stat"><div class="mini-stat-label">Monto total</div><div class="mini-stat-val" style="font-size:14px">${clp(totalM)}</div></div>
+    <div class="mini-stat"><div class="mini-stat-label">Reglas activas</div><div class="mini-stat-val">${regular.length}</div></div>
+  </div>`;
+
+  regular.forEach(g => { h += guideGroup(g, false); });
+  if (sinRegla) h += guideGroup(sinRegla, false);
+  return h;
+}
+
+function guideGroup(g, compact) {
+  const isSin = g.reglaidl === '_sin_regla';
+  const label = isSin ? 'Sin regla asignada' : g.label;
+  return `
+  <div class="guide-group ${isSin?'sin-regla':''} fade-in">
+    <div class="group-header">
+      <div class="group-title-wrap">
+        <span class="group-dot ${isSin?'muted':''}"></span>
+        <span class="group-name ${isSin?'muted':''}">${label}</span>
+        ${!isSin ? `<span class="group-reglaidl">${g.reglaidl}</span>` : ''}
+      </div>
+      <div class="group-right">
+        <span class="group-count">${g.cantidadGuias} guías</span>
+        <span class="group-monto">${clp(g.montoTotal)}</span>
+      </div>
+    </div>
+    <div class="group-body">
+      <div class="folios-label">Folios</div>
+      <div class="folios-wrap">${g.folios.map(f=>`<span class="folio-chip">${f}</span>`).join('')}</div>
+    </div>
+  </div>`;
+}
+
+// ─── RENDER GUÍAS (all) ────────────────────────────────────
+function renderGuiasAll() {
+  const totalG = CLIENTS.reduce((s,c)=>s+c.cantidadGuias,0);
+  let h = `<div class="mini-stats fade-in">
+    <div class="mini-stat"><div class="mini-stat-label">Total guías</div><div class="mini-stat-val">${totalG}</div></div>
+    <div class="mini-stat"><div class="mini-stat-label">Clientes</div><div class="mini-stat-val">${CLIENTS.length}</div></div>
+  </div>`;
+
+  CLIENTS.forEach(c => {
+    const grupos = GUIAS[c.rut] || [];
+    const regular = grupos.filter(g => g.reglaidl !== '_sin_regla');
+    const sinRegla = grupos.find(g => g.reglaidl === '_sin_regla');
+    const [ac, bg] = palette(c.idx);
+
+    h += `
+    <div class="client-section fade-in">
+      <div class="client-section-hdr">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="client-avatar" style="width:30px;height:30px;font-size:10px;border-radius:6px;background:${bg};color:${ac}">${initials(c.nombre)}</div>
+          <div>
+            <div style="font-weight:700;color:#1e293b;font-size:13px">${c.nombre}${c.pendiente?`<span class="badge-pending" style="margin-left:6px">⚠ Pendiente</span>`:''}</div>
+            <div class="mono" style="font-size:10.5px;color:#94a3b8">${c.rut}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:16px;text-align:right">
+          <div><div style="font-size:10.5px;color:#94a3b8">Guías</div><div class="mono" style="font-weight:700;color:#1e293b">${c.cantidadGuias}</div></div>
+          <div><div style="font-size:10.5px;color:#94a3b8">Monto</div><div class="mono" style="font-weight:700;color:#1e293b;font-size:13px">${clp(c.montoTotal)}</div></div>
+        </div>
+      </div>
+      <div class="client-section-inner">
+        ${regular.map(g=>compactGroup(g)).join('')}
+        ${sinRegla ? compactGroup(sinRegla) : ''}
+      </div>
+    </div>`;
+  });
+  return h;
+}
+
+function compactGroup(g) {
+  const isSin = g.reglaidl === '_sin_regla';
+  const label = isSin ? 'Sin regla asignada' : g.label;
+  return `
+  <div class="compact-group ${isSin?'sin-regla':''}">
+    <div class="compact-group-top">
+      <div class="compact-group-title ${isSin?'muted':''}">
+        <span class="compact-dot ${isSin?'muted':''}"></span>
+        ${label}
+      </div>
+      <div class="compact-right">
+        <span class="compact-count">${g.cantidadGuias} guías</span>
+        <span class="compact-monto">${clp(g.montoTotal)}</span>
+      </div>
+    </div>
+    <div class="folios-wrap">${g.folios.map(f=>`<span class="folio-chip" style="font-size:10px;padding:2px 6px">${f}</span>`).join('')}</div>
+  </div>`;
+}
+
+// ─── INIT ──────────────────────────────────────────────────
+navigate('clientes');
+</script>
+</body>
+</html>

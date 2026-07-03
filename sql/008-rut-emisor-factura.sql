@@ -1,0 +1,2 @@
+ALTER TABLE gde.factura
+  ADD COLUMN rut_emisor VARCHAR(20) NOT NULL DEFAULT '';

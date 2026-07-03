@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml-stylesheet type="text/xsl" href="http://webapp.enternet.cl/enternetearly/Estatico/Config/DTEPlantilla-PANADERIAS.xsl"?>
+<Document Domain="enternet" Type="Factura Electronica Afecta">
+<Issuer><PI Type="Rut">8673062-6</PI></Issuer>
+<Signers><Signer><PI Type="Rut"></PI></Signer></Signers>
+<Recipients>
+<Recipient>
+<PI Type="Role">Funcionario</PI>
+</Recipient>
+</Recipients>
+<Attributes>
+	<Attribute Type="FOLIO">8241</Attribute>
+	<Attribute Type="TIPODTE">33</Attribute>
+	<Attribute Type="FECHAEMISION">2026-06-30</Attribute>
+	<Attribute Type="RUTRECEPTOR">4320736-9</Attribute>
+	<Attribute Type="NOMBRERECEPTOR">BUSTAMANTE HERNANDEZ JUAN ALEJANDRO</Attribute>
+	<Attribute Type="DIRECCIONRECEPTOR">AVDA. ESPERANZA S/N- ESTACION VILLA ALEGRE</Attribute>
+	<Attribute Type="VENDEDOR">ALVARO DIEGUEZ</Attribute>
+	<Attribute Type="RUTEMISOR">8673062-6</Attribute>
+	<Attribute Type="NOMBREEMISOR">ALVARO ROBERTO DIEGUEZ ANGULO</Attribute>
+</Attributes>
+<Content>
+
+<DTE xmlns="http://www.sii.cl/SiiDte" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0">			<Documento ID="EMI086730626F8241T33">
+				<Encabezado>
+					<IdDoc>
+						<TipoDTE>33</TipoDTE>
+						<Folio>8241</Folio>
+						<FchEmis>2026-06-30</FchEmis>
+						<MntBruto>1</MntBruto>
+						<FchVenc>2026-06-30</FchVenc>
+					</IdDoc>
+					<Emisor>
+						<RUTEmisor>8673062-6</RUTEmisor>
+						<RznSoc>ALVARO ROBERTO DIEGUEZ ANGULO</RznSoc>
+						<GiroEmis>PANADERIA, ROTISERIA Y  SUPER. DE BEBIDAS ALCOHOLICAS</GiroEmis>
+						<Telefono>732381373</Telefono>
+						<Acteco>107100</Acteco>
+						<Acteco>107100</Acteco>
+						<Acteco>107100</Acteco>
+						<Acteco>107100</Acteco>
+						<DirOrigen>AV ABATE MOLINA 920, VILLA ALEGRE</DirOrigen>
+						<CmnaOrigen>LINARES</CmnaOrigen>
+						<CdgVendedor>8673062-6</CdgVendedor>
+					</Emisor>
+					<Receptor>
+						<RUTRecep>4320736-9</RUTRecep>
+						<RznSocRecep>BUSTAMANTE HERNANDEZ JUAN ALEJANDRO</RznSocRecep>
+						<GiroRecep>ALMACEN</GiroRecep>
+						<Contacto>BUSTAMANTE HERNANDEZ JUAN ALEJANDRO</Contacto>
+						<DirRecep>AVDA. ESPERANZA S/N- ESTACION VILLA ALEGRE</DirRecep>
+						<CmnaRecep>VILLA ALEGRE</CmnaRecep>
+						<CiudadRecep>VILLA ALEGRE</CiudadRecep>
+					</Receptor>
+					<Totales>
+						<MntNeto>2971956</MntNeto>
+						<TasaIVA>19.00</TasaIVA>
+						<IVA>564672</IVA>
+						<MntTotal>3536628</MntTotal>
+					</Totales>
+				</Encabezado>
+				<Detalle>
+					<NroLinDet>1</NroLinDet>
+					<NmbItem>Segun Guias:</NmbItem>
+					<DscItem>358135 361645 359093 358192 361741 360020 361434 361548 361439 361438 359996 361510 361505 361587 361565 361569 361591 361670 361484 361716 361685 361387 361823 361815 361891 361873 361793 361897 361943 361967 361965 361961 360156 362072 362069 362078 361051 360039 362087 360080 362005 360112 360101 361913 360258 360237 360311 360275 360851 360332 360393 360364 360463 360433 360353 360538 360468 360564 360562 360623 360583 360699 360417 360775 360735 361014 360929 360925 360997 360933 360882 361011 360329 360546 361107 361032 360195 361186 361119 361262 361202 361300 361286 361342 361111 361365 361364</DscItem>
+					<MontoItem>3536628</MontoItem>
+				</Detalle>
+				<Referencia>
+					<NroLinRef>1</NroLinRef>
+					<TpoDocRef>52</TpoDocRef>
+					<IndGlobal>1</IndGlobal>
+					<FolioRef>0</FolioRef>
+					<FchRef>2026-06-30</FchRef>
+				</Referencia>
+			<TED version="1.0">
+  <DD>
+    <RE>8673062-6</RE>
+    <TD>33</TD>
+    <F>8241</F>
+    <FE>2026-06-30</FE>
+    <RR>4320736-9</RR>
+    <RSR>BUSTAMANTE HERNANDEZ JUAN ALEJANDRO</RSR>
+    <MNT>3536628</MNT>
+    <IT1>Segun Guias:</IT1>
+    <CAF version="1.0">
+      <DA>
+        <RE>8673062-6</RE>
+        <RS>ALVARO ROBERTO DIEGUEZ ANGULO</RS>
+        <TD>33</TD>
+        <RNG>
+          <D>8201</D>
+          <H>8400</H>
+        </RNG>
+        <FA>2026-05-31</FA>
+        <RSAPK>
+          <M>3ChK4U6fPrtUeoc61up36ooLE+pE0HsgEl+J6aKGRk7n4P/u8OJD+nAtjsRoBmrkba3KOgznkZDdNevM2wkOvQ==</M>
+          <E>Aw==</E>
+        </RSAPK>
+        <IDK>300</IDK>
+      </DA>
+      <FRMA algoritmo="SHA1withRSA">mWAlkLMElW/Flgf1JthLXhNViD299j9/cKM/ijAvqT3XFjlHVA9fjceCvKNBGvNYQwaYWFkgXrXZrD2XBgCTGg==</FRMA>
+    </CAF>
+    <TSTED>2026-06-30T17:09:15</TSTED>
+  </DD>
+  <FRMT algoritmo="SHA1withRSA">vVP/LmQ8AT0iJXyd6reCyi20sRxrPrAbU+tHMmSHNiiqfXh7LAGFbb7FL25yI07803Ns/2x8TfmcV7VW1id4vw==</FRMT>
+</TED><TmstFirma>2026-06-30T17:09:15</TmstFirma>
+			</Documento>
+<Signature xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><Reference URI="#EMI086730626F8241T33"><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><DigestValue>xTyz80cZLyYM5qV0Es+Cr92/BzY=</DigestValue></Reference></SignedInfo><SignatureValue>Wpa3qotLwca9CXFJQfw9Q/+RGIZN5g6OckrTVv4DBD/Z1WE1I1kzPdhu5tEGN/tNFmkv67h1Aqj0
+5jVRQdlJ/z6fHLtmQgKxEMh8DyUgOmpid1A/mP3BZjrHFZXBhB8j1ims7PjVTw+cPPdNQQil8bUj
+56AAxAE8iDLmGXxEHd5Lfg1aJj2HXrXdjnIoNEc13Wl/Sft0bRp6RGa45xhvgfaOBe5E5EmWnklB
+kxbLwtvZcfrlcHl5GN8uWQww6DR1XhnSRxzKs15F9mXOrR3ZCO16LkS+i4o0Zw68ui81Hk2xaUn2
+b6UOurFDoJeU9SBGVolIBAq/SOm/OVovygGxlA==</SignatureValue><KeyInfo><KeyValue><RSAKeyValue><Modulus>wgQBWUwL9jF4gnfroDB18KyMSKS9l4pmALCtG0ko0TyzM6QHGuGlpCMsihUos70E06b+CSSvybfX
+iepFjwj2hhZ3bKj7APiW3dIOHDW4cP+PVQEzj5U/Ca0qS5S1YVzJr11L6krPIWwHoSJFHM1JP5bs
+VXnmCh7Lj89+uP6bndr6UmEybg96MYLB6/KoTrAjk2ByamF6dN22vpj3SR8VwQQwRNsM76V0pSdD
+4DlHnXlxhigv9hVvi93C2WlrtFib/9PryE9n8sLIg30qkKE7/mSkdiGCM3bBeFqs0FLN08h1Y1D8
+HsfYGl5ohCHkw87uVAE1onsgwayIE+fYJOIBzw==</Modulus><Exponent>AQAB</Exponent></RSAKeyValue></KeyValue><X509Data><X509Certificate>MIIFTDCCBDSgAwIBAgIIB38HXx7kTHAwDQYJKoZIhvcNAQELBQAwgboxHjAcBgkqhkiG9w0BCQEW
+D3NvcG9ydGVAaWRvay5jbDEiMCAGA1UEAwwZSURPSyBGSVJNQSBFTEVDVFJPTklDQSBWNDEXMBUG
+A1UECwwOUlVULTc2NjEwNzE4LTQxIDAeBgNVBAsMF0F1dG9yaWRhZCBDZXJ0aWZpY2Fkb3JhMRkw
+FwYDVQQKDBBCUE8gQWR2aXNvcnMgU3BBMREwDwYDVQQHDAhTYW50aWFnbzELMAkGA1UEBhMCQ0ww
+HhcNMjYwNjIyMjE1MjQ4WhcNMjgwNTI2MTMwMTMxWjCBgzEmMCQGA1UEAwwdQUxWQVJPIFJPQkVS
+VE8gRElFR1VFWiBBTkdVTE8xKzApBgkqhkiG9w0BCQEWHGFsdmFyby5yLmRpZWd1ZXouYUBnbWFp
+bC5jb20xEjAQBgNVBAUTCTg2NzMwNjItNjELMAkGA1UEBhMCQ0wxCzAJBgNVBAcMAlJNMIIBIjAN
+BgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwgQBWUwL9jF4gnfroDB18KyMSKS9l4pmALCtG0ko
+0TyzM6QHGuGlpCMsihUos70E06b+CSSvybfXiepFjwj2hhZ3bKj7APiW3dIOHDW4cP+PVQEzj5U/
+Ca0qS5S1YVzJr11L6krPIWwHoSJFHM1JP5bsVXnmCh7Lj89+uP6bndr6UmEybg96MYLB6/KoTrAj
+k2ByamF6dN22vpj3SR8VwQQwRNsM76V0pSdD4DlHnXlxhigv9hVvi93C2WlrtFib/9PryE9n8sLI
+g30qkKE7/mSkdiGCM3bBeFqs0FLN08h1Y1D8HsfYGl5ohCHkw87uVAE1onsgwayIE+fYJOIBzwID
+AQABo4IBiTCCAYUwCQYDVR0TBAIwADAfBgNVHSMEGDAWgBS73UrbfxA3iHRnRbLKuRKE4MZ4FjCB
+mAYDVR0gBIGQMIGNMIGKBgorBgEEAYOMHgEEMHwwLAYIKwYBBQUHAgEWIGh0dHBzOi8vcHNjLmlk
+b2suY2wvb3Blbi9jcHMucGRmMEwGCCsGAQUFBwICMEAePgBDAGUAcgB0AGkAZgBpAGMAYQBkAG8A
+IABwAGEAcgBhACAAdQBzAG8AIABUAHIAaQBiAHUAdABhAHIAaQBvMEYGA1UdHwQ/MD0wO6A5oDeG
+NWh0dHBzOi8vcHNjLmlkb2suY2wvb3Blbi9JRE9LX0ZJUk1BX0VMRUNUUk9OSUNBXzQuY3JsMB0G
+A1UdDgQWBBQN7QtS1ttTWr8XXVOSihpcmxV0TTALBgNVHQ8EBAMCBJAwIwYDVR0SBBwwGqAYBggr
+BgEEAcEBAqAMFgo3NjYxMDcxOC00MCMGA1UdEQQcMBqgGAYIKwYBBAHBAQGgDBYKMDg2NzMwNjIt
+NjANBgkqhkiG9w0BAQsFAAOCAQEAA4V2XAF3AeFjpBn7wCV/xNVTqn4IdVKxgFh/iWEipB01XLGz
+VM3OIFN30dnD+XcWeYGzMazYSMx/UByaPxBu3cZW0PFGPBO3HmcfXqwJYAH+fR85fZkF2crd1SLR
+zNFk8x79be+YjVG7v+qVFIFYrlDSk8x0wLEzuDgi9mT8OzEp4ZmVtLGRPvV2tytnOjAqGn8B5s5Y
+uoL5zh/hT6R+gulacltlMRppoBlpA/dnSqo1q0dQTyw2wLk9Q00BP+8sXjpAg9+slRAZ8QUK9cgm
+8xXAt/++fMvWx1ahJYpbMjNPRFX1d1UxMfQLNUIcSji7WO6pVPrK7wEybLN/lYbdbw==</X509Certificate></X509Data></KeyInfo></Signature></DTE><DatosAdjuntos><NombreDA>Nro_Empresa</NombreDA><ValorDA>609</ValorDA></DatosAdjuntos><DatosAdjuntos><NombreDA>Tipo_Fact</NombreDA><ValorDA>        33</ValorDA></DatosAdjuntos><DatoAdjunto nombre="Pago">Contado</DatoAdjunto><DatoAdjunto nombre="eti7"></DatoAdjunto><DatoAdjunto nombre="eti8"></DatoAdjunto><DatoAdjunto nombre="FonoEmisor">732381373</DatoAdjunto>
+<DatoAdjunto nombre="MailEmisor">adieguez.a@hotmail.com</DatoAdjunto>
+<DatoAdjunto nombre="Logo">http://webapp.enternet.cl/enternetearly/Estatico/Config/201612/8673062-6_AlvaroRobertoDieguez.png</DatoAdjunto>
+<DatoAdjunto nombre="Agencia_SII">LINARES</DatoAdjunto>
+<DatoAdjunto nombre="NumRes_SII">80</DatoAdjunto>
+			<DatoAdjunto nombre="FechRes_SII">2014</DatoAdjunto>
+			<DatoAdjunto nombre="IDDOC">E609K391081TFEEF8241</DatoAdjunto>
+<DatosAnexos></DatosAnexos>
+<DatosAdicionales>
+			<DatoAdicional nombre="TelefonoReceptor"/>
+			<DatoAdicional nombre="CondicionPago">Contado</DatoAdicional>
+			<DatoAdicional nombre="OrdenCompra"/>
+			<DatoAdicional nombre="GuiaDespacho"/>
+<DatoAdicional nombre="HIDETBLPAGO">TRUE</DatoAdicional>
+</DatosAdicionales>		
+</Content>
+</Document>
+

@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="ISO-8859-1" standalone="no"?><DTE xmlns="http://www.sii.cl/SiiDte" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0">		<Documento ID="EMI780357800F5938T33">
+			<Encabezado>
+				<IdDoc>
+					<TipoDTE>33</TipoDTE>
+					<Folio>5938</Folio>
+					<FchEmis>2026-06-30</FchEmis>
+					<MntBruto>1</MntBruto>
+					<FchVenc>2026-06-30</FchVenc>
+				</IdDoc>
+				<Emisor>
+					<RUTEmisor>78035780-0</RUTEmisor>
+					<RznSoc>PANIFICADORA Y AUTOSERVICIO BUEN GUSTO LTDA</RznSoc>
+					<GiroEmis>PANIFICADORA Y ALMACEN</GiroEmis>
+					<Telefono>225557384</Telefono>
+					<Acteco>107100</Acteco>
+					<Acteco>107100</Acteco>
+					<Acteco>107100</Acteco>
+					<Acteco>107100</Acteco>
+					<DirOrigen>SANTA ELENA 1446</DirOrigen>
+					<CmnaOrigen>SANTIAGO</CmnaOrigen>
+					<CdgVendedor>8345614-0</CdgVendedor>
+				</Emisor>
+				<Receptor>
+					<RUTRecep>76828684-1</RUTRecep>
+					<RznSocRecep>Autos y Minimarket Monica del Pilar Perez Diaz E.I.R.L.</RznSocRecep>
+					<GiroRecep>Almacen y Abarrotes</GiroRecep>
+					<Contacto>Fono 225557384</Contacto>
+					<DirRecep>Santa Elena 1446</DirRecep>
+					<CmnaRecep>SANTIAGO</CmnaRecep>
+					<CiudadRecep>SANTIAGO</CiudadRecep>
+				</Receptor>
+				<Totales>
+					<MntNeto>5021429</MntNeto>
+					<TasaIVA>19.00</TasaIVA>
+					<IVA>954071</IVA>
+					<MntTotal>5975500</MntTotal>
+				</Totales>
+			</Encabezado>
+			<Detalle>
+				<NroLinDet>1</NroLinDet>
+				<NmbItem>Segun Guias:</NmbItem>
+				<DscItem>144488 144515 144525 144555 144566 144601 144608 144645 144648 144687 144690 144715 144716 144731 144758 144771 144808 144815 144846 144856 144891 144895 144930 144937 144962 144963 144976 145003 145015 145056 145057 145097 145102 145140 145183 145184 145186 145187 145212 145213 145228 145256 145268 145301 145310 145346 145354 145398 145431 145432 145437 145442 145467 145468 145486 145502 145544</DscItem>
+				<MontoItem>5975500</MontoItem>
+			</Detalle>
+			<Referencia>
+				<NroLinRef>1</NroLinRef>
+				<TpoDocRef>52</TpoDocRef>
+				<IndGlobal>1</IndGlobal>
+				<FolioRef>0</FolioRef>
+				<FchRef>2026-06-30</FchRef>
+			</Referencia>
+			<TED version="1.0">
+				<DD>
+					<RE>78035780-0</RE>
+					<TD>33</TD>
+					<F>5938</F>
+					<FE>2026-06-30</FE>
+					<RR>76828684-1</RR>
+					<RSR>Autos y Minimarket Monica del Pilar Pere</RSR>
+					<MNT>5975500</MNT>
+					<IT1>Segun Guias:</IT1>
+					<CAF version="1.0">
+						<DA>
+							<RE>78035780-0</RE>
+							<RS>PANIFICADORA Y AUTOSERVICIO BUEN GUSTO L</RS>
+							<TD>33</TD>
+							<RNG>
+								<D>5714</D>
+								<H>6008</H>
+							</RNG>
+							<FA>2026-01-31</FA>
+							<RSAPK>
+								<M>05P0u+a3A2tIk+G3z/caA9l7ZIil+vbS/nS6PRV/I+Xaj9frto/V0bF0eLp9G28bSWv2JKhvwW6Yxt16e+EVzw==</M>
+								<E>Aw==</E>
+							</RSAPK>
+							<IDK>300</IDK>
+						</DA>
+						<FRMA algoritmo="SHA1withRSA">CGByXE5MOH32rSXKJGEPQ501JIwCr6aemWkJx2X6csm7r5nP5JKCaZngqbDmtKX5RyzDjCT31PtTEwO+f0J00g==</FRMA>
+					</CAF>
+					<TSTED>2026-06-30T13:14:52</TSTED>
+				</DD>
+				<FRMT algoritmo="SHA1withRSA">PQAxZ0P4tB2DWENw/CvRvCQDeebkzfqvL5krcmc3aVp/2HJ5RA8uhebj2rf2h2mb0AKn2IfsDMC6YBbGpItS2g==</FRMT>
+			</TED>
+			<TmstFirma>2026-06-30T13:14:52</TmstFirma>
+		</Documento>
+		<Signature xmlns="http://www.w3.org/2000/09/xmldsig#">
+			<SignedInfo>
+				<CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
+				<SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+				<Reference URI="#EMI780357800F5938T33">
+					<DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+					<DigestValue>yolBIclCeYx/JpJrbDIUZbS3Rkg=</DigestValue>
+				</Reference>
+			</SignedInfo>
+			<SignatureValue>OQjr76w0zClzNsmc9+qV4nvT2bm0HxrFuniL5wuVzO/BOvAiN8CMHLp3dTanUENF5c97EAnYAHkG
+WRvTGpJDuQeJsJNh7/sM2vo20I2li1C9XY+Bez3h0NiYkRvzleL2CGNvHyawZRlYCxo3er0qm/H7
+/ZrOMmy1k0In51WcF4npm/LRYtgUDsQOYIBbIGSUe933Yl7o9mXb1qLpnbf7HSVUbDLSpt7agTDV
+U+FWjvvunzqh9PbZSHUqijWM9/FbSAK/KZG0ho/duYSmgGBs0wUisqLdF1IBeW3Hbqe2U2O1jibx
++zqoj1q6HJNfvyao0Cr/CHjEkVj149h9GFSt4A==</SignatureValue>
+			<KeyInfo>
+				<KeyValue>
+					<RSAKeyValue>
+						<Modulus>5DRHJTv9I8vu/31Z8NZutNdLTB1UEvmx52kUIIjT+yN6LWtqTVmHWChJE5J98INvX98mMJkpaaoE
++zSMIwQNiFMvOY+Mr/XJYShAOEdU3jGk6IRDN+hklNXv/cv43IWp9O5bPRT7Nn0EPfIdCZG2FRQ1
+OBrG3gQITpEZNy657IpW5p+glbSJbcriVqkwtxe8RMpIBzOKI1Nrg0Ewy5rbTtJME3tyISG++xBV
+bIvZyt5JOkUAXkci6tp95Islasgk8US/K3DBIOw+Ea4fDSZpksG4ntIjZawe5MBkBRk+D3YOf/C3
+9J8BDDAJ004iRHcCnNuRmN/lXaeGU8aV/NLhSQ==</Modulus>
+						<Exponent>AQAB</Exponent>
+					</RSAKeyValue>
+				</KeyValue>
+				<X509Data>
+					<X509Certificate>MIIH1zCCBb+gAwIBAgIKXCic3AABAA7clzANBgkqhkiG9w0BAQsFADCBvzELMAkGA1UEBhMCQ0wx
+HTAbBgNVBAgTFFJlZ2lvbiBNZXRyb3BvbGl0YW5hMREwDwYDVQQHEwhTYW50aWFnbzEUMBIGA1UE
+ChMLRS1DRVJUQ0hJTEUxIDAeBgNVBAsTF0F1dG9yaWRhZCBDZXJ0aWZpY2Fkb3JhMR4wHAYDVQQD
+ExVFLUNFUlRDSElMRSBDQSBGRVMgMDIxJjAkBgkqhkiG9w0BCQEWF3NjbGllbnRlQGUtY2VydGNo
+aWxlLmNsMB4XDTI1MDcwMzE5MDc1N1oXDTI4MDcwMjE5MDc1N1owgdMxCzAJBgNVBAYTAkNMMSIw
+IAYDVQQIExlNRVRST1BPTElUQU5BIERFIFNBTlRJQUdPMREwDwYDVQQHEwhTQU5USUFHTzE0MDIG
+A1UEChMrUEFOSUZJQ0FET1JBIFkgQVVUT1NFUlZJQ0lPIEJVRU4gR1VTVE8gTFREQTEKMAgGA1UE
+CwwBKjEkMCIGA1UEAxMbTU9OSUNBIERFTCBQSUxBUiBQRVJFWiBESUFaMSUwIwYJKoZIhvcNAQkB
+FhZNT05JQ0FQRVJFWkRAR01BSUwuQ09NMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA
+5DRHJTv9I8vu/31Z8NZutNdLTB1UEvmx52kUIIjT+yN6LWtqTVmHWChJE5J98INvX98mMJkpaaoE
++zSMIwQNiFMvOY+Mr/XJYShAOEdU3jGk6IRDN+hklNXv/cv43IWp9O5bPRT7Nn0EPfIdCZG2FRQ1
+OBrG3gQITpEZNy657IpW5p+glbSJbcriVqkwtxe8RMpIBzOKI1Nrg0Ewy5rbTtJME3tyISG++xBV
+bIvZyt5JOkUAXkci6tp95Islasgk8US/K3DBIOw+Ea4fDSZpksG4ntIjZawe5MBkBRk+D3YOf/C3
+9J8BDDAJ004iRHcCnNuRmN/lXaeGU8aV/NLhSQIDAQABo4ICvTCCArkwggFfBgNVHSAEggFWMIIB
+UjCCAU4GCCsGAQQBw1IFMIIBQDA9BggrBgEFBQcCARYxaHR0cHM6Ly93d3cuZS1jZXJ0Y2hpbGUu
+Y2wvcG9saXRpY2FzLXktcHJhY3RpY2FzLzCB/gYIKwYBBQUHAgIwgfEege4ARQBsACAAcgBlAHMA
+cABvAG4AZABlAHIAIABlAHMAdABlACAAZgBvAHIAbQB1AGwAYQByAGkAbwAgAGUAcwAgAHUAbgAg
+AHIAZQBxAHUAaQBzAGkAdABvACAAaQBuAGQAaQBzAHAAZQBuAHMAYQBiAGwAZQAgAHAAYQByAGEA
+IABkAGEAcgAgAGkAbgBpAGMAaQBvACAAYQBsACAAcAByAG8AYwBlAHMAbwAgAGQAZQAgAGMAZQBy
+AHQAaQBmAGkAYwBhAGMAaQDzAG4ALgAgAFAAbwBzAHQAZQByAGkAbwByAG0AZQBuAHQAZQAsMB0G
+A1UdDgQWBBQSPg3QyqgnlxKNxjD9X0UZpBJcvTALBgNVHQ8EBAMCBPAwIwYDVR0RBBwwGqAYBggr
+BgEEAcEBAaAMFgowODM0NTYxNC0wMB8GA1UdIwQYMBaAFHTWIbP0WugtfLtZBmND72m0OpMEMEAG
+A1UdHwQ5MDcwNaAzoDGGL2h0dHA6Ly9jcmwuZWNlcnRjaGlsZS5jbC9FLUNFUlRDSElMRUNBRkVT
+MDIuY3JsMD0GCCsGAQUFBwEBBDEwLzAtBggrBgEFBQcwAYYhaHR0cDovL29jc3BmZXMuZWNlcnRj
+aGlsZS5jbC9vY3NwMDwGCSsGAQQBgjcVBwQvMC0GJSsGAQQBgjcVCIHd0k2X1DqGiZ0Gh4jOb4Ov
+zGBFhtLsCIbHyn0CAWQCAQcwIwYDVR0SBBwwGqAYBggrBgEEAcEBAqAMFgo5NjkyODE4MC01MA0G
+CSqGSIb3DQEBCwUAA4ICAQBMCHw+EsdeZMOHXcGWQnOL/gu4BVu2R7UZlN76FUB1gWp1nuFp/IrM
+gwJDOro8PX9wVAGer4Cf4uaYTGYJmp2X0f6ysItTi/kVDZJjzM+8IKTAc9p856/2FuOdjKHR5JVi
+Lpfg5bHwkihwERcoBlkuocnm34vMqpa6Q8Hxb81aHKxF4yD4QMbjbbkKxm2OqGnx4ZY5oqldWsJN
+Ar+ffk2DO8vPk6kO7vdUJPNAgNahVnuGDfhFQmnPXULembLpIWlDgqxtL4KxarsbCBXAC+FLrpaN
+ZyG7l4bzlRYRnGIXalA40w7m7CEqu94wP0DIxuJEAM4HP+jSWINUb9HESXRdKLhkwyQK+MTREKh+
+fBOxnKwuQz/R65bkiWgv0XxZfLIx+sGaQ/6tDMS6q+hN5WUzCbD+OYj3uxHtljCsfsu5XYzR39nT
+6g4Fdukry4COOcBXdaTLH9BE8a3KN8b2GV5Upgo+sP9jacBPwvKBNQ+dZnZKbSXEpwJcov3ZnyIi
+C+jPF9+Mi5SNDlGTuGn4AGlpaUz6zfK6CPcS2sKEj6lM2P5vLwFchbHVNLokrUnbzouOyuKdMh0V
+95+eJ7Gm/Rnn6mg/t0h8RCjcwQDCeOtfIBr1a4xsbC48VM96G04hOnyFbAWjJWPcq1vZO3ZE/qRv
+pQipQQ83EqlRS7Q++CJDaw==</X509Certificate>
+				</X509Data>
+			</KeyInfo>
+		</Signature>
+</DTE>
