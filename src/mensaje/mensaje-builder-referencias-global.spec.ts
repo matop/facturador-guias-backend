@@ -107,7 +107,7 @@ describe('buildMensaje — umbral 40 con OC/HES sumando al total', () => {
     const detalle = mensaje.split('\r\n').find((l) => l.startsWith('3:|'))!;
     const foliosGuias = guias.map((g) => g.folio).join(' ');
     expect(detalle).toBe(
-      `3:|1|AFECTO|Segun Guias:|1|${41000}|0|${41000}|${foliosGuias} | OC: 900 901 | HES: 950`,
+      `3:|1|AFECTO|Segun Guias:|1|${41000}|0|${41000}|${foliosGuias} - OC: 900 901 - HES: 950`,
     );
   });
 
@@ -120,7 +120,7 @@ describe('buildMensaje — umbral 40 con OC/HES sumando al total', () => {
     expect(detalle.endsWith(guias.map((g) => g.folio).join(' '))).toBe(true);
   });
 
-  it('Global con OC pero sin HES: solo aparece el segmento OC:, sin "| HES: " colgando', () => {
+  it('Global con OC pero sin HES: solo aparece el segmento OC:, sin "- HES: " colgando', () => {
     const guias = makeGuias(41);
     const { mensaje } = buildMensaje(
       baseInput(guias, {
@@ -128,11 +128,11 @@ describe('buildMensaje — umbral 40 con OC/HES sumando al total', () => {
       }),
     );
     const detalle = mensaje.split('\r\n').find((l) => l.startsWith('3:|'))!;
-    expect(detalle).toContain('| OC: 900');
+    expect(detalle).toContain('- OC: 900');
     expect(detalle).not.toContain('HES:');
   });
 
-  it('Global con HES pero sin OC: solo aparece el segmento HES:, sin "| OC: " colgando', () => {
+  it('Global con HES pero sin OC: solo aparece el segmento HES:, sin "- OC: " colgando', () => {
     const guias = makeGuias(41);
     const { mensaje } = buildMensaje(
       baseInput(guias, {
@@ -140,7 +140,7 @@ describe('buildMensaje — umbral 40 con OC/HES sumando al total', () => {
       }),
     );
     const detalle = mensaje.split('\r\n').find((l) => l.startsWith('3:|'))!;
-    expect(detalle).toContain('| HES: 950');
+    expect(detalle).toContain('- HES: 950');
     expect(detalle).not.toContain('OC:');
   });
 });

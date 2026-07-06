@@ -304,11 +304,15 @@ export function buildMensaje(input: MensajeInput): MensajeResult {
     // OC/HES colapsan junto con las guías en el mismo campo, sin listarse
     // aparte — ver PRD-referencias-oc-hes.md "Interacción con Modo Global
     // simultáneo". Un segmento OC:/HES: se omite por completo si no hay
-    // ninguna referencia de ese tipo (no queda "| OC: " colgando vacío).
+    // ninguna referencia de ese tipo (no queda "- OC: " colgando vacío).
+    // El separador NO puede ser "|": el Mensaje V5 completo es pipe-delimited,
+    // así que un "|" dentro de este campo se cuenta como columna extra y
+    // Enternet rechaza con [ParseErr001] (confirmado en QA 2026-07-06, ver
+    // referencias-oc-hes.md).
     const segmentos = [guias.map((g) => g.folio).join(' ')];
     if (oc.length) segmentos.push(`OC: ${oc.map((r) => r.folio).join(' ')}`);
     if (hes.length) segmentos.push(`HES: ${hes.map((r) => r.folio).join(' ')}`);
-    const descripcionAdicional = segmentos.join(' | ');
+    const descripcionAdicional = segmentos.join(' - ');
     lines.push(
       `3:|1|AFECTO|Segun Guias:|1|${sumNeto}|0|${sumNeto}|${descripcionAdicional}`,
     );

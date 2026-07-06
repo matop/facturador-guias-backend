@@ -36,6 +36,23 @@ Sesiones: 2026-05-28, 2026-05-29 (×2), 2026-05-30, 2026-06-01 (×3), 2026-06-02
 
 ## Historial Técnico
 
+### 2026-07-06 (sesión 7) — Fix del separador de DESCRIPCION ADICIONAL, confirmado en QA: elimina el ParseErr001, revela el bug real pendiente (bloqueado en Enternet)
+
+**Contexto:** el usuario pidió arreglar el separador de `DESCRIPCION ADICIONAL` (causa raíz identificada en la sesión 6) para comprobar en QA real que efectivamente era eso lo que rompía OC/HES con 40 guías.
+
+**Fix (commit siguiente):** `mensaje-builder.ts` línea ~311, `segmentos.join(' | ')` → `segmentos.join(' - ')`. El Mensaje V5 es pipe-delimited de punta a punta, así que ningún separador legible dentro de un campo puede usar `|`. Tests actualizados en `mensaje-builder-referencias-global.spec.ts` (4 asserts con `' | '`/`'| OC'`/`'| HES'` → `' - '`/`'- OC'`/`'- HES'`). Suite completa: 236/238 verdes (mismos 2 skips), lint y build limpios.
+
+**Re-test contra Enternet QA real (`test-oc-hes-chunking-sintetico.js --reset --aprobar`):**
+- OC N=40 y HES N=40: el `[ParseErr001]` **desapareció** — el Detalle (línea `3:|`) ya no se rechaza por conteo de columnas. Confirma que el separador era la causa raíz de ese error específico.
+- Pero N=40 **sigue fallando**, ahora por un error distinto y ya conocido: `[FirmaErr002] Falla en el Proceso de Firma del XML, cvc-datatype-valid.1.2.1: '-  -' is not a valid value for 'date'` — el bloque EXPERIMENTAL de `buildMensaje` (líneas `TIPO/FOLIO/ACCION REFERENCIA` + `5:|52|0|{fecha}`) que se agrega siempre que `isGlobal=true`. Este es exactamente el bug de Enternet ya documentado y pausado en `enternet-v5-referencia-global-en-progreso.md` — no relacionado con OC/HES, no es un hallazgo nuevo.
+- OC N=39 y HES N=39: sin cambios (ya `EMITIDA` de la sesión 6, `isGlobal=false` no pasa por este código en absoluto).
+
+**Conclusión:** el fix del separador era necesario y correcto (elimina un bug real y propio), pero no alcanza para que 40 guías + 1 OC/HES emitan — el modo Global sigue bloqueado por el bug del lado de Enternet, ahora sin el ruido del `ParseErr001` encima. El plan de "resolver el hallazgo `isGlobal`×chunking antes de sacar el PR de draft" pasa a depender 100% de que Enternet corrija su parser (ver Pendientes) — de nuestro lado ya no queda nada más que arreglar en este camino.
+
+**Archivos modificados:** `src/mensaje/mensaje-builder.ts`, `src/mensaje/mensaje-builder-referencias-global.spec.ts`.
+
+---
+
 ### 2026-07-06 (sesión 6) — Confirmado en QA real: OC y HES por separado con 40 guías rompen la emisión; con 39 funcionan
 
 **Contexto:** siguiente paso del hallazgo abierto #3 de la sesión 5 (interacción `isGlobal` × chunking de 40). El usuario pidió probar la emisión real de OC y HES **por separado** (no combinadas, ya confirmado con ambas juntas en folioSii=411212) con 40 guías cada una, y si fallaba, repetir con 39.
