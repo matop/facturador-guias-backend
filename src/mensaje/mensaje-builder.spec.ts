@@ -306,7 +306,9 @@ describe('buildMensaje — Referencias Externas (OC/HES)', () => {
       }),
     );
     const lines = mensaje.split('\r\n');
-    expect(lines).toContain('4:|TIPO DE REFERENCIA|FOLIO|FECHA|RAZON REFERENCIA');
+    expect(lines).toContain(
+      '4:|TIPO DE REFERENCIA|FOLIO|FECHA|RAZON REFERENCIA',
+    );
     expect(lines).toContain('5:|52|64261|06/04/2026|');
   });
 

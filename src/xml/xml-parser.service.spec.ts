@@ -219,7 +219,7 @@ describe('XmlParserService', () => {
       ]);
     });
 
-    it('guía con 2+ OC toma la primera ocurrencia, no bloquea', () => {
+    it('guía con 2+ OC toma la primera ocurrencia, no bloquea, reporta la repetida en descartadas', () => {
       const xml = buildGuiaXml({
         referencias: [
           { tipo: '801', folio: '111', fecha: '2026-05-10' },
@@ -230,9 +230,11 @@ describe('XmlParserService', () => {
       expect(result.referencias).toEqual([
         { tipo: '801', folio: '111', fecha: '2026-05-10' },
       ]);
+      expect(result.descartadas).toHaveLength(1);
+      expect(result.descartadas[0].tipo).toBe('801');
     });
 
-    it('guía con 2+ HES toma la primera ocurrencia, no bloquea', () => {
+    it('guía con 2+ HES toma la primera ocurrencia, no bloquea, reporta la repetida en descartadas', () => {
       const xml = buildGuiaXml({
         referencias: [
           { tipo: 'HES', folio: '222', fecha: '2026-05-11' },
@@ -243,6 +245,8 @@ describe('XmlParserService', () => {
       expect(result.referencias).toEqual([
         { tipo: 'HES', folio: '222', fecha: '2026-05-11' },
       ]);
+      expect(result.descartadas).toHaveLength(1);
+      expect(result.descartadas[0].tipo).toBe('HES');
     });
 
     it('TpoDocRef no reconocido (52 dentro de la guía) se ignora y aparece en descartadas', () => {

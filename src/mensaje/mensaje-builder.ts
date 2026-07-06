@@ -1,6 +1,13 @@
 // MensajeBuilder — genera el string Mensaje en formato Enternet V5 (pipe-delimited).
 // Módulo puro: sin side-effects, sin NestJS DI, sin HTTP. Testeable en aislamiento.
 
+import type {
+  TipoReferenciaExterna,
+  ReferenciaExterna,
+} from '../xml/xml-parser.utils.js';
+
+export type { TipoReferenciaExterna };
+
 export interface GuiaParaMensaje {
   folio: string;
   fechaEmision: string; // YYYY-MM-DD
@@ -20,14 +27,8 @@ export type ModoDetalle = 'SG' | 'POR_PRODUCTO';
  */
 export const MAX_REFERENCIAS_INDIVIDUALES = 40;
 
-export type TipoReferenciaExterna = '801' | 'HES';
-
 /** Referencia a OC/HES extraída de una guía — ver parseReferencias en xml-parser.utils.ts. */
-export interface ReferenciaExternaParaMensaje {
-  tipo: TipoReferenciaExterna;
-  folio: string;
-  fecha: string; // YYYY-MM-DD
-}
+export type ReferenciaExternaParaMensaje = ReferenciaExterna;
 
 const RAZON_REFERENCIA_EXTERNA: Record<TipoReferenciaExterna, string> = {
   '801': 'Orden de Compra',

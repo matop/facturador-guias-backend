@@ -149,7 +149,15 @@ export function parseReferencias(xml: string): ParseReferenciasResult {
       continue;
     }
 
-    if (vistos.has(tipo)) continue; // fallback fase 1: solo la primera ocurrencia
+    if (vistos.has(tipo)) {
+      // fallback fase 1: solo la primera ocurrencia — se reporta la descartada
+      // para que el caller la loguee (misma visibilidad que un tipo no reconocido).
+      descartadas.push({
+        tipo,
+        motivo: `Referencia ${tipo} repetida en el mismo XML — se usó la primera ocurrencia`,
+      });
+      continue;
+    }
     vistos.add(tipo);
 
     const folio = extractTagOptional(block, 'FolioRef');
