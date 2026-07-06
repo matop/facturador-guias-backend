@@ -36,6 +36,28 @@ Sesiones: 2026-05-28, 2026-05-29 (×2), 2026-05-30, 2026-06-01 (×3), 2026-06-02
 
 ## Historial Técnico
 
+### 2026-07-06 (sesión 6) — Confirmado en QA real: OC y HES por separado con 40 guías rompen la emisión; con 39 funcionan
+
+**Contexto:** siguiente paso del hallazgo abierto #3 de la sesión 5 (interacción `isGlobal` × chunking de 40). El usuario pidió probar la emisión real de OC y HES **por separado** (no combinadas, ya confirmado con ambas juntas en folioSii=411212) con 40 guías cada una, y si fallaba, repetir con 39.
+
+**Script nuevo:** `scripts/test-oc-hes-chunking-sintetico.js --tipo=oc|hes --n=<N> [--reset] [--aprobar]` — inserta N guías sintéticas directo en BD (bypass de `crearManual`, igual que `test-caso4-global-sintetico.js`, para controlar el N exacto sin el chunking de `MAX_GUIAS_POR_FACTURA`), donde solo la primera guía lleva la `<Referencia>` externa (OC o HES, fixtures reusados de `test/fixtures/oc-hes/`) y el resto son guías planas (fixture de `test/fixtures/caso4-global/guia-global.xml`). Folios no se solapan entre corridas de distinto `(tipo, N)`.
+
+**Resultado — los 4 casos confirmaron exactamente la hipótesis del hallazgo #3:**
+- OC, N=40 (total 41 referencias > 40 → `isGlobal`): **RECHAZADO**, `gfackey=109`.
+- OC, N=39 (total 40 referencias, no > 40 → modo individual): **EMITIDA, folioSii=411213**, `gfackey=110`.
+- HES, N=40: **RECHAZADO**, `gfackey=111` (mismo error).
+- HES, N=39: **EMITIDA, folioSii=411214**, `gfackey=112`.
+
+**Causa raíz del rechazo en N=40 (más específica que la hipótesis original del hallazgo #3):** no es (solo) que el modo Global esté roto en general — es que `segmentos.join(' | ')` en `mensaje-builder.ts` (línea ~311) usa `" | "` como separador legible entre los segmentos de guías/OC/HES dentro de un único campo `DESCRIPCION ADICIONAL`, pero como todo el Mensaje V5 es pipe-delimited, ese `|` literal se cuenta como un separador de columna más. Enternet rechaza con `[ParseErr001] Numero de campos del detalle no coincide con el número de etiquetas en la linea 15`, señalando exactamente la línea `3:|...|994300 ... 994339 | OC: 555001` — el header `2:|` declara 8 columnas pero la línea `3:|` con el segmento `OC:`/`HES:` agregado tiene 9 (por el `|` de separación). El bloque EXPERIMENTAL final de `buildMensaje` (líneas `TIPO/FOLIO/ACCION REFERENCIA`) nunca llega a ejecutarse contra Enternet porque el rechazo ocurre antes, al parsear el Detalle.
+
+**Nota:** el caso 4 puro (solo guías, sin OC/HES, folioSii=411211) no tiene este problema porque `segmentos` tiene un solo elemento y `join(' | ')` no agrega ningún `|` de más.
+
+**Archivos modificados:** `scripts/test-oc-hes-chunking-sintetico.js` (nuevo, activo permanente reusable).
+
+**Pendiente:** decidir el fix real para el hallazgo #3 con esta causa raíz más específica — candidatos: usar un separador que no sea `|` dentro de `DESCRIPCION ADICIONAL` (ej. `;` o espacio), o evitar que `isGlobal` se dispare por el borde exacto de chunking cuando la causa es solo 1 OC/HES agregada a 40 guías ya en modo individual. Sigue sin resolverse antes de marcar el PR #9 como "Ready for review" (mismo pendiente #2 de la sesión 5, ahora con más información).
+
+---
+
 ### 2026-07-06 (sesión 5) — Code review de PR #9 (8 ángulos + verify), 2 fixes aplicados, 2 hallazgos abiertos
 
 **Contexto:** retomando el handoff de la sesión 4 (paso sugerido: correr `code-review` antes de marcar PR #9 como "Ready for review"). Se corrió una revisión con 8 agentes finder en paralelo (line-by-line, removed-behavior, cross-file, reuse, simplification, efficiency, altitude, conventions) sobre `git diff main...HEAD`, seguida de verificación manual (lectura directa del código + diff) de cada candidato antes de reportar.
@@ -455,7 +477,7 @@ ALTER TABLE gde.factura ADD COLUMN IF NOT EXISTS gfacfolio_sii int,
 - [x] Implementar Caso 4 (Global/overflow >40 refs) en `mensaje-builder.ts` — ✅ 2026-07-02, **pero sin validar en QA** (ver Historial sesión 3). El pendiente real ahora es la validación empírica, no la implementación.
 - [ ] **Validar Caso 4 con emisión real contra Enternet QA** — 2026-07-03: fixture y script ya armados (`scripts/test-caso4-global-sintetico.js`), reintentado varias veces contra QA. **Bug confirmado del lado de Enternet** (parser no completa `FchRef` del bloque `IndGlobal=1` generado desde `ACCION REFERENCIA=5`, ver Historial 2026-07-03). Bloqueado hasta que Enternet corrija su parser — no seguir iterando desde nuestro lado hasta tener novedades. Código experimental queda sin revertir en `mensaje-builder.ts` para reintentar rápido con `--reset --aprobar`.
 - [x] Deduplicar OC (801) y HES en el conteo de "total de referencias" de Caso 4 — ✅ 2026-07-06: `parseReferencias()` implementado, `isGlobal` ahora cuenta `guias.length + oc.length + hes.length > 40`. Ver PR #9 (draft) y memoria `referencias-oc-hes.md`.
-- [ ] **Validar OC/HES con XML real y emisión QA** — 2026-07-06: `parseReferencias()` + wiring en `facturas.service.ts` implementados y testeados (sintético + unit tests), PR #9 sigue en draft. Falta: (1) XML real de cliente con `<Referencia>` 801/HES poblada para confirmar el parseo de entrada, (2) emisión real contra Enternet QA (mismo patrón que Caso 4). Marcar PR #9 "Ready for review" al cerrar este ciclo.
+- [ ] **Validar OC/HES con XML real y emisión QA** — 2026-07-06: `parseReferencias()` + wiring en `facturas.service.ts` implementados y testeados (sintético + unit tests), PR #9 sigue en draft. Falta: (1) XML real de cliente con `<Referencia>` 801/HES poblada para confirmar el parseo de entrada, (2) emisión real contra Enternet QA — ✅ **hecho 2026-07-06 (sesión 4, combinadas, folioSii=411212; sesión 6, por separado con 39 guías, folioSii=411213/411214)**. Falta (1) y arreglar el bug de `isGlobal`×40 guías (sesión 6: causa raíz confirmada, el `" | "` separador de `DESCRIPCION ADICIONAL` rompe el conteo de columnas pipe-delimited) antes de marcar PR #9 "Ready for review".
 - [ ] OPEN-1: confirmar `TpoDocRef=HES` en XML de guía (DTE 52) de entrada — falta XML real con `<Referencia>` HES (mismo bloqueador que el ítem anterior)
 
 ### Baja prioridad
