@@ -333,9 +333,20 @@ export function buildMensaje(input: MensajeInput): MensajeResult {
   // DEBITO" — consistente con que no exista un mecanismo funcional para
   // referencia Global en Facturas vía este canal.
   if (!isGlobal) {
-    lines.push(`4:|TIPO DE REFERENCIA|FOLIO|FECHA`);
+    // Enternet valida que el número de campos de cada línea 5:| corresponda
+    // exactamente con las etiquetas declaradas en 4:| ([ParseErr001] si no
+    // coinciden, confirmado en QA 2026-07-06). Las líneas de OC/HES agregan un
+    // 4to campo (RAZON REFERENCIA) — cuando hay al menos una, TODAS las líneas
+    // 5:| (incluidas las de guía) deben declarar ese campo, vacío para guías.
+    const tieneReferenciasExternas = oc.length > 0 || hes.length > 0;
+    lines.push(
+      tieneReferenciasExternas
+        ? `4:|TIPO DE REFERENCIA|FOLIO|FECHA|RAZON REFERENCIA`
+        : `4:|TIPO DE REFERENCIA|FOLIO|FECHA`,
+    );
     for (const g of guias) {
-      lines.push(`5:|52|${g.folio}|${formatDateSlash(g.fechaEmision)}`);
+      const linea = `5:|52|${g.folio}|${formatDateSlash(g.fechaEmision)}`;
+      lines.push(tieneReferenciasExternas ? `${linea}|` : linea);
     }
     for (const r of oc) {
       lines.push(

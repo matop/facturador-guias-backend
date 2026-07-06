@@ -298,6 +298,18 @@ describe('buildMensaje — Referencias Externas (OC/HES)', () => {
     expect(lines).toContain('5:|801|111|10/05/2026|Orden de Compra');
   });
 
+  it('con OC/HES presentes, el header 4:| declara RAZON REFERENCIA y la línea 5:| de guía queda con el campo vacío (mismo número de campos, exigido por Enternet)', () => {
+    const guia = makeGuia('64261', { fechaEmision: '2026-04-06' });
+    const { mensaje } = buildMensaje(
+      baseInput([guia], {
+        referenciasExternas: [makeReferenciaExterna('801', '111')],
+      }),
+    );
+    const lines = mensaje.split('\r\n');
+    expect(lines).toContain('4:|TIPO DE REFERENCIA|FOLIO|FECHA|RAZON REFERENCIA');
+    expect(lines).toContain('5:|52|64261|06/04/2026|');
+  });
+
   it('con 1 HES agrega línea 5:|HES| con RAZON REFERENCIA fija', () => {
     const { mensaje } = buildMensaje(
       baseInput(makeGuias(1), {
