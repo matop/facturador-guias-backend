@@ -17,6 +17,7 @@ import {
 } from '../backoffice-adapter/backoffice-adapter.service.js';
 import { FacturacionService } from '../facturacion/facturacion.service.js';
 import { XmlParserService } from '../xml/xml-parser.service.js';
+import { buildGuiaXml } from '../xml/xml-test-builders.js';
 
 const mockBackofficeAdapterService = {
   getGuias: jest.fn(),
@@ -1330,7 +1331,7 @@ describe('FacturasService', () => {
       expect(mensaje).toContain('3:|1|AFECTO|PRODUCTO A (COD-1)|5|1000|0|5000');
     });
 
-    it('cuando cliente.modoDetalle=SG o cliente=null, NO hace fetch adicional (solo 1 fetchDocument aunque haya 2+ guías)', async () => {
+    it('cuando cliente.modoDetalle=SG o cliente=null, igual hace fetchDocument de todas las guías (para extraer OC/HES) pero no genera líneas por producto', async () => {
       const proforma = makeProforma('42') as Factura;
       mockFacturaRepo.findOne.mockResolvedValueOnce(proforma);
       mockFacturaRepo.save.mockResolvedValueOnce({
@@ -1341,6 +1342,9 @@ describe('FacturasService', () => {
       mockXmlParserService.fetchDocument.mockResolvedValueOnce({
         emisor: { rutEmisor: '76407930-2' },
         receptor: mockReceptor,
+        detalle: [],
+      });
+      mockXmlParserService.fetchDocument.mockResolvedValueOnce({
         detalle: [],
       });
       mockClienteRepo.findOne.mockResolvedValueOnce(null);
@@ -1365,7 +1369,7 @@ describe('FacturasService', () => {
 
       await service.aprobar('1', '42');
 
-      expect(mockXmlParserService.fetchDocument).toHaveBeenCalledTimes(1);
+      expect(mockXmlParserService.fetchDocument).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -1478,6 +1482,135 @@ describe('FacturasService', () => {
     });
   });
 
+  // ─── aprobar — Referencias OC/HES ───────────────────────────────────────────
+
+  describe('aprobar — Referencias OC/HES', () => {
+    const mockGuiasDosFilas = [
+      {
+        guitipo: 52,
+        guifolio: '100',
+        guitotneto: '2000',
+        guitotiva: '380',
+        guitotdoc: '2380',
+        guitotexento: '0',
+        guifechaemision: '2026-05-10',
+        guifilepath: '/path/guia100.xml',
+      },
+      {
+        guitipo: 52,
+        guifolio: '101',
+        guitotneto: '3000',
+        guitotiva: '570',
+        guitotdoc: '3570',
+        guitotexento: '0',
+        guifechaemision: '2026-05-11',
+        guifilepath: '/path/guia101.xml',
+      },
+    ];
+    const mockReceptor = {
+      rutReceptor: '78.041.840-0',
+      razonSocial: 'CLIENTE SA',
+      dirRecep: 'DIR',
+      cmnaRecep: 'STGO',
+      ciudadRecep: 'SANTIAGO',
+      giroRecep: 'SERVICIOS',
+    };
+
+    it('extrae OC/HES del rawXml de cada guía y las agrega como líneas 5: en el Mensaje', async () => {
+      const proforma = makeProforma('42') as Factura;
+      mockFacturaRepo.findOne.mockResolvedValueOnce(proforma);
+      mockFacturaRepo.save.mockResolvedValueOnce({
+        ...proforma,
+        estado: 'APROBADA',
+      });
+      mockDataSource.query.mockResolvedValueOnce(mockGuiasDosFilas);
+      mockXmlParserService.fetchDocument.mockResolvedValueOnce({
+        emisor: { rutEmisor: '76407930-2' },
+        receptor: mockReceptor,
+        detalle: [],
+        rawXml: buildGuiaXml({
+          referencias: [{ tipo: '801', folio: '9001', fecha: '2026-05-10' }],
+        }),
+      });
+      mockXmlParserService.fetchDocument.mockResolvedValueOnce({
+        detalle: [],
+        rawXml: buildGuiaXml({
+          referencias: [{ tipo: 'HES', folio: '5001', fecha: '2026-05-11' }],
+        }),
+      });
+      mockClienteRepo.findOne.mockResolvedValueOnce({ modoDetalle: null });
+      mockBackofficeAdapterService.emitirDte.mockResolvedValueOnce({
+        FolioDocumento: 999,
+        EstadoEmision: 'EMITIDO',
+        LinkVisualizacion: 'http://pdf.link',
+        LinkXML: 'http://xml.link',
+      });
+      mockFacturaRepo.save.mockResolvedValueOnce({
+        ...proforma,
+        estado: 'EMITIDA',
+        gfacfolioSii: 999,
+      });
+      mockDataSource.query.mockResolvedValueOnce([
+        { cantidad_guias: '2', monto_total: '5950' },
+      ]);
+      mockClienteRepo.findOne.mockResolvedValueOnce({ gclinom: 'CLIENTE SA' });
+      mockReglaRepo.findOne.mockResolvedValueOnce({
+        regladescripcion: 'SANTIAGO',
+      });
+
+      await service.aprobar('1', '42');
+
+      const mensaje = (
+        mockBackofficeAdapterService.emitirDte.mock.calls[0] as [EmitirDteInput]
+      )[0].Mensaje;
+      expect(mensaje).toContain('5:|801|9001|10/05/2026|Orden de Compra');
+      expect(mensaje).toContain(
+        '5:|HES|5001|11/05/2026|Hoja de Entrada de Servicios',
+      );
+    });
+
+    it('un TpoDocRef desconocido no bloquea la emisión (se descarta y loguea)', async () => {
+      const proforma = makeProforma('42') as Factura;
+      mockFacturaRepo.findOne.mockResolvedValueOnce(proforma);
+      mockFacturaRepo.save.mockResolvedValueOnce({
+        ...proforma,
+        estado: 'APROBADA',
+      });
+      mockDataSource.query.mockResolvedValueOnce([mockGuiasDosFilas[0]]);
+      mockXmlParserService.fetchDocument.mockResolvedValueOnce({
+        emisor: { rutEmisor: '76407930-2' },
+        receptor: mockReceptor,
+        detalle: [],
+        rawXml: buildGuiaXml({
+          referencias: [{ tipo: '52', folio: '888', fecha: '2026-05-10' }],
+        }),
+      });
+      mockClienteRepo.findOne.mockResolvedValueOnce({ modoDetalle: null });
+      mockBackofficeAdapterService.emitirDte.mockResolvedValueOnce({
+        FolioDocumento: 999,
+        EstadoEmision: 'EMITIDO',
+        LinkVisualizacion: 'http://pdf.link',
+        LinkXML: 'http://xml.link',
+      });
+      mockFacturaRepo.save.mockResolvedValueOnce({
+        ...proforma,
+        estado: 'EMITIDA',
+        gfacfolioSii: 999,
+      });
+      mockDataSource.query.mockResolvedValueOnce([
+        { cantidad_guias: '1', monto_total: '2380' },
+      ]);
+      mockClienteRepo.findOne.mockResolvedValueOnce({ gclinom: 'CLIENTE SA' });
+      mockReglaRepo.findOne.mockResolvedValueOnce({
+        regladescripcion: 'SANTIAGO',
+      });
+
+      const result = await service.aprobar('1', '42');
+
+      expect(result.estado).toBe('EMITIDA');
+    });
+  });
+
   // ─── previewMensaje ──────────────────────────────────────────────────────────
 
   describe('previewMensaje', () => {
@@ -1520,6 +1653,44 @@ describe('FacturasService', () => {
       const result = await service.previewMensaje('1', '42');
 
       expect(result.mensaje).toContain('Facturación según guías período');
+    });
+
+    it('incluye referencias OC/HES extraídas del rawXml de la guía', async () => {
+      const proforma = makeProforma('42') as Factura;
+      mockFacturaRepo.findOne.mockResolvedValueOnce(proforma);
+      mockDataSource.query.mockResolvedValueOnce([
+        {
+          guitipo: 52,
+          guifolio: '100',
+          guitotneto: '4202',
+          guitotiva: '798',
+          guitotdoc: '5000',
+          guitotexento: '0',
+          guifechaemision: '2026-05-10',
+          guifilepath: '/path/guia.xml',
+        },
+      ]);
+      mockXmlParserService.fetchDocument.mockResolvedValueOnce({
+        receptor: {
+          rutReceptor: '78.041.840-0',
+          razonSocial: 'CLIENTE SA',
+          dirRecep: 'DIR',
+          cmnaRecep: 'STGO',
+          ciudadRecep: 'SANTIAGO',
+          giroRecep: 'SERVICIOS',
+        },
+        detalle: [],
+        rawXml: buildGuiaXml({
+          referencias: [{ tipo: '801', folio: '7001', fecha: '2026-05-10' }],
+        }),
+      });
+      mockClienteRepo.findOne.mockResolvedValueOnce({ modoDetalle: null });
+
+      const result = await service.previewMensaje('1', '42');
+
+      expect(result.mensaje).toContain(
+        '5:|801|7001|10/05/2026|Orden de Compra',
+      );
     });
   });
 
