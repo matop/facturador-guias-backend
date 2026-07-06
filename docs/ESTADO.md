@@ -1,5 +1,5 @@
 # Estado del Proyecto — guias-middleware
-Sesiones: 2026-05-28, 2026-05-29 (×2), 2026-05-30, 2026-06-01 (×3), 2026-06-02 (×4), 2026-06-03 (×4), 2026-06-19, 2026-06-30, 2026-07-01 (×2), 2026-07-02 (×3), 2026-07-03, 2026-07-06 (×3, branch `worktree-oc-hes-prd-grill`)
+Sesiones: 2026-05-28, 2026-05-29 (×2), 2026-05-30, 2026-06-01 (×3), 2026-06-02 (×4), 2026-06-03 (×4), 2026-06-19, 2026-06-30, 2026-07-01 (×2), 2026-07-02 (×3), 2026-07-03, 2026-07-06 (×4, branch `worktree-oc-hes-prd-grill`)
 
 ## Estado de Componentes
 | Componente | Estado | Nota |
@@ -12,7 +12,7 @@ Sesiones: 2026-05-28, 2026-05-29 (×2), 2026-05-30, 2026-06-01 (×3), 2026-06-02
 | Regla Agrupadora v4 | ✅ Implementada | `extraeTagLista` + `REGLA_REGISTRY` + `reglaconfig jsonb` |
 | Detalle+Referencia Factura (DTE 33) — Casos 1/2/3 | ✅ Validados en QA real | `src/mensaje/mensaje-builder.ts` — Caso 1 (S.G.) validado en QA con PDF real; Casos 2/3 (Por Producto — Precio Constante/Variable) **emisión real confirmada 2026-07-02** (`gfackey=98`, folioSii=411208, guías sintéticas). |
 | Detalle+Referencia Factura (DTE 33) — Caso 4 (Global) | ⏳ Bloqueado — bug confirmado del lado de Enternet | `src/mensaje/mensaje-builder.ts` — Detalle (1 línea "Segun Guias:") funcional y confirmado en QA (folioSii=411211). Bloque `<Referencia>`/`IndGlobal` sigue en código **EXPERIMENTAL** (rama `if (isGlobal)` al final de `buildMensaje`) dejado a propósito sin revertir — Enternet confirmó que el problema es de su parser/generador de XML (no del Mensaje V5 enviado) y está corrigiéndolo. Reintentar cuando avisen. Ver Historial 2026-07-03 y `docs/consulta-enternet-referencia-global.md`. |
-| Referencias OC (801) / HES en Factura | ⏳ Implementado + wireado, sin validar con datos reales | `parseReferencias()` en `src/xml/xml-parser.utils.ts` + integración en `mensaje-builder.ts` (PR #9, branch `worktree-oc-hes-prd-grill`, draft) — probado con XML sintético (modo individual, modo Global, tipo desconocido descartado, `FolioRef` faltante). Wireado en `facturas.service.ts` (`_emitir`/`previewMensaje` fetchean XML de todas las guías y arman `referenciasExternas`) — commit `4ea5fd6`, 2026-07-06. Falta: XML real de cliente con OC/HES poblada + emisión real en Enternet QA. Ver `docs/PRD-referencias-oc-hes.md` y memoria `referencias-oc-hes.md`. |
+| Referencias OC (801) / HES en Factura | ✅ Confirmado en QA real (sintético) — falta XML real de cliente | `parseReferencias()` en `src/xml/xml-parser.utils.ts` + integración en `mensaje-builder.ts` (PR #9, branch `worktree-oc-hes-prd-grill`, draft). Wireado en `facturas.service.ts` desde commit `4ea5fd6`. **Emisión real confirmada 2026-07-06** (`gfackey=108`, folioSii=411212, 2 guías sintéticas con 1 OC + 1 HES) tras corregir un bug de formato (header `4:\|` no declaraba la 4ta columna `RAZON REFERENCIA` que las líneas `5:\|801\|`/`5:\|HES\|` sí enviaban — commit `b6f7086`). XML final verificado con los 4 bloques `<Referencia>` esperados. Falta solo: XML real de cliente con OC/HES poblada (hoy solo probado con fixtures sintéticos). Ver `docs/PRD-referencias-oc-hes.md` y memoria `referencias-oc-hes.md`. |
 | GroupingService batch | ✅ Funcional | Evita N+1, 2 queries |
 | assignRegla + recomputo | ✅ Funcional | RUT en query usa XmlRut. **Corrección 2026-06-30**: no existe distinción real "primera activación" vs "cambio" en el código actual — comportamiento es uniforme, ver Historial 2026-06-30 |
 | Proforma — modelo `factura`+`facturaguias` | ✅ Implementado | `gde.facturaguias` tabla puente factura↔guía; `factura.gclirut`/`reglaidl` propios; chunking `MAX_GUIAS_POR_FACTURA=40` (confirmado E2E 2026-07-02); estados +`ANULADA` vía `anular`/`limpiar` |
@@ -21,7 +21,7 @@ Sesiones: 2026-05-28, 2026-05-29 (×2), 2026-05-30, 2026-06-01 (×3), 2026-06-02
 | PRD discover-por-cliente | ✅ Completo | service + controller + tests — 2026-05-27 |
 | Migración SQL 007 | ✅ Aplicada | BD local actualizada 2026-05-29 |
 | Limpieza código legacy | ✅ Completo | `src/empresa/` + 7 DTOs huérfanos + `toXmlRut` eliminados — 2026-05-29 |
-| Tests unitarios | ✅ **210 tests verdes** | 15 suites — +6 tests Caso 4 (Global) — 2026-07-02 |
+| Tests unitarios | ✅ **236/238 verdes** | 16 suites — 2 skips preexistentes sin relación (Caso 4 Global) — branch `worktree-oc-hes-prd-grill`, 2026-07-06 |
 | FacturasService / Proformas | ✅ Funcional | `empresaRepository` eliminado — `sync` usa `?rut=` query param — 2026-05-29 |
 | MensajeBuilder V5 | ✅ Implementado | `src/mensaje/mensaje-builder.ts` — módulo puro, 39 tests — 2026-06-02 |
 | Preview Mensaje endpoint | ✅ **Aprobado en QA** | Modo 1 (<20 guías) y Modo 2 (≥20) verificados contra servidor real — 2026-06-02 |
@@ -35,6 +35,37 @@ Sesiones: 2026-05-28, 2026-05-29 (×2), 2026-05-30, 2026-06-01 (×3), 2026-06-02
 | proforma-transitions.ts | ✅ Creado | assertPuedeAprobar / assertPuedeAnular — 2026-05-29 |
 
 ## Historial Técnico
+
+### 2026-07-06 (sesión 4) — Emisión real OC/HES confirmada en Enternet QA, bug de header `4:|` corregido
+
+**Contexto:** continuación directa de la sesión 3 del mismo día (wiring de `parseReferencias` en `facturas.service.ts`, commit `4ea5fd6`). El usuario pidió "probar la emisión para ver cómo responde QA Enternet" — el paso pendiente #2 de la sesión anterior.
+
+**Preparación:** se creó `scripts/test-oc-hes-sintetico.js` + `test/fixtures/oc-hes/{guia-oc,guia-hes}.xml` (mismo patrón `data:` URL usado en `test-por-producto-sintetico.js`/`test-caso4-global-sintetico.js`): 2 guías sintéticas (`empkey=1163`, emisor `968880004`, `RutUsuario=16714595-7`), una con `<Referencia><TpoDocRef>801</TpoDocRef>...` (OC folio 555001) y otra con `<TpoDocRef>HES</TpoDocRef>` (folio 777002). El servidor de desarrollo se corrió sobre el propio worktree (no sobre el checkout principal) para que `preview-mensaje`/`aprobar` ejercitaran el código de la branch `worktree-oc-hes-prd-grill`, no `main`.
+
+**Primer intento real (`PATCH /aprobar`) — RECHAZADO por Enternet QA:**
+```
+[DTEErr001] No fue posible emitir el documento. | [ParseErr001] Número de campos de la
+linea de referencia no coincide con el número de etiquetas en la linea 19/20 |
+[4:|TIPO DE REFERENCIA|FOLIO|FECHA] | [5:|801|555001|10/01/2026|Orden de Compra]
+```
+El preview (`preview-mensaje`, que no valida contra Enternet) se veía correcto y no detectó el problema — solo `/aprobar` contra QA real lo expuso.
+
+**Causa raíz (confirmada releyendo la spec V5, `docs/FormatodeIntegracinbasadoenEtiquetasEstndarv5.html`):** el header `4:|` declara las columnas de las líneas `5:|` siguientes, y Enternet valida que el número de campos corresponda exactamente. La spec sí documenta un campo opcional `RAZON REFERENCIA` (C90) para un 4to campo — pero el código emitía el header fijo de 3 columnas (`4:|TIPO DE REFERENCIA|FOLIO|FECHA`) incluso cuando las líneas de OC/HES agregaban una 4ta (la razón fija "Orden de Compra"/"Hoja de Entrada de Servicios").
+
+**Fix en `src/mensaje/mensaje-builder.ts` (commit `b6f7086`):** cuando hay al menos una OC/HES, el header pasa a 4 columnas (`4:|TIPO DE REFERENCIA|FOLIO|FECHA|RAZON REFERENCIA`) y las líneas `5:|52|...` de guía agregan un 4to campo vacío (`5:|52|{folio}|{fecha}|`) para mantener la correspondencia exigida. Sin OC/HES, el header sigue igual que antes (sin afectar Casos 1-4 ya validados).
+
+**Segundo intento — EMITIDA:** `gfackey=108` (empkey 1163) → **EMITIDA, folioSii=411212**. Se descargó el XML final (`linkXml`) y se verificaron los 4 bloques `<Referencia>` generados por Enternet: 2× `TpoDocRef=52` (guías, sin `RazonRef`) + 1× `TpoDocRef=801` + 1× `TpoDocRef=HES` (ambos con `<RazonRef>` poblado con el texto fijo esperado) — confirma el diseño de punta a punta contra QA real.
+
+**Archivos modificados:**
+- `src/mensaje/mensaje-builder.ts` — fix de header/campo vacío descrito arriba.
+- `src/mensaje/mensaje-builder.spec.ts` — test nuevo verificando header de 4 columnas + campo vacío en línea de guía cuando hay OC/HES.
+- `scripts/test-oc-hes-sintetico.js` (nuevo) + `test/fixtures/oc-hes/guia-{oc,hes}.xml` (nuevos) — activos permanentes reusables con `--reset`/`--aprobar`.
+
+**Tests:** 236/238 verdes (mismos 2 skips preexistentes de Caso 4 Global, sin relación). Lint y build limpios.
+
+**Pendiente:** conseguir un XML real de cliente con OC/HES poblada (hoy solo se validó con fixtures sintéticos) antes de marcar el PR #9 como "Ready for review".
+
+---
 
 ### 2026-07-06 (sesión 3) — Prueba con datos sintéticos + wiring de OC/HES en `facturas.service.ts`
 
