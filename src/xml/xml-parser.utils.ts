@@ -96,6 +96,80 @@ export function parseDetalle(xml: string): DetalleItem[] {
   return result;
 }
 
+export type TipoReferenciaExterna = '801' | 'HES';
+
+export interface ReferenciaExterna {
+  tipo: TipoReferenciaExterna;
+  folio: string;
+  fecha: string; // YYYY-MM-DD, tal como viene en <FchRef>
+}
+
+export interface ReferenciaDescartada {
+  tipo: string;
+  motivo: string;
+}
+
+export interface ParseReferenciasResult {
+  referencias: ReferenciaExterna[];
+  descartadas: ReferenciaDescartada[];
+}
+
+const TIPOS_REFERENCIA_EXTERNA: TipoReferenciaExterna[] = ['801', 'HES'];
+
+function esTipoReferenciaExterna(tipo: string): tipo is TipoReferenciaExterna {
+  return (TIPOS_REFERENCIA_EXTERNA as string[]).includes(tipo);
+}
+
+/**
+ * Extrae las referencias a OC (801) y HES embebidas en el <Referencia> del
+ * XML de una guía. Fase 1: asume 1:1 (una sola OC y una sola HES por guía) —
+ * si hay más de una del mismo tipo, toma la primera ocurrencia y sigue.
+ *
+ * Tipos no reconocidos (ni 801 ni HES, incluye 52) se ignoran y se reportan
+ * en `descartadas` en vez de bloquear — es responsabilidad del caller loguear.
+ * Un 801/HES reconocido pero con FolioRef o FchRef faltante SÍ bloquea (throw),
+ * ya que es dato incompleto en un tipo de interés (ver PRD-referencias-oc-hes.md).
+ */
+export function parseReferencias(xml: string): ParseReferenciasResult {
+  const referencias: ReferenciaExterna[] = [];
+  const descartadas: ReferenciaDescartada[] = [];
+  const vistos = new Set<TipoReferenciaExterna>();
+
+  const pattern = /<Referencia>([\s\S]*?)<\/Referencia>/g;
+  let match: RegExpExecArray | null;
+  while ((match = pattern.exec(xml)) !== null) {
+    const block = match[1];
+    const tipo = extractTagOptional(block, 'TpoDocRef');
+
+    if (!esTipoReferenciaExterna(tipo)) {
+      descartadas.push({
+        tipo,
+        motivo: `TpoDocRef "${tipo}" no reconocido (se esperaba 801 o HES)`,
+      });
+      continue;
+    }
+
+    if (vistos.has(tipo)) continue; // fallback fase 1: solo la primera ocurrencia
+    vistos.add(tipo);
+
+    const folio = extractTagOptional(block, 'FolioRef');
+    if (!folio) {
+      throw new Error(`Referencia ${tipo} sin <FolioRef> en el XML de la guía`);
+    }
+
+    const fecha = extractTagOptional(block, 'FchRef');
+    if (!fecha) {
+      throw new Error(
+        `Referencia ${tipo} folio ${folio} sin <FchRef> en el XML de la guía`,
+      );
+    }
+
+    referencias.push({ tipo, folio, fecha });
+  }
+
+  return { referencias, descartadas };
+}
+
 export function parseDocument(xml: string): DteDocument {
   return {
     emisor: {
