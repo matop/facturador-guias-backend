@@ -93,3 +93,50 @@ Adjuntamos como referencia:
 - Ejemplo de Mensaje V5 enviado en el intento 1 (o el que soporte solicite).
 - XML de salida real sin `<Referencia>` (folioSii=411211) para comparar contra el formato
   esperado.
+
+## Actualización 2026-07-03 (tarde) — intento 4, confirma bug del lado de Enternet
+
+Reintentamos el mismo Mensaje V5 del intento 2 (header `TIPO/FOLIO/ACCION REFERENCIA` +
+línea `5:|52|0|{fecha de hoy}`) sin cambiar nada de nuestro lado. Esta vez el error **cambió**
+de `[ErrorRefTipDoc01]` (folio inválido) a `[FirmaErr002]` (falla de firma XML) — señal de que
+Enternet modificó algo en su procesamiento entre la mañana y la tarde del mismo día:
+
+```
+[DTEErr001] No fue posible emitir el documento. |
+[FirmaErr002] Falla en el Proceso de Firma del XML, cvc-datatype-valid.1.2.1:
+'-  -' is not a valid value for 'date'.
+        <Referencia>
+                <NroLinRef>1</NroLinRef>
+                <TpoDocRef>52</TpoDocRef>
+                <IndGlobal>1</IndGlobal>
+                <FolioRef>0</FolioRef>
+                <FchRef>    -  -  </FchRef>
+                <CodRef>3</CodRef>
+                <RazonRef>Corrige Montos de mas de 20 Documentos</RazonRef>
+        </Referencia>
+        <Referencia>
+                <NroLinRef>2</NroLinRef>
+                <TpoDocRef>52</TpoDocRef>
+                <FolioRef>0</FolioRef>
+                <FchRef>2026-07-03</FchRef>
+        </Referencia>
+```
+
+**Diagnóstico:** con un mismo Mensaje V5 de entrada, Enternet arma **dos** bloques
+`<Referencia>` en el XML de salida — uno por el header `ACCION REFERENCIA=5` (que sí genera
+`IndGlobal=1`, confirmando que el mecanismo existe) y otro por la línea `5:|52|0|{fecha}`. El
+bloque generado desde el header trae `CodRef=3` / `RazonRef="Corrige Montos de mas de 20
+Documentos"` **hardcodeado** (valor de ACCION REFERENCIA=3, no 5 — posible bug de mapeo interno)
+y **no toma la fecha de la línea `5:|`**, dejando `FchRef` vacío (`'-  -'`), lo que rompe la
+firma del XML. Es decir: el bloque `IndGlobal=1` casi funciona, pero el parser del emisor de
+Enternet no le está inyectando `FchRef` desde donde correspondería.
+
+**Conclusión:** el problema no es de nuestro Mensaje V5 (que ya es correcto y estable — no
+cambia entre corridas) sino un bug del lado del parser/generador de XML de Enternet. Enternet
+está al tanto y trabajando en su parser; quedamos a la espera de que lo corrijan para reintentar.
+No se seguirá iterando desde nuestro lado hasta tener novedades de ellos.
+
+**Estado del código:** se dejó a propósito el bloque experimental en
+`src/mensaje/mensaje-builder.ts` (dentro de `buildMensaje`, rama `if (isGlobal)` al final) que
+genera `TIPO/FOLIO/ACCION REFERENCIA` + línea `5:|52|0|{fecha}` — no se revirtió para poder
+reintentar sin rearmar el código cuando Enternet confirme el fix.

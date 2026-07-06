@@ -56,6 +56,11 @@ export class Guia {
   @Column({ name: 'guireglaidl', type: 'varchar', length: 200, nullable: true })
   guireglaidl!: string | null;
 
-  @Column({ name: 'guivaloragrupador', type: 'varchar', length: 200, nullable: true })
+  @Column({
+    name: 'guivaloragrupador',
+    type: 'varchar',
+    length: 200,
+    nullable: true,
+  })
   guivaloragrupador!: string | null;
 }

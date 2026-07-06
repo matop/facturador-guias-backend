@@ -48,7 +48,7 @@ describe('ClientesService', () => {
 
     it('crea cliente cuando no existe', async () => {
       mockRepo.findOne.mockResolvedValueOnce(null);
-      mockRepo.save.mockImplementation(async (c: Cliente) => c);
+      mockRepo.save.mockImplementation((c: Cliente) => c);
 
       const { cliente, created } = await service.findOrCreate('1', RECEPTOR);
 

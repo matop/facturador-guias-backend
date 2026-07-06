@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, HttpCode } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Param,
+  Body,
+  HttpCode,
+} from '@nestjs/common';
 import { ReglasService } from './reglas.service.js';
 import { CreateReglaDto } from './dto/create-regla.dto.js';
 import { Regla } from './entities/regla.entity.js';
@@ -14,7 +23,9 @@ export class ReglasController {
   }
 
   @Get('empresa/:empkey')
-  async findByEmpresa(@Param('empkey') empkey: string): Promise<ReglaEmpresa[]> {
+  async findByEmpresa(
+    @Param('empkey') empkey: string,
+  ): Promise<ReglaEmpresa[]> {
     return this.reglasService.findByEmpresa(empkey);
   }
 
@@ -29,7 +40,10 @@ export class ReglasController {
   }
 
   @Put(':id')
-  async update(@Param('id') id: string, @Body() dto: Partial<CreateReglaDto>): Promise<Regla> {
+  async update(
+    @Param('id') id: string,
+    @Body() dto: Partial<CreateReglaDto>,
+  ): Promise<Regla> {
     return this.reglasService.update(id, dto);
   }
 

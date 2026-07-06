@@ -14,7 +14,9 @@ describe('FacturacionController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [FacturacionController],
-      providers: [{ provide: FacturacionService, useValue: mockFacturacionService }],
+      providers: [
+        { provide: FacturacionService, useValue: mockFacturacionService },
+      ],
     }).compile();
 
     controller = module.get<FacturacionController>(FacturacionController);

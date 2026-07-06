@@ -1,5 +1,5 @@
 # Estado del Proyecto — guias-middleware
-Sesiones: 2026-05-28, 2026-05-29 (×2), 2026-05-30, 2026-06-01 (×3), 2026-06-02 (×4), 2026-06-03 (×4), 2026-06-19, 2026-06-30, 2026-07-01 (×2), 2026-07-02 (×3)
+Sesiones: 2026-05-28, 2026-05-29 (×2), 2026-05-30, 2026-06-01 (×3), 2026-06-02 (×4), 2026-06-03 (×4), 2026-06-19, 2026-06-30, 2026-07-01 (×2), 2026-07-02 (×3), 2026-07-03
 
 ## Estado de Componentes
 | Componente | Estado | Nota |
@@ -11,7 +11,7 @@ Sesiones: 2026-05-28, 2026-05-29 (×2), 2026-05-30, 2026-06-01 (×3), 2026-06-02
 | Agrupadores batch | ✅ Funcional | Lookup por RUT XML format |
 | Regla Agrupadora v4 | ✅ Implementada | `extraeTagLista` + `REGLA_REGISTRY` + `reglaconfig jsonb` |
 | Detalle+Referencia Factura (DTE 33) — Casos 1/2/3 | ✅ Validados en QA real | `src/mensaje/mensaje-builder.ts` — Caso 1 (S.G.) validado en QA con PDF real; Casos 2/3 (Por Producto — Precio Constante/Variable) **emisión real confirmada 2026-07-02** (`gfackey=98`, folioSii=411208, guías sintéticas). |
-| Detalle+Referencia Factura (DTE 33) — Caso 4 (Global) | ⏳ Implementado, sin validar en QA | `src/mensaje/mensaje-builder.ts` — `isGlobal` (>40 guías) colapsa Detalle a 1 línea + agrega campos `1:\|TIPO DOC REFERENCIA\|ACCION REFERENCIA` al encabezado. Mecanismo de Referencia es **hipótesis sin confirmar** contra Enternet — ver Historial 2026-07-02 (sesión 3). Solo cuenta guías, no OC/HES (fuera de alcance por ahora). |
+| Detalle+Referencia Factura (DTE 33) — Caso 4 (Global) | ⏳ Bloqueado — bug confirmado del lado de Enternet | `src/mensaje/mensaje-builder.ts` — Detalle (1 línea "Segun Guias:") funcional y confirmado en QA (folioSii=411211). Bloque `<Referencia>`/`IndGlobal` sigue en código **EXPERIMENTAL** (rama `if (isGlobal)` al final de `buildMensaje`) dejado a propósito sin revertir — Enternet confirmó que el problema es de su parser/generador de XML (no del Mensaje V5 enviado) y está corrigiéndolo. Reintentar cuando avisen. Ver Historial 2026-07-03 y `docs/consulta-enternet-referencia-global.md`. |
 | GroupingService batch | ✅ Funcional | Evita N+1, 2 queries |
 | assignRegla + recomputo | ✅ Funcional | RUT en query usa XmlRut. **Corrección 2026-06-30**: no existe distinción real "primera activación" vs "cambio" en el código actual — comportamiento es uniforme, ver Historial 2026-06-30 |
 | Proforma — modelo `factura`+`facturaguias` | ✅ Implementado | `gde.facturaguias` tabla puente factura↔guía; `factura.gclirut`/`reglaidl` propios; chunking `MAX_GUIAS_POR_FACTURA=40` (confirmado E2E 2026-07-02); estados +`ANULADA` vía `anular`/`limpiar` |
@@ -34,6 +34,22 @@ Sesiones: 2026-05-28, 2026-05-29 (×2), 2026-05-30, 2026-06-01 (×3), 2026-06-02
 | proforma-transitions.ts | ✅ Creado | assertPuedeAprobar / assertPuedeAnular — 2026-05-29 |
 
 ## Historial Técnico
+
+### 2026-07-03 — Reintentos Caso 4 (Global) en QA real, bug confirmado del lado de Enternet
+
+**Contexto:** se retomó la validación empírica del mecanismo de `<Referencia>`/`IndGlobal` para Caso 4 (pendiente desde la sesión 2026-07-02 #3), reintentando en QA real contra Enternet con el script `scripts/test-caso4-global-sintetico.js` (41 guías sintéticas, `empkey=1163`, emisor `968880004`, cliente `76407930-2`).
+
+**Intento 2 repetido (folio=0, fecha=hoy):** se reintrodujo temporalmente en `mensaje-builder.ts` el header `TIPO/FOLIO/ACCION REFERENCIA` + línea `5:|52|0|{fecha de hoy}` (ya documentado como fallido en la sesión anterior con `ErrorRefTipDoc01`). Primera corrida del día: mismo error (`ErrorRefTipDoc01`, folio inválido).
+
+**Intento 4 (misma tarde, sin cambios de nuestro lado):** se repitió exactamente el mismo Mensaje V5 y el error **cambió** a `[FirmaErr002] Falla en el Proceso de Firma del XML` — señal de que Enternet modificó algo en su procesamiento entre la mañana y la tarde. El detalle del error mostró el XML interno: Enternet arma **dos** bloques `<Referencia>` a partir de un solo Mensaje V5 — uno desde el header `ACCION REFERENCIA=5` (genera `IndGlobal=1` correctamente, confirmando que el mecanismo existe) pero con `CodRef=3`/`RazonRef="Corrige Montos..."` hardcodeado y `FchRef` vacío (rompe la firma XML); y otro desde la línea `5:|52|0|{fecha}` con `FchRef` correcto pero sin `IndGlobal`. El parser de Enternet no está tomando la fecha de la línea `5:|` para completar el bloque `IndGlobal=1`.
+
+**Conclusión:** confirmado con el propio equipo de Enternet que es un bug de su parser/generador de XML, no un problema del Mensaje V5 que enviamos (que es correcto y estable). Enternet está corrigiendo su lado; **se pausa el trabajo de este caso hasta que avisen** (estimado: día siguiente).
+
+**Decisión explícita:** se deja el código EXPERIMENTAL sin revertir en `src/mensaje/mensaje-builder.ts` (rama `if (isGlobal)` al final de `buildMensaje`, agrega `TIPO/FOLIO/ACCION REFERENCIA` + `5:|52|0|{fecha}`) para poder reintentar de inmediato con `scripts/test-caso4-global-sintetico.js --reset --aprobar` sin rearmar el código. **Los tests unitarios de `mensaje-builder.spec.ts` (Caso 4 Global) no reflejan este código experimental** — no se tocaron porque el bloque no es la solución final, solo una prueba en curso.
+
+**Detalle completo:** `docs/consulta-enternet-referencia-global.md`, sección "Actualización 2026-07-03 (tarde)".
+
+---
 
 ### 2026-07-02 (sesión 3) — Caso 4 (Global/overflow >40 refs) implementado, SIN validar en QA
 
@@ -365,7 +381,7 @@ ALTER TABLE gde.factura ADD COLUMN IF NOT EXISTS gfacfolio_sii int,
 ### Media prioridad
 - [x] Implementar Casos 2/3 (Por Producto) — ✅ ya estaban implementados con TDD antes de 2026-07-02 (drift de documentación corregido esa sesión), ver ADR 0002.
 - [x] Implementar Caso 4 (Global/overflow >40 refs) en `mensaje-builder.ts` — ✅ 2026-07-02, **pero sin validar en QA** (ver Historial sesión 3). El pendiente real ahora es la validación empírica, no la implementación.
-- [ ] **Validar Caso 4 con emisión real contra Enternet QA** — armar fixture de 41+ guías sintéticas (empkey `1163`, emisor `968880004`, cliente `76407930-2`) y confirmar si `IndGlobal=1`/`FolioRef=0` se genera correctamente, o si Enternet rechaza/ignora los campos `ACCION REFERENCIA`/`TIPO DOC REFERENCIA` agregados.
+- [ ] **Validar Caso 4 con emisión real contra Enternet QA** — 2026-07-03: fixture y script ya armados (`scripts/test-caso4-global-sintetico.js`), reintentado varias veces contra QA. **Bug confirmado del lado de Enternet** (parser no completa `FchRef` del bloque `IndGlobal=1` generado desde `ACCION REFERENCIA=5`, ver Historial 2026-07-03). Bloqueado hasta que Enternet corrija su parser — no seguir iterando desde nuestro lado hasta tener novedades. Código experimental queda sin revertir en `mensaje-builder.ts` para reintentar rápido con `--reset --aprobar`.
 - [ ] Deduplicar OC (801) y HES en el conteo de "total de referencias" de Caso 4 — hoy el umbral de 40 solo cuenta guías porque `parseReferencias()` no existe en el código.
 - [ ] OPEN-1: confirmar `TpoDocRef=HES` en XML de guía (DTE 52) de entrada — falta XML real con `<Referencia>` HES
 

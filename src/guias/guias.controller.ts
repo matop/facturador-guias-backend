@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Query, Param, Body, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Query,
+  Param,
+  Body,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { GuiasService } from './guias.service.js';
 import { Guia } from './entities/guia.entity.js';
 import { SyncGuiaDto } from './dto/sync-guia.dto.js';

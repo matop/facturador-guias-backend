@@ -33,16 +33,16 @@ export interface DetalleItemParaMensaje {
 export interface MensajeInput {
   transaccionIdL: string;
   fechaDocumento: string; // YYYY-MM-DD
-  diasCredito: number;    // default 30 — TODO: dependerá de criterio emisor/receptor
-  rutEmisor: string;      // cualquier formato (con/sin puntos y guión)
-  rutCliente: string;     // cualquier formato (con/sin puntos y guión)
+  diasCredito: number; // default 30 — TODO: dependerá de criterio emisor/receptor
+  rutEmisor: string; // cualquier formato (con/sin puntos y guión)
+  rutCliente: string; // cualquier formato (con/sin puntos y guión)
   nombreCliente: string;
   direccion: string;
   comuna: string;
   ciudad: string;
   giro: string;
   guias: GuiaParaMensaje[];
-  modoDetalle?: ModoDetalle;               // default 'SG'
+  modoDetalle?: ModoDetalle; // default 'SG'
   detalleItems?: DetalleItemParaMensaje[]; // ignorado salvo POR_PRODUCTO
 }
 
@@ -121,7 +121,9 @@ const sumaMonto = (items: ItemGrupo[]): string =>
  * Si varía → 1 línea por tramo de fechas con precio constante (sin CODIGO),
  * ordenando primero los items por fecha (Caso 3 — Precio Variable).
  */
-export function buildDetallePorProducto(items: DetalleItemParaMensaje[]): string[] {
+export function buildDetallePorProducto(
+  items: DetalleItemParaMensaje[],
+): string[] {
   const grupos = new Map<string, GrupoPorProducto>();
 
   for (const item of items) {
@@ -130,12 +132,19 @@ export function buildDetallePorProducto(items: DetalleItemParaMensaje[]): string
 
     const key = `${item.nmbItem}|${item.indExe}`;
     const itemGrupo: ItemGrupo = {
-      prcItem: item.prcItem, qtyItem: item.qtyItem, montoItem: item.montoItem,
-      codigo: item.codigo, fecha: item.fecha,
+      prcItem: item.prcItem,
+      qtyItem: item.qtyItem,
+      montoItem: item.montoItem,
+      codigo: item.codigo,
+      fecha: item.fecha,
     };
     const existente = grupos.get(key);
     if (!existente) {
-      grupos.set(key, { nmbItem: item.nmbItem, indExe: item.indExe, items: [itemGrupo] });
+      grupos.set(key, {
+        nmbItem: item.nmbItem,
+        indExe: item.indExe,
+        items: [itemGrupo],
+      });
     } else {
       existente.items.push(itemGrupo);
     }
@@ -145,11 +154,17 @@ export function buildDetallePorProducto(items: DetalleItemParaMensaje[]): string
   const lines: string[] = [];
   for (const g of grupos.values()) {
     const tipoItem = g.indExe && g.indExe !== '0' ? 'EXENTO' : 'AFECTO';
-    const ordenados = [...g.items].sort((a, b) => a.fecha.localeCompare(b.fecha));
-    const precioConstante = ordenados.every(it => it.prcItem === ordenados[0].prcItem);
+    const ordenados = [...g.items].sort((a, b) =>
+      a.fecha.localeCompare(b.fecha),
+    );
+    const precioConstante = ordenados.every(
+      (it) => it.prcItem === ordenados[0].prcItem,
+    );
 
     if (precioConstante) {
-      lines.push(`3:|${n}|${tipoItem}|${g.nmbItem} (${ordenados[0].codigo})|${sumaQty(ordenados)}|${ordenados[0].prcItem}|0|${sumaMonto(ordenados)}`);
+      lines.push(
+        `3:|${n}|${tipoItem}|${g.nmbItem} (${ordenados[0].codigo})|${sumaQty(ordenados)}|${ordenados[0].prcItem}|0|${sumaMonto(ordenados)}`,
+      );
       n++;
       continue;
     }
@@ -163,7 +178,9 @@ export function buildDetallePorProducto(items: DetalleItemParaMensaje[]): string
       }
       const fechaIni = formatDateDash(tramo[0].fecha);
       const fechaFin = formatDateDash(tramo[tramo.length - 1].fecha);
-      lines.push(`3:|${n}|${tipoItem}|${g.nmbItem} (${fechaIni} al ${fechaFin})|${sumaQty(tramo)}|${tramo[0].prcItem}|0|${sumaMonto(tramo)}`);
+      lines.push(
+        `3:|${n}|${tipoItem}|${g.nmbItem} (${fechaIni} al ${fechaFin})|${sumaQty(tramo)}|${tramo[0].prcItem}|0|${sumaMonto(tramo)}`,
+      );
       n++;
       if (item) tramo = [item];
     }
@@ -175,24 +192,34 @@ export function buildDetallePorProducto(items: DetalleItemParaMensaje[]): string
 
 export function buildMensaje(input: MensajeInput): MensajeResult {
   const {
-    transaccionIdL, fechaDocumento, diasCredito,
-    rutEmisor, rutCliente, nombreCliente, direccion, comuna, ciudad, giro,
-    guias, modoDetalle, detalleItems,
+    transaccionIdL,
+    fechaDocumento,
+    diasCredito,
+    rutEmisor,
+    rutCliente,
+    nombreCliente,
+    direccion,
+    comuna,
+    ciudad,
+    giro,
+    guias,
+    modoDetalle,
+    detalleItems,
   } = input;
 
   if (guias.length === 0) throw new Error('La proforma no tiene guías');
 
   const fechaVenc = addDias(fechaDocumento, diasCredito);
 
-  const sumNetoN   = guias.reduce((s, g) => s + BigInt(g.totneto),   0n);
+  const sumNetoN = guias.reduce((s, g) => s + BigInt(g.totneto), 0n);
   const sumExentoN = guias.reduce((s, g) => s + BigInt(g.totexento), 0n);
 
-  const sumNeto   = sumNetoN.toString();
+  const sumNeto = sumNetoN.toString();
   const sumExento = sumExentoN.toString();
   // Enternet valida IVA == round(Neto_total * 19%); sumar los totiva ya
   // redondeados por guía acumula drift de redondeo con muchas guías.
   const sumIvaN = BigInt(Math.round(Number(sumNetoN) * 0.19));
-  const sumIva  = sumIvaN.toString();
+  const sumIva = sumIvaN.toString();
   // MONTO TOTAL se deriva de los totales ya recalculados, no de sumar
   // los totdoc por guía (que arrastran el mismo drift que totiva).
   const sumDoc = (sumNetoN + sumIvaN + sumExentoN).toString();
@@ -229,12 +256,14 @@ export function buildMensaje(input: MensajeInput): MensajeResult {
       : `2:|ITEM|TIPO ITEM|DESCRIPCION|CANTIDAD|PRECIO|DESCUENTO MONTO|TOTAL LINEA`,
   );
   if (isGlobal) {
-    const folios = guias.map(g => g.folio).join(' ');
+    const folios = guias.map((g) => g.folio).join(' ');
     lines.push(`3:|1|AFECTO|Segun Guias:|1|${sumNeto}|0|${sumNeto}|${folios}`);
   } else if (modoDetalle === 'POR_PRODUCTO') {
     lines.push(...buildDetallePorProducto(detalleItems ?? []));
   } else {
-    lines.push(`3:|1|AFECTO|Facturación según guías período ${periodo}|1|${sumNeto}|0|${sumNeto}`);
+    lines.push(
+      `3:|1|AFECTO|Facturación según guías período ${periodo}|1|${sumNeto}|0|${sumNeto}`,
+    );
   }
 
   // ── Referencias ──

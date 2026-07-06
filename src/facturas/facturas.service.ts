@@ -6,7 +6,10 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { assertPuedeAprobar, assertPuedeAnular } from './proforma-transitions.js';
+import {
+  assertPuedeAprobar,
+  assertPuedeAnular,
+} from './proforma-transitions.js';
 import { InjectRepository } from '@nestjs/typeorm';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { Repository, Between, DataSource } from 'typeorm';
@@ -100,7 +103,9 @@ function chunkArray<T>(arr: T[], size: number): T[][] {
 
 /** Fecha de hoy (YYYY-MM-DD) en huso America/Santiago. */
 function todayInChile(): string {
-  return new Date().toLocaleString('sv-SE', { timeZone: 'America/Santiago' }).split(' ')[0];
+  return new Date()
+    .toLocaleString('sv-SE', { timeZone: 'America/Santiago' })
+    .split(' ')[0];
 }
 
 @Injectable()
@@ -124,7 +129,11 @@ export class FacturasService {
 
   // ─── Sync tipo 33 desde backoffice ─────────────────────────────────────────
 
-  async sync(empkey: string, periodo: string, rut: string): Promise<FacturasSyncResult> {
+  async sync(
+    empkey: string,
+    periodo: string,
+    rut: string,
+  ): Promise<FacturasSyncResult> {
     const { fechaInicial, fechaFinal } = periodoToRange(periodo);
     const rows = await this.backofficeAdapterService.getGuias(
       rut,
@@ -134,8 +143,8 @@ export class FacturasService {
     );
 
     const facturas = rows
-      .filter(row => row['Folio'] && row['Codigo Tipo'])
-      .map(row => {
+      .filter((row) => row['Folio'] && row['Codigo Tipo'])
+      .map((row) => {
         const f = new Factura();
         f.empkey = empkey;
         f.gfackey = row['Folio'];
@@ -162,13 +171,16 @@ export class FacturasService {
     return { synced: facturas.length };
   }
 
-  async getFacturasPorPeriodo(empkey: string, periodo: string): Promise<FacturasPorPeriodoDto> {
+  async getFacturasPorPeriodo(
+    empkey: string,
+    periodo: string,
+  ): Promise<FacturasPorPeriodoDto> {
     const { fechaInicial, fechaFinal } = periodoToRange(periodo);
     const facturas = await this.facturaRepository.find({
-      where: { empkey, gfacfecha: Between(fechaInicial, fechaFinal) as any },
+      where: { empkey, gfacfecha: Between(fechaInicial, fechaFinal) },
     });
 
-    const facturasMapped: FacturaResumenDto[] = facturas.map(f => ({
+    const facturasMapped: FacturaResumenDto[] = facturas.map((f) => ({
       id: f.gfackey,
       folio: f.gfacfolio,
       fecha: f.gfacfecha,
@@ -187,28 +199,52 @@ export class FacturasService {
       facturas: facturasMapped,
       totales: {
         cantidad: facturas.length,
-        montoNeto: facturas.reduce((s, f) => s + BigInt(f.gfactotneto), 0n).toString(),
-        montoIva: facturas.reduce((s, f) => s + BigInt(f.gfactotiva), 0n).toString(),
-        montoTotal: facturas.reduce((s, f) => s + BigInt(f.gfactotdoc), 0n).toString(),
+        montoNeto: facturas
+          .reduce((s, f) => s + BigInt(f.gfactotneto), 0n)
+          .toString(),
+        montoIva: facturas
+          .reduce((s, f) => s + BigInt(f.gfactotiva), 0n)
+          .toString(),
+        montoTotal: facturas
+          .reduce((s, f) => s + BigInt(f.gfactotdoc), 0n)
+          .toString(),
       },
     };
   }
 
-  async getGuiasPorFactura(empkey: string, gfackey: string): Promise<FacturaGuia[]> {
-    const factura = await this.facturaRepository.findOne({ where: { empkey, gfackey } });
-    if (!factura) throw new NotFoundException(`Factura no encontrada: gfackey=${gfackey}`);
+  async getGuiasPorFactura(
+    empkey: string,
+    gfackey: string,
+  ): Promise<FacturaGuia[]> {
+    const factura = await this.facturaRepository.findOne({
+      where: { empkey, gfackey },
+    });
+    if (!factura)
+      throw new NotFoundException(`Factura no encontrada: gfackey=${gfackey}`);
     return this.facturacionService.getGuiasByFactura(empkey, gfackey);
   }
 
   // ─── Factura Proforma ───────────────────────────────────────────────────────
 
-  async generar(empkey: string, periodo: string, rutEmisor: string): Promise<ProformaGenerarResult> {
+  async generar(
+    empkey: string,
+    periodo: string,
+    rutEmisor: string,
+  ): Promise<ProformaGenerarResult> {
     const { fechaInicial, fechaFinal } = periodoToRange(periodo);
 
     // Guías disponibles del período: con regla agrupadora asignada y no bloqueadas
     const guias = await this.dataSource.query<
-      { empkey: string; guitipo: number; guifolio: string; gclirut: string;
-        guireglaidl: string; guitotneto: string; guitotiva: string; guitotdoc: string; }[]
+      {
+        empkey: string;
+        guitipo: number;
+        guifolio: string;
+        gclirut: string;
+        guireglaidl: string;
+        guitotneto: string;
+        guitotiva: string;
+        guitotdoc: string;
+      }[]
     >(
       `SELECT g.empkey, g.guitipo, g.guifolio, g.gclirut, g.guireglaidl,
               g.guitotneto, g.guitotiva, g.guitotdoc
@@ -267,7 +303,11 @@ export class FacturasService {
     return { created, skipped };
   }
 
-  async crearManual(empkey: string, body: CrearProformaBody, rutEmisor: string): Promise<ProformaDto> {
+  async crearManual(
+    empkey: string,
+    body: CrearProformaBody,
+    rutEmisor: string,
+  ): Promise<ProformaDto> {
     const { periodo, gclirut, reglaidl } = body;
     const { fechaInicial, fechaFinal } = periodoToRange(periodo);
 
@@ -287,8 +327,16 @@ export class FacturasService {
 
     // Guías disponibles para este cliente + regla + período
     const guias = await this.dataSource.query<
-      { empkey: string; guitipo: number; guifolio: string; gclirut: string;
-        guireglaidl: string; guitotneto: string; guitotiva: string; guitotdoc: string; }[]
+      {
+        empkey: string;
+        guitipo: number;
+        guifolio: string;
+        gclirut: string;
+        guireglaidl: string;
+        guitotneto: string;
+        guitotiva: string;
+        guitotdoc: string;
+      }[]
     >(
       `SELECT g.empkey, g.guitipo, g.guifolio, g.gclirut, g.guireglaidl,
               g.guitotneto, g.guitotiva, g.guitotdoc
@@ -315,21 +363,42 @@ export class FacturasService {
     const chunks = chunkArray(guias, MAX_GUIAS_POR_FACTURA);
     const gfackeys: string[] = [];
     for (const chunk of chunks) {
-      const key = await this.insertProforma(empkey, gclirut, reglaidl, chunk, rutEmisor);
+      const key = await this.insertProforma(
+        empkey,
+        gclirut,
+        reglaidl,
+        chunk,
+        rutEmisor,
+      );
       gfackeys.push(key);
     }
-    const factura = await this.facturaRepository.findOne({ where: { empkey, gfackey: gfackeys[0] } });
+    const factura = await this.facturaRepository.findOne({
+      where: { empkey, gfackey: gfackeys[0] },
+    });
     return this.buildProformaDto(factura!);
   }
 
-  async listarProformas(empkey: string, periodo: string, estado?: string): Promise<ProformaDto[]> {
+  async listarProformas(
+    empkey: string,
+    periodo: string,
+    estado?: string,
+  ): Promise<ProformaDto[]> {
     const { fechaInicial, fechaFinal } = periodoToRange(periodo);
     const estadoFiltro = estado ?? 'BORRADOR';
 
     const rows = await this.dataSource.query<
-      { gfackey: string; gfacfolio: string; gclirut: string; reglaidl: string | null;
-        estado: string; gfacfecha: string; gclinom: string | null;
-        regladescripcion: string | null; cantidad_guias: string; monto_total: string; }[]
+      {
+        gfackey: string;
+        gfacfolio: string;
+        gclirut: string;
+        reglaidl: string | null;
+        estado: string;
+        gfacfecha: string;
+        gclinom: string | null;
+        regladescripcion: string | null;
+        cantidad_guias: string;
+        monto_total: string;
+      }[]
     >(
       `SELECT f.gfackey, f.gfacfolio, f.gclirut, f.reglaidl, f.estado, f.gfacfecha,
               c.gclinom,
@@ -348,7 +417,7 @@ export class FacturasService {
       [empkey, estadoFiltro, fechaInicial, fechaFinal],
     );
 
-    return rows.map(r => ({
+    return rows.map((r) => ({
       id: r.gfackey,
       folio: r.gfacfolio,
       cliente: { rut: r.gclirut, nombre: r.gclinom ?? '' },
@@ -364,7 +433,8 @@ export class FacturasService {
     const factura = await this.facturaRepository.findOne({
       where: { empkey, gfackey, esProforma: true },
     });
-    if (!factura) throw new NotFoundException(`Proforma no encontrada: gfackey=${gfackey}`);
+    if (!factura)
+      throw new NotFoundException(`Proforma no encontrada: gfackey=${gfackey}`);
     assertPuedeAprobar(factura);
 
     factura.estado = 'APROBADA';
@@ -377,18 +447,26 @@ export class FacturasService {
       factura.gfaclinkXml = resultado.LinkXML;
       factura.estado = 'EMITIDA';
       await this.facturaRepository.save(factura);
-      this.logger.log(`DTE emitido: empkey=${empkey} gfackey=${gfackey} folio=${resultado.FolioDocumento}`);
+      this.logger.log(
+        `DTE emitido: empkey=${empkey} gfackey=${gfackey} folio=${resultado.FolioDocumento}`,
+      );
     } catch (err) {
       factura.estado = 'FALLIDA';
       await this.facturaRepository.save(factura);
-      this.logger.warn(`Emisión fallida: empkey=${empkey} gfackey=${gfackey} — ${err instanceof Error ? err.message : String(err)}`);
+      this.logger.warn(
+        `Emisión fallida: empkey=${empkey} gfackey=${gfackey} — ${err instanceof Error ? err.message : String(err)}`,
+      );
       throw err;
     }
 
     return this.buildProformaDto(factura);
   }
 
-  async emitirPendientes(empkey: string): Promise<{ emitidas: number; fallidas: number; detalle: { gfackey: string; error: string }[] }> {
+  async emitirPendientes(empkey: string): Promise<{
+    emitidas: number;
+    fallidas: number;
+    detalle: { gfackey: string; error: string }[];
+  }> {
     const pendientes = await this.facturaRepository.find({
       where: { empkey, esProforma: true, estado: 'FALLIDA' },
     });
@@ -405,10 +483,17 @@ export class FacturasService {
         factura.estado = 'EMITIDA';
         await this.facturaRepository.save(factura);
         emitidas++;
-        this.logger.log(`Re-emisión exitosa: empkey=${empkey} gfackey=${factura.gfackey} folio=${resultado.FolioDocumento}`);
+        this.logger.log(
+          `Re-emisión exitosa: empkey=${empkey} gfackey=${factura.gfackey} folio=${resultado.FolioDocumento}`,
+        );
       } catch (err) {
-        detalle.push({ gfackey: factura.gfackey, error: err instanceof Error ? err.message : String(err) });
-        this.logger.warn(`Re-emisión fallida: empkey=${empkey} gfackey=${factura.gfackey}`);
+        detalle.push({
+          gfackey: factura.gfackey,
+          error: err instanceof Error ? err.message : String(err),
+        });
+        this.logger.warn(
+          `Re-emisión fallida: empkey=${empkey} gfackey=${factura.gfackey}`,
+        );
       }
     }
 
@@ -419,7 +504,8 @@ export class FacturasService {
     const factura = await this.facturaRepository.findOne({
       where: { empkey, gfackey, esProforma: true },
     });
-    if (!factura) throw new NotFoundException(`Proforma no encontrada: gfackey=${gfackey}`);
+    if (!factura)
+      throw new NotFoundException(`Proforma no encontrada: gfackey=${gfackey}`);
     assertPuedeAnular(factura);
 
     await this.dataSource.query(
@@ -431,7 +517,10 @@ export class FacturasService {
     return this.buildProformaDto(factura);
   }
 
-  async limpiar(empkey: string, periodo: string): Promise<ProformaLimpiarResult> {
+  async limpiar(
+    empkey: string,
+    periodo: string,
+  ): Promise<ProformaLimpiarResult> {
     const { fechaInicial, fechaFinal } = periodoToRange(periodo);
 
     const borradores = await this.facturaRepository.find({
@@ -439,7 +528,7 @@ export class FacturasService {
         empkey,
         esProforma: true,
         estado: 'BORRADOR',
-        gfacfecha: Between(fechaInicial, fechaFinal) as any,
+        gfacfecha: Between(fechaInicial, fechaFinal),
       },
     });
 
@@ -461,11 +550,18 @@ export class FacturasService {
   // ─── Helpers de emisión ─────────────────────────────────────────────────────
 
   private async _cargarGuiasParaEmision(empkey: string, gfackey: string) {
-    const guias = await this.dataSource.query<{
-      guitipo: number; guifolio: string; guitotneto: string;
-      guitotiva: string; guitotdoc: string; guitotexento: string;
-      guifechaemision: string; guifilepath: string;
-    }[]>(
+    const guias = await this.dataSource.query<
+      {
+        guitipo: number;
+        guifolio: string;
+        guitotneto: string;
+        guitotiva: string;
+        guitotdoc: string;
+        guitotexento: string;
+        guifechaemision: string;
+        guifilepath: string;
+      }[]
+    >(
       `SELECT g.guitipo, g.guifolio, g.guitotneto, g.guitotiva, g.guitotdoc,
               g.guitotexento, g.guifechaemision::text, g.guifilepath
        FROM gde.guia g
@@ -476,12 +572,17 @@ export class FacturasService {
       [empkey, gfackey],
     );
     if (guias.length === 0) {
-      throw new UnprocessableEntityException(`Proforma ${gfackey} no tiene guías asociadas`);
+      throw new UnprocessableEntityException(
+        `Proforma ${gfackey} no tiene guías asociadas`,
+      );
     }
     return guias;
   }
 
-  private async _resolveModoDetalle(empkey: string, gclirut: string): Promise<ModoDetalle> {
+  private async _resolveModoDetalle(
+    empkey: string,
+    gclirut: string,
+  ): Promise<ModoDetalle> {
     const cliente = await this.clienteRepository.findOne({
       where: { empkey, gclirut: normalizeToXml(toCsvRut(gclirut)) },
     });
@@ -493,28 +594,41 @@ export class FacturasService {
     primerDoc: FetchedDocument,
   ): Promise<DetalleItemParaMensaje[]> {
     const restoDocs = await Promise.all(
-      guias.slice(1).map(g => this.xmlParserService.fetchDocument(g.guifilepath)),
+      guias
+        .slice(1)
+        .map((g) => this.xmlParserService.fetchDocument(g.guifilepath)),
     );
     const docs = [primerDoc, ...restoDocs];
-    return docs.flatMap((d, i) => d.detalle.map(item => ({
-      nmbItem: item.nmbItem,
-      qtyItem: item.qtyItem,
-      prcItem: item.prcItem,
-      codigo: item.codigo,
-      indExe: item.indExe,
-      montoItem: item.montoItem,
-      fecha: guias[i].guifechaemision,
-    })));
+    return docs.flatMap((d, i) =>
+      d.detalle.map((item) => ({
+        nmbItem: item.nmbItem,
+        qtyItem: item.qtyItem,
+        prcItem: item.prcItem,
+        codigo: item.codigo,
+        indExe: item.indExe,
+        montoItem: item.montoItem,
+        fecha: guias[i].guifechaemision,
+      })),
+    );
   }
 
   private async _emitir(factura: Factura): Promise<ResultadoDTE> {
-    const guias = await this._cargarGuiasParaEmision(factura.empkey, factura.gfackey);
-    const primerDoc = await this.xmlParserService.fetchDocument(guias[0].guifilepath);
+    const guias = await this._cargarGuiasParaEmision(
+      factura.empkey,
+      factura.gfackey,
+    );
+    const primerDoc = await this.xmlParserService.fetchDocument(
+      guias[0].guifilepath,
+    );
     const { receptor } = primerDoc;
-    const modoDetalle = await this._resolveModoDetalle(factura.empkey, factura.gclirut);
-    const detalleItems = modoDetalle === 'POR_PRODUCTO'
-      ? await this._construirDetalleItems(guias, primerDoc)
-      : [];
+    const modoDetalle = await this._resolveModoDetalle(
+      factura.empkey,
+      factura.gclirut,
+    );
+    const detalleItems =
+      modoDetalle === 'POR_PRODUCTO'
+        ? await this._construirDetalleItems(guias, primerDoc)
+        : [];
     // Enternet exige que la fecha de emisión sea la de hoy — no la de creación de la proforma
     // (que puede ser de días/meses atrás si quedó pendiente de aprobación).
     factura.gfacfecha = todayInChile();
@@ -529,7 +643,7 @@ export class FacturasService {
       comuna: receptor.cmnaRecep,
       ciudad: receptor.ciudadRecep,
       giro: receptor.giroRecep,
-      guias: guias.map(g => ({
+      guias: guias.map((g) => ({
         folio: g.guifolio,
         fechaEmision: g.guifechaemision,
         totneto: g.guitotneto,
@@ -540,7 +654,9 @@ export class FacturasService {
       modoDetalle,
       detalleItems,
     });
-    const rutUsuario = this.configService.get<string>('FACTURACION_RUT_USUARIO') ?? factura.rutEmisor;
+    const rutUsuario =
+      this.configService.get<string>('FACTURACION_RUT_USUARIO') ??
+      factura.rutEmisor;
     return this.backofficeAdapterService.emitirDte({
       RutEmisor: normalizeToXml(toCsvRut(factura.rutEmisor)),
       RutUsuario: rutUsuario,
@@ -551,19 +667,26 @@ export class FacturasService {
 
   // ─── Preview Mensaje V5 ─────────────────────────────────────────────────────
 
-  async previewMensaje(empkey: string, gfackey: string): Promise<MensajeResult> {
+  async previewMensaje(
+    empkey: string,
+    gfackey: string,
+  ): Promise<MensajeResult> {
     const factura = await this.facturaRepository.findOne({
       where: { empkey, gfackey, esProforma: true },
     });
-    if (!factura) throw new NotFoundException(`Proforma no encontrada: gfackey=${gfackey}`);
+    if (!factura)
+      throw new NotFoundException(`Proforma no encontrada: gfackey=${gfackey}`);
 
     const guias = await this._cargarGuiasParaEmision(empkey, gfackey);
-    const primerDoc = await this.xmlParserService.fetchDocument(guias[0].guifilepath);
+    const primerDoc = await this.xmlParserService.fetchDocument(
+      guias[0].guifilepath,
+    );
     const { receptor } = primerDoc;
     const modoDetalle = await this._resolveModoDetalle(empkey, factura.gclirut);
-    const detalleItems = modoDetalle === 'POR_PRODUCTO'
-      ? await this._construirDetalleItems(guias, primerDoc)
-      : [];
+    const detalleItems =
+      modoDetalle === 'POR_PRODUCTO'
+        ? await this._construirDetalleItems(guias, primerDoc)
+        : [];
 
     return buildMensaje({
       transaccionIdL: `${empkey}-${gfackey}`,
@@ -576,7 +699,7 @@ export class FacturasService {
       comuna: receptor.cmnaRecep,
       ciudad: receptor.ciudadRecep,
       giro: receptor.giroRecep,
-      guias: guias.map(g => ({
+      guias: guias.map((g) => ({
         folio: g.guifolio,
         fechaEmision: g.guifechaemision,
         totneto: g.guitotneto,
@@ -595,10 +718,16 @@ export class FacturasService {
     empkey: string,
     gclirut: string,
     reglaidl: string,
-    guias: { guitipo: number; guifolio: string; guitotneto: string; guitotiva: string; guitotdoc: string }[],
+    guias: {
+      guitipo: number;
+      guifolio: string;
+      guitotneto: string;
+      guitotiva: string;
+      guitotdoc: string;
+    }[],
     rutEmisor: string,
   ): Promise<string> {
-    return this.dataSource.transaction(async manager => {
+    return this.dataSource.transaction(async (manager) => {
       // gfacfolio: siguiente secuencial por tenant
       const [folioRow] = await manager.query<{ max: string }[]>(
         `SELECT COALESCE(MAX(gfacfolio::bigint), 0)::text AS max FROM gde.factura WHERE empkey = $1`,
@@ -607,9 +736,15 @@ export class FacturasService {
       const folio = (parseInt(folioRow.max) + 1).toString();
 
       // Totales desde guías
-      const totNeto = guias.reduce((s, g) => s + BigInt(g.guitotneto), 0n).toString();
-      const totIva = guias.reduce((s, g) => s + BigInt(g.guitotiva), 0n).toString();
-      const totDoc = guias.reduce((s, g) => s + BigInt(g.guitotdoc), 0n).toString();
+      const totNeto = guias
+        .reduce((s, g) => s + BigInt(g.guitotneto), 0n)
+        .toString();
+      const totIva = guias
+        .reduce((s, g) => s + BigInt(g.guitotiva), 0n)
+        .toString();
+      const totDoc = guias
+        .reduce((s, g) => s + BigInt(g.guitotdoc), 0n)
+        .toString();
       const today = todayInChile();
 
       const [facturaRow] = await manager.query<{ gfackey: string }[]>(
@@ -619,7 +754,17 @@ export class FacturasService {
             gfactotdoc, gfacfilepath, gfacloteidl, gclirut, estado, es_proforma, reglaidl, rut_emisor)
          VALUES ($1,'33',$2,'','',$3,$4,'0',$5,'0',$6,'','',$7,'BORRADOR',true,$8,$9)
          RETURNING gfackey`,
-        [empkey, folio, today, totNeto, totIva, totDoc, normalizeToXml(toCsvRut(gclirut)), reglaidl, rutEmisor],
+        [
+          empkey,
+          folio,
+          today,
+          totNeto,
+          totIva,
+          totDoc,
+          normalizeToXml(toCsvRut(gclirut)),
+          reglaidl,
+          rutEmisor,
+        ],
       );
       const gfackey = facturaRow.gfackey.toString();
 
@@ -647,18 +792,26 @@ export class FacturasService {
     );
 
     const cliente = await this.clienteRepository.findOne({
-      where: { empkey: factura.empkey, gclirut: normalizeToXml(toCsvRut(factura.gclirut)) },
+      where: {
+        empkey: factura.empkey,
+        gclirut: normalizeToXml(toCsvRut(factura.gclirut)),
+      },
     });
 
     const regla = factura.reglaidl
-      ? await this.reglaRepository.findOne({ where: { reglaidl: factura.reglaidl } })
+      ? await this.reglaRepository.findOne({
+          where: { reglaidl: factura.reglaidl },
+        })
       : null;
 
     return {
       id: factura.gfackey,
       folio: factura.gfacfolio,
       cliente: { rut: factura.gclirut, nombre: cliente?.gclinom ?? '' },
-      regla: { id: factura.reglaidl ?? '', descripcion: regla?.regladescripcion ?? '' },
+      regla: {
+        id: factura.reglaidl ?? '',
+        descripcion: regla?.regladescripcion ?? '',
+      },
       cantidadGuias: parseInt(row.cantidad_guias),
       montoTotal: row.monto_total,
       estado: factura.estado,

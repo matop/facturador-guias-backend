@@ -97,7 +97,8 @@ describe('XmlParserService', () => {
     });
 
     it('lanza error descriptivo cuando falta un tag requerido', () => {
-      const xmlSinEmisor = '<DTE><Documento><Encabezado></Encabezado></Documento></DTE>';
+      const xmlSinEmisor =
+        '<DTE><Documento><Encabezado></Encabezado></Documento></DTE>';
 
       expect(() => service.parseDocument(xmlSinEmisor)).toThrow('RUTEmisor');
     });

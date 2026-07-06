@@ -113,15 +113,18 @@ Modelo de 3 niveles (aplica a `<Referencia>`, independiente del Modo de Detalle)
 ### OC (Orden de Compra)
 Referencia tipo 801 en el SII DTE. Viene embebida en la sección `<Referencia>` del XML de cada Guía.
 Se extrae en runtime al parsear el XML de las guías incluidas en la Proforma.
-Se deduplica por folio antes de incluirla en el DTE factura.
+Se deduplica por clave **`(tipo, folio)`**, no por folio solo — una OC y una HES pueden coincidir en número de folio al ser numeraciones de terceros independientes entre sí; deduplicar solo por folio las trataría como el mismo documento por error.
 En el pipe-format de salida hacia Enternet: `5:|801|{folio}|{fecha}|Orden de Compra` — código oficial (no texto), con `RAZON REFERENCIA` ("Orden de Compra") como 4ta columna.
+Confirmado también en el formato XML alternativo de la spec V5 (sección de ejemplo de salida): `<REFERENCIA><TIPO_DE_REFERENCIA>801</TIPO_DE_REFERENCIA><FOLIO>...</FOLIO><FECHA_DEL_DOCUMENTO>...</FECHA_DEL_DOCUMENTO></REFERENCIA>` — ese ejemplo es del lado de **salida hacia Enternet**, no dice nada sobre el formato de entrada (XML de guía SII que este sistema parsea).
+Fase 1 de implementación (sesión 2026-07-03, ver `docs/PRD-referencias-oc-hes.md`): se asume **1:1** (una sola OC por guía). Si una guía trae más de una, se toma la primera ocurrencia y se sigue (mismo criterio que ya existe para `CODIGO` inconsistente en modo Por Producto) — no bloquea la emisión. La multiplicidad N (varias OC por guía) se diseña recién después de validar 1:1 contra una emisión real en QA.
 
 ### HES (Hoja de Entrada de Servicios)
 Referencia que viene embebida en la sección `<Referencia>` del XML de cada Guía.
-Se extrae en runtime, se deduplica por folio antes de incluirla en el DTE factura.
-Código oficial Enternet V5 confirmado: `HES` (código libre 3 caracteres, listado en la spec de TIPO DE REFERENCIA junto a los códigos SII estándar).
+Se extrae en runtime, se deduplica por clave `(tipo, folio)` — mismo criterio y misma razón que OC (ver arriba).
+Código oficial Enternet V5 confirmado: `HES` (código libre 3 caracteres, listado en la spec de TIPO DE REFERENCIA junto a los códigos SII estándar) — confirmado tanto en pipe-format como en el formato XML alternativo de la spec (ver ejemplo en sección OC).
 En el pipe-format de salida: `5:|HES|{folio}|{fecha}|Hoja de Entrada de Servicios`.
-⚠️ OPEN: aunque el código `HES` está confirmado en la spec de salida de Enternet, falta confirmar que el XML de la guía (DTE 52, de *entrada*) usa el mismo valor en su propio `<TpoDocRef>` — pendiente de XML real con `<Referencia>`. Un XML de ejemplo revisado (2026-06-30, guía sin OC/HES) no tenía sección `<Referencia>` — sigue sin confirmar. Decisión: avanzar con la hipótesis sin bloquear el resto del diseño; se confirma en implementación/QA cuando aparezca un caso real con HES.
+⚠️ OPEN (acotado): lo confirmado es el código de **salida** hacia Enternet. Sigue sin confirmarse que el XML de guía SII (DTE 52, *entrada*) real use el mismo código `HES` en su propio `<TpoDocRef>` — no hay XML real de un cliente con este caso todavía. No bloquea: se avanza con datos sintéticos (ver PRD) y se busca en paralelo un XML real de confirmación (mismo patrón usado para confirmar `CODIGO` con XML de San Damaso).
+Fase 1 de implementación: mismo criterio 1:1 + "toma la primera" que OC (ver arriba).
 
 ### Pipe-format de Referencia (Mensaje V5)
 Cada referencia en el mensaje Enternet V5 tiene 4 campos: `TIPO DE REFERENCIA` (código — oficial SII como `52`/`801` o código libre 3 caracteres como `HES`, NO texto descriptivo), `FOLIO` (C18), `FECHA` (dd/mm/aaaa), `RAZON REFERENCIA` (C90, texto libre opcional).

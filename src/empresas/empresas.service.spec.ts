@@ -45,12 +45,20 @@ const makeGuia = (
 describe('EmpresasService', () => {
   let service: EmpresasService;
   let mockGuiaRepo: { find: jest.Mock; update: jest.Mock };
-  let mockClienteRepo: { find: jest.Mock; update: jest.Mock; findOne: jest.Mock };
+  let mockClienteRepo: {
+    find: jest.Mock;
+    update: jest.Mock;
+    findOne: jest.Mock;
+  };
 
   beforeEach(async () => {
     jest.clearAllMocks();
     mockGuiaRepo = { find: jest.fn(), update: jest.fn() };
-    mockClienteRepo = { find: jest.fn(), update: jest.fn(), findOne: jest.fn() };
+    mockClienteRepo = {
+      find: jest.fn(),
+      update: jest.fn(),
+      findOne: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -71,12 +79,18 @@ describe('EmpresasService', () => {
 
   describe('sync', () => {
     it('delega en GuiasService con RUT y rango derivado del período', async () => {
-      mockGuiasService.syncFromReporte.mockResolvedValueOnce({ synced: 5, clientesCreated: 0 });
+      mockGuiasService.syncFromReporte.mockResolvedValueOnce({
+        synced: 5,
+        clientesCreated: 0,
+      });
 
       const result = await service.sync('1', '11111111-1', '2026-05');
 
       expect(mockGuiasService.syncFromReporte).toHaveBeenCalledWith(
-        '1', '11111111-1', '2026-05-01', '2026-05-31',
+        '1',
+        '11111111-1',
+        '2026-05-01',
+        '2026-05-31',
       );
       expect(result).toEqual({ synced: 5, clientesCreated: 0 });
     });
@@ -105,19 +119,25 @@ describe('EmpresasService', () => {
 
       expect(result).toHaveLength(2);
       expect(result[0]).toEqual({
-        rut: '22222222-2', nombre: 'Cliente A',
-        cantidadGuias: 2, montoTotal: '3570',
+        rut: '22222222-2',
+        nombre: 'Cliente A',
+        cantidadGuias: 2,
+        montoTotal: '3570',
         reglaIdl: 'por_comuna',
       });
       expect(result[1]).toEqual({
-        rut: '33333333-3', nombre: 'Cliente B',
-        cantidadGuias: 1, montoTotal: '595',
+        rut: '33333333-3',
+        nombre: 'Cliente B',
+        cantidadGuias: 1,
+        montoTotal: '595',
         reglaIdl: null,
       });
     });
 
     it('usa nombre vacío y reglaIdl null cuando el cliente no existe en BD', async () => {
-      mockGuiaRepo.find.mockResolvedValueOnce([makeGuia('100', '22222222-2', '2026-05-10', '1190')]);
+      mockGuiaRepo.find.mockResolvedValueOnce([
+        makeGuia('100', '22222222-2', '2026-05-10', '1190'),
+      ]);
       mockClienteRepo.find.mockResolvedValueOnce([]);
 
       const result = await service.getClientesConGuias('1', '2026-05');
@@ -130,7 +150,9 @@ describe('EmpresasService', () => {
         makeGuia('100', '22222222-2', '2026-05-10', '9999999999999'),
         makeGuia('101', '22222222-2', '2026-05-11', '1'),
       ]);
-      mockClienteRepo.find.mockResolvedValueOnce([{ gclirut: '22222222-2', gclinom: 'X', reglaidl: null }]);
+      mockClienteRepo.find.mockResolvedValueOnce([
+        { gclirut: '22222222-2', gclinom: 'X', reglaidl: null },
+      ]);
 
       const result = await service.getClientesConGuias('1', '2026-05');
       expect(result[0].montoTotal).toBe('10000000000000');
@@ -147,15 +169,34 @@ describe('EmpresasService', () => {
 
     it('agrupa por valorAgrupador con folios y montos', async () => {
       mockGuiaRepo.find.mockResolvedValueOnce([
-        makeGuia('100', '22222222-2', '2026-05-10', '1190', 'por_comuna', 'SANTIAGO'),
-        makeGuia('101', '22222222-2', '2026-05-15', '2380', 'por_comuna', 'SANTIAGO'),
+        makeGuia(
+          '100',
+          '22222222-2',
+          '2026-05-10',
+          '1190',
+          'por_comuna',
+          'SANTIAGO',
+        ),
+        makeGuia(
+          '101',
+          '22222222-2',
+          '2026-05-15',
+          '2380',
+          'por_comuna',
+          'SANTIAGO',
+        ),
       ]);
-      mockClienteRepo.find.mockResolvedValueOnce([{ gclirut: '22222222-2', gclinom: 'Cliente A', reglaidl: 'por_comuna' }]);
+      mockClienteRepo.find.mockResolvedValueOnce([
+        { gclirut: '22222222-2', gclinom: 'Cliente A', reglaidl: 'por_comuna' },
+      ]);
 
       const result = await service.getGuiasAgrupadas('1', '2026-05');
 
       expect(result).toHaveLength(1);
-      expect(result[0].cliente).toEqual({ rut: '22222222-2', nombre: 'Cliente A' });
+      expect(result[0].cliente).toEqual({
+        rut: '22222222-2',
+        nombre: 'Cliente A',
+      });
       expect(result[0].grupos).toHaveLength(1);
       expect(result[0].grupos[0]).toEqual({
         valorAgrupador: 'SANTIAGO',
@@ -172,15 +213,24 @@ describe('EmpresasService', () => {
     it('guías sin valorAgrupador van al grupo _sin_regla con reglaIdl null', async () => {
       mockGuiaRepo.find.mockResolvedValueOnce([
         makeGuia('100', '22222222-2', '2026-05-10', '1190', null, null),
-        makeGuia('101', '22222222-2', '2026-05-15', '2380', 'por_comuna', 'SANTIAGO'),
+        makeGuia(
+          '101',
+          '22222222-2',
+          '2026-05-15',
+          '2380',
+          'por_comuna',
+          'SANTIAGO',
+        ),
       ]);
-      mockClienteRepo.find.mockResolvedValueOnce([{ gclirut: '22222222-2', gclinom: 'Cliente A', reglaidl: null }]);
+      mockClienteRepo.find.mockResolvedValueOnce([
+        { gclirut: '22222222-2', gclinom: 'Cliente A', reglaidl: null },
+      ]);
 
       const result = await service.getGuiasAgrupadas('1', '2026-05');
       const grupos = result[0].grupos;
 
       expect(grupos).toHaveLength(2);
-      const sinRegla = grupos.find(g => g.valorAgrupador === '_sin_regla');
+      const sinRegla = grupos.find((g) => g.valorAgrupador === '_sin_regla');
       expect(sinRegla).toBeDefined();
       expect(sinRegla!.reglaIdl).toBeNull();
       expect(sinRegla!.folios).toEqual([{ folio: '100', fecha: '2026-05-10' }]);
@@ -191,7 +241,9 @@ describe('EmpresasService', () => {
         makeGuia('200', '22222222-2', '2026-05-01', '500'),
         makeGuia('201', '22222222-2', '2026-05-02', '600'),
       ]);
-      mockClienteRepo.find.mockResolvedValueOnce([{ gclirut: '22222222-2', gclinom: 'X', reglaidl: null }]);
+      mockClienteRepo.find.mockResolvedValueOnce([
+        { gclirut: '22222222-2', gclinom: 'X', reglaidl: null },
+      ]);
 
       const result = await service.getGuiasAgrupadas('1', '2026-05');
 
@@ -201,19 +253,32 @@ describe('EmpresasService', () => {
     });
 
     it('filtra por rut cuando se proporciona', async () => {
-      mockGuiaRepo.find.mockResolvedValueOnce([makeGuia('100', '22222222-2', '2026-05-10', '1190')]);
-      mockClienteRepo.find.mockResolvedValueOnce([{ gclirut: '22222222-2', gclinom: 'Cliente A', reglaidl: null }]);
+      mockGuiaRepo.find.mockResolvedValueOnce([
+        makeGuia('100', '22222222-2', '2026-05-10', '1190'),
+      ]);
+      mockClienteRepo.find.mockResolvedValueOnce([
+        { gclirut: '22222222-2', gclinom: 'Cliente A', reglaidl: null },
+      ]);
 
       await service.getGuiasAgrupadas('1', '2026-05', '22222222-2');
 
       expect(mockGuiaRepo.find).toHaveBeenCalledWith(
-        expect.objectContaining({ where: expect.objectContaining({ gclirut: '22222222-2' }) }),
+        expect.objectContaining({
+          where: expect.objectContaining({ gclirut: '22222222-2' }) as unknown,
+        }),
       );
     });
 
     it('sin rut devuelve todos los clientes con sus grupos', async () => {
       mockGuiaRepo.find.mockResolvedValueOnce([
-        makeGuia('100', '22222222-2', '2026-05-10', '1190', 'por_comuna', 'SANTIAGO'),
+        makeGuia(
+          '100',
+          '22222222-2',
+          '2026-05-10',
+          '1190',
+          'por_comuna',
+          'SANTIAGO',
+        ),
         makeGuia('200', '33333333-3', '2026-05-10', '595'),
       ]);
       mockClienteRepo.find.mockResolvedValueOnce([
@@ -224,7 +289,10 @@ describe('EmpresasService', () => {
       const result = await service.getGuiasAgrupadas('1', '2026-05');
 
       expect(result).toHaveLength(2);
-      expect(result.map(r => r.cliente.rut)).toEqual(['22222222-2', '33333333-3']);
+      expect(result.map((r) => r.cliente.rut)).toEqual([
+        '22222222-2',
+        '33333333-3',
+      ]);
     });
   });
 
@@ -275,7 +343,16 @@ describe('EmpresasService', () => {
       mockGuiaRepo.find.mockResolvedValueOnce([guia]);
       const rawXml = '<DTE><CmnaRecep>SANTIAGO</CmnaRecep></DTE>';
       mockXmlParserService.fetchDocument.mockResolvedValueOnce({
-        receptor: { rutReceptor: '77004250-K', cmnaRecep: 'SANTIAGO', razonSocial: 'Empresa', dirRecep: '', cdgIntRecep: '', ciudadRecep: '', giroRecep: '', contacto: '' },
+        receptor: {
+          rutReceptor: '77004250-K',
+          cmnaRecep: 'SANTIAGO',
+          razonSocial: 'Empresa',
+          dirRecep: '',
+          cdgIntRecep: '',
+          ciudadRecep: '',
+          giroRecep: '',
+          contacto: '',
+        },
         detalle: [],
         rawXml,
       });
@@ -285,10 +362,18 @@ describe('EmpresasService', () => {
       });
       mockGuiaRepo.update.mockResolvedValue(undefined);
 
-      await service.assignRegla('977', '77004250K', 'por_comuna', { recomputar: true, periodo: '2026-05' });
+      await service.assignRegla('977', '77004250K', 'por_comuna', {
+        recomputar: true,
+        periodo: '2026-05',
+      });
 
       expect(mockGuiaRepo.find).toHaveBeenCalledWith(
-        expect.objectContaining({ where: expect.objectContaining({ empkey: '977', gclirut: '77004250-K' }) }),
+        expect.objectContaining({
+          where: expect.objectContaining({
+            empkey: '977',
+            gclirut: '77004250-K',
+          }) as unknown,
+        }),
       );
     });
 
@@ -302,7 +387,16 @@ describe('EmpresasService', () => {
       mockGuiaRepo.find.mockResolvedValueOnce([guia]);
       const rawXml = '<DTE><CmnaRecep>SANTIAGO</CmnaRecep></DTE>';
       mockXmlParserService.fetchDocument.mockResolvedValueOnce({
-        receptor: { rutReceptor: '77004250-K', cmnaRecep: 'SANTIAGO', razonSocial: 'Empresa', dirRecep: '', cdgIntRecep: '', ciudadRecep: '', giroRecep: '', contacto: '' },
+        receptor: {
+          rutReceptor: '77004250-K',
+          cmnaRecep: 'SANTIAGO',
+          razonSocial: 'Empresa',
+          dirRecep: '',
+          cdgIntRecep: '',
+          ciudadRecep: '',
+          giroRecep: '',
+          contacto: '',
+        },
         detalle: [],
         rawXml,
       });
@@ -312,13 +406,27 @@ describe('EmpresasService', () => {
       });
       mockGuiaRepo.update.mockResolvedValue(undefined);
 
-      await service.assignRegla('977', '77004250K', 'por_comuna', { recomputar: true, periodo: '2026-05' });
+      await service.assignRegla('977', '77004250K', 'por_comuna', {
+        recomputar: true,
+        periodo: '2026-05',
+      });
 
       expect(mockGuiaRepo.find).toHaveBeenCalledWith(
-        expect.objectContaining({ where: expect.objectContaining({ empkey: '977', gclirut: '77004250-K' }) }),
+        expect.objectContaining({
+          where: expect.objectContaining({
+            empkey: '977',
+            gclirut: '77004250-K',
+          }) as unknown,
+        }),
       );
-      expect(mockXmlParserService.fetchDocument).toHaveBeenCalledWith('/ruta/guia100.xml');
-      expect(mockGroupingService.computeAgrupador).toHaveBeenCalledWith('977', '77004250-K', rawXml);
+      expect(mockXmlParserService.fetchDocument).toHaveBeenCalledWith(
+        '/ruta/guia100.xml',
+      );
+      expect(mockGroupingService.computeAgrupador).toHaveBeenCalledWith(
+        '977',
+        '77004250-K',
+        rawXml,
+      );
       expect(mockGuiaRepo.update).toHaveBeenCalledWith(
         { empkey: '1', guitipo: 52, guifolio: '100' },
         { guireglaidl: 'por_comuna', guivaloragrupador: 'SANTIAGO' },
@@ -330,7 +438,9 @@ describe('EmpresasService', () => {
       mockClienteRepo.update.mockResolvedValue(undefined);
 
       await expect(
-        service.assignRegla('977', '77004250K', 'por_comuna', { recomputar: true }),
+        service.assignRegla('977', '77004250K', 'por_comuna', {
+          recomputar: true,
+        }),
       ).rejects.toThrow('periodo es obligatorio');
     });
 
@@ -340,7 +450,9 @@ describe('EmpresasService', () => {
       mockClienteRepo.findOne.mockResolvedValueOnce({ reglaidl: 'por_ciudad' });
       mockClienteRepo.update.mockResolvedValue(undefined);
 
-      await service.assignRegla('977', '77004250K', 'por_comuna', { recomputar: false });
+      await service.assignRegla('977', '77004250K', 'por_comuna', {
+        recomputar: false,
+      });
 
       expect(mockGuiaRepo.find).not.toHaveBeenCalled();
       expect(mockXmlParserService.fetchDocument).not.toHaveBeenCalled();
@@ -361,10 +473,15 @@ describe('EmpresasService', () => {
       const guia = makeGuia('200', '77004250K', '2026-05-10', '1190');
       guia.guifilepath = '/ruta/inexistente.xml';
       mockGuiaRepo.find.mockResolvedValueOnce([guia]);
-      mockXmlParserService.fetchDocument.mockRejectedValueOnce(new Error('ENOENT'));
+      mockXmlParserService.fetchDocument.mockRejectedValueOnce(
+        new Error('ENOENT'),
+      );
       mockGuiaRepo.update.mockResolvedValue(undefined);
 
-      await service.assignRegla('977', '77004250K', 'por_comuna', { recomputar: true, periodo: '2026-05' });
+      await service.assignRegla('977', '77004250K', 'por_comuna', {
+        recomputar: true,
+        periodo: '2026-05',
+      });
 
       expect(mockGuiaRepo.update).toHaveBeenCalledWith(
         { empkey: '1', guitipo: 52, guifolio: '200' },

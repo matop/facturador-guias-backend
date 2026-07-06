@@ -1,4 +1,10 @@
-import { IsString, IsNotEmpty, IsIn, IsArray, ArrayNotEmpty } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsIn,
+  IsArray,
+  ArrayNotEmpty,
+} from 'class-validator';
 
 export class CreateReglaDto {
   @IsString()

@@ -1,9 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import {
-  parseDocument,
-  parseDetalle,
-  parseKv,
-} from './xml-parser.utils.js';
+import { parseDocument, parseDetalle, parseKv } from './xml-parser.utils.js';
 
 // Re-export types so existing importers don't break
 export type {

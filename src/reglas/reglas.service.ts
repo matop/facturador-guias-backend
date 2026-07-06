@@ -1,4 +1,8 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Regla } from './entities/regla.entity.js';
@@ -27,8 +31,13 @@ export class ReglasService {
   }
 
   async create(dto: CreateReglaDto): Promise<Regla> {
-    const existe = await this.reglaRepository.findOne({ where: { reglaidl: dto.reglaidl } });
-    if (existe) throw new ConflictException(`Ya existe una regla con id '${dto.reglaidl}'`);
+    const existe = await this.reglaRepository.findOne({
+      where: { reglaidl: dto.reglaidl },
+    });
+    if (existe)
+      throw new ConflictException(
+        `Ya existe una regla con id '${dto.reglaidl}'`,
+      );
     const regla = this.reglaRepository.create({
       reglaidl: dto.reglaidl,
       regladescripcion: dto.regladescripcion,
@@ -38,28 +47,39 @@ export class ReglasService {
   }
 
   async update(id: string, dto: Partial<CreateReglaDto>): Promise<Regla> {
-    const regla = await this.reglaRepository.findOne({ where: { reglaidl: id } });
+    const regla = await this.reglaRepository.findOne({
+      where: { reglaidl: id },
+    });
     if (!regla) throw new NotFoundException(`Regla '${id}' no encontrada`);
     if (dto.regladescripcion) regla.regladescripcion = dto.regladescripcion;
-    if (dto.fn && dto.reglaTags) regla.reglaconfig = { fn: dto.fn, reglaTags: dto.reglaTags };
-    else if (dto.reglaTags) (regla.reglaconfig as any).reglaTags = dto.reglaTags;
+    if (dto.fn && dto.reglaTags)
+      regla.reglaconfig = { fn: dto.fn, reglaTags: dto.reglaTags };
+    else if (dto.reglaTags) regla.reglaconfig.reglaTags = dto.reglaTags;
     return this.reglaRepository.save(regla);
   }
 
   async remove(id: string): Promise<void> {
-    const regla = await this.reglaRepository.findOne({ where: { reglaidl: id } });
+    const regla = await this.reglaRepository.findOne({
+      where: { reglaidl: id },
+    });
     if (!regla) throw new NotFoundException(`Regla '${id}' no encontrada`);
     await this.reglaRepository.remove(regla);
   }
 
-  async findReglasDisponibles(empkey: string): Promise<{ reglaIdl: string; reglaDesc: string }[]> {
-    const asignaciones = await this.reglaEmpresaRepository.find({ where: { empkey } });
+  async findReglasDisponibles(
+    empkey: string,
+  ): Promise<{ reglaIdl: string; reglaDesc: string }[]> {
+    const asignaciones = await this.reglaEmpresaRepository.find({
+      where: { empkey },
+    });
     if (asignaciones.length === 0) return [];
-    const ids = asignaciones.map(a => a.reglaidl);
-    const reglas = await this.reglaRepository.find({ where: ids.map(reglaidl => ({ reglaidl })) });
-    const map = new Map(reglas.map(r => [r.reglaidl, r.regladescripcion]));
+    const ids = asignaciones.map((a) => a.reglaidl);
+    const reglas = await this.reglaRepository.find({
+      where: ids.map((reglaidl) => ({ reglaidl })),
+    });
+    const map = new Map(reglas.map((r) => [r.reglaidl, r.regladescripcion]));
     return ids
-      .filter(id => map.has(id))
-      .map(id => ({ reglaIdl: id, reglaDesc: map.get(id)! }));
+      .filter((id) => map.has(id))
+      .map((id) => ({ reglaIdl: id, reglaDesc: map.get(id)! }));
   }
 }

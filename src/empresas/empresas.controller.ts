@@ -1,5 +1,20 @@
-import { Controller, Get, Post, Put, Param, Query, Body, BadRequestException } from '@nestjs/common';
-import { IsString, IsNotEmpty, IsBoolean, IsOptional, IsIn } from 'class-validator';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Param,
+  Query,
+  Body,
+  BadRequestException,
+} from '@nestjs/common';
+import {
+  IsString,
+  IsNotEmpty,
+  IsBoolean,
+  IsOptional,
+  IsIn,
+} from 'class-validator';
 import { EmpresasService } from './empresas.service.js';
 
 class AssignReglaBody {
@@ -31,7 +46,8 @@ export class EmpresasController {
     @Query('periodo') periodo: string,
     @Query('rut') rut: string,
   ) {
-    if (!periodo) throw new BadRequestException('periodo es obligatorio (YYYY-MM)');
+    if (!periodo)
+      throw new BadRequestException('periodo es obligatorio (YYYY-MM)');
     if (!rut) throw new BadRequestException('rut es obligatorio');
     return this.empresasService.sync(empkey, rut, periodo);
   }
@@ -46,7 +62,8 @@ export class EmpresasController {
     @Param('empkey') empkey: string,
     @Query('periodo') periodo: string,
   ) {
-    if (!periodo) throw new BadRequestException('periodo es obligatorio (YYYY-MM)');
+    if (!periodo)
+      throw new BadRequestException('periodo es obligatorio (YYYY-MM)');
     return this.empresasService.getClientesConGuias(empkey, periodo);
   }
 
@@ -56,7 +73,8 @@ export class EmpresasController {
     @Query('periodo') periodo: string,
     @Query('rut') rut?: string,
   ) {
-    if (!periodo) throw new BadRequestException('periodo es obligatorio (YYYY-MM)');
+    if (!periodo)
+      throw new BadRequestException('periodo es obligatorio (YYYY-MM)');
     return this.empresasService.getGuiasAgrupadas(empkey, periodo, rut);
   }
 
@@ -65,7 +83,8 @@ export class EmpresasController {
     @Param('empkey') empkey: string,
     @Query('periodo') periodo: string,
   ) {
-    if (!periodo) throw new BadRequestException('periodo es obligatorio (YYYY-MM)');
+    if (!periodo)
+      throw new BadRequestException('periodo es obligatorio (YYYY-MM)');
     return this.empresasService.recomputarTodasLasGuias(empkey, periodo);
   }
 
@@ -75,12 +94,18 @@ export class EmpresasController {
     @Param('rut') rut: string,
     @Body() body: AssignReglaBody,
   ) {
-    if (!body?.reglaIdl) throw new BadRequestException('reglaIdl es obligatorio');
+    if (!body?.reglaIdl)
+      throw new BadRequestException('reglaIdl es obligatorio');
     const opciones =
       body.recomputar !== undefined
         ? { recomputar: body.recomputar, periodo: body.periodo }
         : undefined;
-    await this.empresasService.assignRegla(empkey, rut, body.reglaIdl, opciones);
+    await this.empresasService.assignRegla(
+      empkey,
+      rut,
+      body.reglaIdl,
+      opciones,
+    );
   }
 
   @Put(':empkey/clientes/:rut/modo-detalle')
@@ -89,7 +114,8 @@ export class EmpresasController {
     @Param('rut') rut: string,
     @Body() body: AssignModoDetalleBody,
   ) {
-    if (!body?.modoDetalle) throw new BadRequestException('modoDetalle es obligatorio');
+    if (!body?.modoDetalle)
+      throw new BadRequestException('modoDetalle es obligatorio');
     await this.empresasService.assignModoDetalle(empkey, rut, body.modoDetalle);
   }
 }

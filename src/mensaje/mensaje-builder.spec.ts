@@ -13,7 +13,10 @@ import {
 
 // ─── Factories ─────────────────────────────────────────────────────────────────
 
-const makeGuia = (folio: string, overrides: Partial<GuiaParaMensaje> = {}): GuiaParaMensaje => ({
+const makeGuia = (
+  folio: string,
+  overrides: Partial<GuiaParaMensaje> = {},
+): GuiaParaMensaje => ({
   folio,
   fechaEmision: '2026-05-10',
   totneto: '1000',
@@ -26,7 +29,10 @@ const makeGuia = (folio: string, overrides: Partial<GuiaParaMensaje> = {}): Guia
 const makeGuias = (n: number): GuiaParaMensaje[] =>
   Array.from({ length: n }, (_, i) => makeGuia(String(64000 + i)));
 
-const baseInput = (guias: GuiaParaMensaje[], overrides: Partial<MensajeInput> = {}): MensajeInput => ({
+const baseInput = (
+  guias: GuiaParaMensaje[],
+  overrides: Partial<MensajeInput> = {},
+): MensajeInput => ({
   transaccionIdL: '977-42',
   fechaDocumento: '2026-05-20',
   diasCredito: 30,
@@ -130,8 +136,12 @@ describe('buildMensaje — encabezado', () => {
   });
 
   it('diasCredito=15 → vencimiento correcto', () => {
-    const { mensaje } = buildMensaje(baseInput(makeGuias(1), { diasCredito: 15 }));
-    expect(mensaje.split('\r\n')).toContain('1:|FECHA DE VENCIMIENTO|04/06/2026');
+    const { mensaje } = buildMensaje(
+      baseInput(makeGuias(1), { diasCredito: 15 }),
+    );
+    expect(mensaje.split('\r\n')).toContain(
+      '1:|FECHA DE VENCIMIENTO|04/06/2026',
+    );
   });
 });
 
@@ -140,8 +150,18 @@ describe('buildMensaje — encabezado', () => {
 describe('buildMensaje — totales', () => {
   it('suma correctamente múltiples guías', () => {
     const guias: GuiaParaMensaje[] = [
-      makeGuia('1', { totneto: '1000', totiva: '190', totdoc: '1190', totexento: '0' }),
-      makeGuia('2', { totneto: '2000', totiva: '380', totdoc: '2430', totexento: '50' }),
+      makeGuia('1', {
+        totneto: '1000',
+        totiva: '190',
+        totdoc: '1190',
+        totexento: '0',
+      }),
+      makeGuia('2', {
+        totneto: '2000',
+        totiva: '380',
+        totdoc: '2430',
+        totexento: '50',
+      }),
     ];
     const { mensaje } = buildMensaje(baseInput(guias));
     const lines = mensaje.split('\r\n');
@@ -157,7 +177,12 @@ describe('buildMensaje — totales', () => {
     // Sumar los totiva ya redondeados da 40*148=5920, pero Enternet valida
     // IVA == round(Neto_total * 19%): round(31080*0.19)=round(5905.2)=5905.
     const guias: GuiaParaMensaje[] = Array.from({ length: 40 }, (_, i) =>
-      makeGuia(String(64000 + i), { totneto: '777', totiva: '148', totdoc: '925', totexento: '0' }),
+      makeGuia(String(64000 + i), {
+        totneto: '777',
+        totiva: '148',
+        totdoc: '925',
+        totexento: '0',
+      }),
     );
     const { mensaje } = buildMensaje(baseInput(guias));
     const lines = mensaje.split('\r\n');
@@ -174,13 +199,15 @@ describe('buildMensaje — totales', () => {
 describe('buildMensaje — Detalle S.G.', () => {
   it('tiene línea 2:| de cabecera de detalle', () => {
     const { mensaje } = buildMensaje(baseInput(makeGuias(1)));
-    expect(mensaje).toContain('2:|ITEM|TIPO ITEM|DESCRIPCION|CANTIDAD|PRECIO|DESCUENTO MONTO|TOTAL LINEA');
+    expect(mensaje).toContain(
+      '2:|ITEM|TIPO ITEM|DESCRIPCION|CANTIDAD|PRECIO|DESCUENTO MONTO|TOTAL LINEA',
+    );
   });
 
   it('siempre una sola línea 3:|, sin importar la cantidad de guías', () => {
     for (const n of [1, 3, 19, 20, 25]) {
       const { mensaje } = buildMensaje(baseInput(makeGuias(n)));
-      const detalles = mensaje.split('\r\n').filter(l => l.startsWith('3:|'));
+      const detalles = mensaje.split('\r\n').filter((l) => l.startsWith('3:|'));
       expect(detalles).toHaveLength(1);
     }
   });
@@ -188,8 +215,10 @@ describe('buildMensaje — Detalle S.G.', () => {
   it('texto exacto "Facturación según guías período YYYY-MM"', () => {
     const guias = makeGuias(3); // fechaEmision '2026-05-10'
     const { mensaje } = buildMensaje(baseInput(guias));
-    const detalle = mensaje.split('\r\n').find(l => l.startsWith('3:|'))!;
-    expect(detalle).toBe('3:|1|AFECTO|Facturación según guías período 2026-05|1|3000|0|3000');
+    const detalle = mensaje.split('\r\n').find((l) => l.startsWith('3:|'))!;
+    expect(detalle).toBe(
+      '3:|1|AFECTO|Facturación según guías período 2026-05|1|3000|0|3000',
+    );
   });
 
   it('monto de la línea es la suma de totneto de todas las guías', () => {
@@ -198,8 +227,10 @@ describe('buildMensaje — Detalle S.G.', () => {
       makeGuia('2', { totneto: '2500' }),
     ];
     const { mensaje } = buildMensaje(baseInput(guias));
-    const detalle = mensaje.split('\r\n').find(l => l.startsWith('3:|'))!;
-    expect(detalle).toBe('3:|1|AFECTO|Facturación según guías período 2026-05|1|3500|0|3500');
+    const detalle = mensaje.split('\r\n').find((l) => l.startsWith('3:|'))!;
+    expect(detalle).toBe(
+      '3:|1|AFECTO|Facturación según guías período 2026-05|1|3500|0|3500',
+    );
   });
 
   it('nunca incluye GLOSA', () => {
@@ -229,8 +260,8 @@ describe('buildMensaje — Referencias', () => {
   it('una línea 5:| por cada guía, sin importar la cantidad', () => {
     const { mensaje } = buildMensaje(baseInput(makeGuias(25)));
     const lines = mensaje.split('\r\n');
-    expect(lines.filter(l => l.startsWith('4:|'))).toHaveLength(1);
-    expect(lines.filter(l => l.startsWith('5:|'))).toHaveLength(25);
+    expect(lines.filter((l) => l.startsWith('4:|'))).toHaveLength(1);
+    expect(lines.filter((l) => l.startsWith('5:|'))).toHaveLength(25);
   });
 });
 
@@ -278,7 +309,9 @@ describe('buildDetallePorProducto', () => {
   });
 
   it('línea incluye CODIGO en la descripción', () => {
-    const lines = buildDetallePorProducto([makeItem({ codigo: 'RSL00001448' })]);
+    const lines = buildDetallePorProducto([
+      makeItem({ codigo: 'RSL00001448' }),
+    ]);
     expect(lines[0]).toContain('PRODUCTO A (RSL00001448)');
   });
 
@@ -293,7 +326,12 @@ describe('buildDetallePorProducto', () => {
 
   it('excluye línea no-producto (sin CdgItem y MontoItem=0)', () => {
     const items = [
-      makeItem({ nmbItem: 'OBSERVACIONES', codigo: '', montoItem: '0', indExe: '2' }),
+      makeItem({
+        nmbItem: 'OBSERVACIONES',
+        codigo: '',
+        montoItem: '0',
+        indExe: '2',
+      }),
       makeItem({ nmbItem: 'PRODUCTO A' }),
     ];
     const lines = buildDetallePorProducto(items);
@@ -318,25 +356,63 @@ describe('buildDetallePorProducto', () => {
 describe('buildDetallePorProducto — Precio Variable', () => {
   it('precio varía entre guías → genera una línea por tramo de fecha', () => {
     const items = [
-      makeItem({ nmbItem: 'DIESEL', prcItem: '800', qtyItem: '10', montoItem: '8000', fecha: '2026-05-01' }),
-      makeItem({ nmbItem: 'DIESEL', prcItem: '900', qtyItem: '5', montoItem: '4500', fecha: '2026-05-05' }),
+      makeItem({
+        nmbItem: 'DIESEL',
+        prcItem: '800',
+        qtyItem: '10',
+        montoItem: '8000',
+        fecha: '2026-05-01',
+      }),
+      makeItem({
+        nmbItem: 'DIESEL',
+        prcItem: '900',
+        qtyItem: '5',
+        montoItem: '4500',
+        fecha: '2026-05-05',
+      }),
     ];
     const lines = buildDetallePorProducto(items);
     expect(lines).toHaveLength(2);
-    expect(lines[0]).toBe('3:|1|AFECTO|DIESEL (01-05-2026 al 01-05-2026)|10|800|0|8000');
-    expect(lines[1]).toBe('3:|2|AFECTO|DIESEL (05-05-2026 al 05-05-2026)|5|900|0|4500');
+    expect(lines[0]).toBe(
+      '3:|1|AFECTO|DIESEL (01-05-2026 al 01-05-2026)|10|800|0|8000',
+    );
+    expect(lines[1]).toBe(
+      '3:|2|AFECTO|DIESEL (05-05-2026 al 05-05-2026)|5|900|0|4500',
+    );
   });
 
   it('varios items con mismo precio dentro de un tramo se suman en una sola línea', () => {
     const items = [
-      makeItem({ nmbItem: 'DIESEL', prcItem: '800', qtyItem: '10', montoItem: '8000', fecha: '2026-05-01' }),
-      makeItem({ nmbItem: 'DIESEL', prcItem: '800', qtyItem: '3', montoItem: '2400', fecha: '2026-05-03' }),
-      makeItem({ nmbItem: 'DIESEL', prcItem: '900', qtyItem: '5', montoItem: '4500', fecha: '2026-05-05' }),
+      makeItem({
+        nmbItem: 'DIESEL',
+        prcItem: '800',
+        qtyItem: '10',
+        montoItem: '8000',
+        fecha: '2026-05-01',
+      }),
+      makeItem({
+        nmbItem: 'DIESEL',
+        prcItem: '800',
+        qtyItem: '3',
+        montoItem: '2400',
+        fecha: '2026-05-03',
+      }),
+      makeItem({
+        nmbItem: 'DIESEL',
+        prcItem: '900',
+        qtyItem: '5',
+        montoItem: '4500',
+        fecha: '2026-05-05',
+      }),
     ];
     const lines = buildDetallePorProducto(items);
     expect(lines).toHaveLength(2);
-    expect(lines[0]).toBe('3:|1|AFECTO|DIESEL (01-05-2026 al 03-05-2026)|13|800|0|10400');
-    expect(lines[1]).toBe('3:|2|AFECTO|DIESEL (05-05-2026 al 05-05-2026)|5|900|0|4500');
+    expect(lines[0]).toBe(
+      '3:|1|AFECTO|DIESEL (01-05-2026 al 03-05-2026)|13|800|0|10400',
+    );
+    expect(lines[1]).toBe(
+      '3:|2|AFECTO|DIESEL (05-05-2026 al 05-05-2026)|5|900|0|4500',
+    );
   });
 
   it('texto de línea de tramo no incluye CODIGO', () => {
@@ -351,8 +427,18 @@ describe('buildDetallePorProducto — Precio Variable', () => {
 
   it('orden desordenado en el input se ordena por fecha antes de detectar tramos', () => {
     const items = [
-      makeItem({ prcItem: '900', qtyItem: '5', montoItem: '4500', fecha: '2026-05-05' }),
-      makeItem({ prcItem: '800', qtyItem: '10', montoItem: '8000', fecha: '2026-05-01' }),
+      makeItem({
+        prcItem: '900',
+        qtyItem: '5',
+        montoItem: '4500',
+        fecha: '2026-05-05',
+      }),
+      makeItem({
+        prcItem: '800',
+        qtyItem: '10',
+        montoItem: '8000',
+        fecha: '2026-05-01',
+      }),
     ];
     const lines = buildDetallePorProducto(items);
     expect(lines).toHaveLength(2);
@@ -363,9 +449,24 @@ describe('buildDetallePorProducto — Precio Variable', () => {
 
   it('precio A → B → A (no contiguo) genera 3 tramos separados, no se fusionan', () => {
     const items = [
-      makeItem({ prcItem: '800', qtyItem: '1', montoItem: '800', fecha: '2026-05-01' }),
-      makeItem({ prcItem: '900', qtyItem: '1', montoItem: '900', fecha: '2026-05-02' }),
-      makeItem({ prcItem: '800', qtyItem: '1', montoItem: '800', fecha: '2026-05-03' }),
+      makeItem({
+        prcItem: '800',
+        qtyItem: '1',
+        montoItem: '800',
+        fecha: '2026-05-01',
+      }),
+      makeItem({
+        prcItem: '900',
+        qtyItem: '1',
+        montoItem: '900',
+        fecha: '2026-05-02',
+      }),
+      makeItem({
+        prcItem: '800',
+        qtyItem: '1',
+        montoItem: '800',
+        fecha: '2026-05-03',
+      }),
     ];
     const lines = buildDetallePorProducto(items);
     expect(lines).toHaveLength(3);
@@ -376,8 +477,18 @@ describe('buildDetallePorProducto — Precio Variable', () => {
 
   it('mismo día con 2 precios distintos genera 2 tramos con igual fechaInicio/fechaFin', () => {
     const items = [
-      makeItem({ prcItem: '800', qtyItem: '1', montoItem: '800', fecha: '2026-05-01' }),
-      makeItem({ prcItem: '900', qtyItem: '1', montoItem: '900', fecha: '2026-05-01' }),
+      makeItem({
+        prcItem: '800',
+        qtyItem: '1',
+        montoItem: '800',
+        fecha: '2026-05-01',
+      }),
+      makeItem({
+        prcItem: '900',
+        qtyItem: '1',
+        montoItem: '900',
+        fecha: '2026-05-01',
+      }),
     ];
     const lines = buildDetallePorProducto(items);
     expect(lines).toHaveLength(2);
@@ -412,24 +523,28 @@ describe('buildMensaje — Caso 4 (Global)', () => {
   it('40 guías exactas → NO activa Global, sigue en modo individual', () => {
     const { mensaje } = buildMensaje(baseInput(makeGuias(40)));
     const lines = mensaje.split('\r\n');
-    expect(lines.filter(l => l.startsWith('5:|'))).toHaveLength(40);
+    expect(lines.filter((l) => l.startsWith('5:|'))).toHaveLength(40);
   });
 
   it('41 guías → Detalle colapsa a 1 sola línea "Segun Guias:" con folios en campo adicional', () => {
     const guias = makeGuias(41);
     const { mensaje } = buildMensaje(baseInput(guias));
-    const detalles = mensaje.split('\r\n').filter(l => l.startsWith('3:|'));
+    const detalles = mensaje.split('\r\n').filter((l) => l.startsWith('3:|'));
     expect(detalles).toHaveLength(1);
-    const folios = guias.map(g => g.folio).join(' ');
-    expect(detalles[0]).toBe(`3:|1|AFECTO|Segun Guias:|1|${'41000'}|0|${'41000'}|${folios}`);
+    const folios = guias.map((g) => g.folio).join(' ');
+    expect(detalles[0]).toBe(
+      `3:|1|AFECTO|Segun Guias:|1|${'41000'}|0|${'41000'}|${folios}`,
+    );
   });
 
   it('Global anula modoDetalle=POR_PRODUCTO cuando hay más de 40 guías', () => {
-    const detalleItems: DetalleItemParaMensaje[] = [makeItem({ nmbItem: 'PRODUCTO A' })];
+    const detalleItems: DetalleItemParaMensaje[] = [
+      makeItem({ nmbItem: 'PRODUCTO A' }),
+    ];
     const { mensaje } = buildMensaje(
       baseInput(makeGuias(41), { modoDetalle: 'POR_PRODUCTO', detalleItems }),
     );
-    const detalles = mensaje.split('\r\n').filter(l => l.startsWith('3:|'));
+    const detalles = mensaje.split('\r\n').filter((l) => l.startsWith('3:|'));
     expect(detalles).toHaveLength(1);
     expect(detalles[0]).toContain('Segun Guias:');
   });
@@ -439,7 +554,7 @@ describe('buildMensaje — Caso 4 (Global)', () => {
       makeGuia(String(64000 + i), { totneto: '500' }),
     );
     const { mensaje } = buildMensaje(baseInput(guias));
-    const detalle = mensaje.split('\r\n').find(l => l.startsWith('3:|'))!;
+    const detalle = mensaje.split('\r\n').find((l) => l.startsWith('3:|'))!;
     expect(detalle).toContain(`|${41 * 500}|0|${41 * 500}|`);
   });
 
@@ -450,14 +565,14 @@ describe('buildMensaje — Caso 4 (Global)', () => {
   it.skip('más de 40 guías → no genera líneas 4:|/5:| individuales de referencia', () => {
     const { mensaje } = buildMensaje(baseInput(makeGuias(41)));
     const lines = mensaje.split('\r\n');
-    expect(lines.filter(l => l.startsWith('4:|'))).toHaveLength(0);
-    expect(lines.filter(l => l.startsWith('5:|'))).toHaveLength(0);
+    expect(lines.filter((l) => l.startsWith('4:|'))).toHaveLength(0);
+    expect(lines.filter((l) => l.startsWith('5:|'))).toHaveLength(0);
   });
 
   it.skip('más de 40 guías → NO agrega campos de referencia en el encabezado (hipótesis descartada, ver comentario en mensaje-builder.ts)', () => {
     const { mensaje } = buildMensaje(baseInput(makeGuias(41)));
     const lines = mensaje.split('\r\n');
-    expect(lines.filter(l => l.includes('REFERENCIA'))).toHaveLength(0);
+    expect(lines.filter((l) => l.includes('REFERENCIA'))).toHaveLength(0);
   });
 });
 
@@ -469,7 +584,7 @@ describe('buildMensaje — Detalle Por Producto', () => {
     const { mensaje } = buildMensaje(
       baseInput(makeGuias(1), { modoDetalle: 'POR_PRODUCTO', detalleItems }),
     );
-    const detalles = mensaje.split('\r\n').filter(l => l.startsWith('3:|'));
+    const detalles = mensaje.split('\r\n').filter((l) => l.startsWith('3:|'));
     expect(detalles).toHaveLength(1);
     expect(detalles[0]).toBe('3:|1|AFECTO|PRODUCTO A (COD-1)|2|1000|0|2000');
   });
@@ -477,7 +592,7 @@ describe('buildMensaje — Detalle Por Producto', () => {
   it("modoDetalle ausente/'SG' ignora detalleItems (regression guard)", () => {
     const detalleItems: DetalleItemParaMensaje[] = [makeItem()];
     const { mensaje } = buildMensaje(baseInput(makeGuias(1), { detalleItems }));
-    const detalle = mensaje.split('\r\n').find(l => l.startsWith('3:|'))!;
+    const detalle = mensaje.split('\r\n').find((l) => l.startsWith('3:|'))!;
     expect(detalle).toContain('Facturación según guías período');
   });
 });

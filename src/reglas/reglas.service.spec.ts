@@ -1,7 +1,13 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { ReglasService } from './reglas.service.js';
 
-const mockReglaRepo = { find: jest.fn(), findOne: jest.fn(), create: jest.fn(), save: jest.fn(), remove: jest.fn() };
+const mockReglaRepo = {
+  find: jest.fn(),
+  findOne: jest.fn(),
+  create: jest.fn(),
+  save: jest.fn(),
+  remove: jest.fn(),
+};
 const mockReglaEmpresaRepo = { find: jest.fn() };
 
 function makeService(): ReglasService {
@@ -19,7 +25,11 @@ describe('ReglasService', () => {
   describe('findAll', () => {
     it('retorna todas las reglas del catálogo', async () => {
       mockReglaRepo.find.mockResolvedValue([
-        { reglaidl: 'por_comuna', regladescripcion: 'Agrupar por comuna', reglaconfig: { fn: 'extraeTagLista', reglaTags: ['CmnaRecep'] } },
+        {
+          reglaidl: 'por_comuna',
+          regladescripcion: 'Agrupar por comuna',
+          reglaconfig: { fn: 'extraeTagLista', reglaTags: ['CmnaRecep'] },
+        },
       ]);
 
       const result = await service.findAll();
@@ -36,7 +46,11 @@ describe('ReglasService', () => {
 
   describe('findById', () => {
     it('retorna la regla cuando existe', async () => {
-      const regla = { reglaidl: 'por_comuna', regladescripcion: 'desc', reglaconfig: { fn: 'extraeTagLista', reglaTags: ['CmnaRecep'] } };
+      const regla = {
+        reglaidl: 'por_comuna',
+        regladescripcion: 'desc',
+        reglaconfig: { fn: 'extraeTagLista', reglaTags: ['CmnaRecep'] },
+      };
       mockReglaRepo.findOne.mockResolvedValue(regla);
 
       expect(await service.findById('por_comuna')).toEqual(regla);
@@ -68,18 +82,33 @@ describe('ReglasService', () => {
   });
 
   describe('create', () => {
-    const dto = { reglaidl: 'por_comuna', regladescripcion: 'Agrupar por comuna', fn: 'extraeTagLista' as const, reglaTags: ['CmnaRecep'] };
+    const dto = {
+      reglaidl: 'por_comuna',
+      regladescripcion: 'Agrupar por comuna',
+      fn: 'extraeTagLista' as const,
+      reglaTags: ['CmnaRecep'],
+    };
 
     it('crea y retorna la regla nueva', async () => {
       mockReglaRepo.findOne.mockResolvedValue(null);
-      mockReglaRepo.create.mockReturnValue({ ...dto, reglaconfig: { fn: dto.fn, reglaTags: dto.reglaTags } });
-      mockReglaRepo.save.mockResolvedValue({ reglaidl: dto.reglaidl, regladescripcion: dto.regladescripcion, reglaconfig: { fn: dto.fn, reglaTags: dto.reglaTags } });
+      mockReglaRepo.create.mockReturnValue({
+        ...dto,
+        reglaconfig: { fn: dto.fn, reglaTags: dto.reglaTags },
+      });
+      mockReglaRepo.save.mockResolvedValue({
+        reglaidl: dto.reglaidl,
+        regladescripcion: dto.regladescripcion,
+        reglaconfig: { fn: dto.fn, reglaTags: dto.reglaTags },
+      });
 
       const result = await service.create(dto);
 
       expect(mockReglaRepo.create).toHaveBeenCalled();
       expect(result.reglaidl).toBe('por_comuna');
-      expect(result.reglaconfig).toEqual({ fn: 'extraeTagLista', reglaTags: ['CmnaRecep'] });
+      expect(result.reglaconfig).toEqual({
+        fn: 'extraeTagLista',
+        reglaTags: ['CmnaRecep'],
+      });
     });
 
     it('lanza ConflictException si el id ya existe', async () => {
@@ -90,18 +119,32 @@ describe('ReglasService', () => {
 
   describe('update', () => {
     it('actualiza descripcion y tags', async () => {
-      const regla = { reglaidl: 'por_comuna', regladescripcion: 'vieja', reglaconfig: { fn: 'extraeTagLista', reglaTags: ['TagA'] } };
+      const regla = {
+        reglaidl: 'por_comuna',
+        regladescripcion: 'vieja',
+        reglaconfig: { fn: 'extraeTagLista', reglaTags: ['TagA'] },
+      };
       mockReglaRepo.findOne.mockResolvedValue(regla);
-      mockReglaRepo.save.mockResolvedValue({ ...regla, regladescripcion: 'nueva', reglaconfig: { fn: 'extraeTagLista', reglaTags: ['TagB'] } });
+      mockReglaRepo.save.mockResolvedValue({
+        ...regla,
+        regladescripcion: 'nueva',
+        reglaconfig: { fn: 'extraeTagLista', reglaTags: ['TagB'] },
+      });
 
-      const result = await service.update('por_comuna', { regladescripcion: 'nueva', fn: 'extraeTagLista', reglaTags: ['TagB'] });
+      const result = await service.update('por_comuna', {
+        regladescripcion: 'nueva',
+        fn: 'extraeTagLista',
+        reglaTags: ['TagB'],
+      });
 
       expect(result.regladescripcion).toBe('nueva');
     });
 
     it('lanza NotFoundException si no existe', async () => {
       mockReglaRepo.findOne.mockResolvedValue(null);
-      await expect(service.update('inexistente', {})).rejects.toThrow(NotFoundException);
+      await expect(service.update('inexistente', {})).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -118,7 +161,9 @@ describe('ReglasService', () => {
 
     it('lanza NotFoundException si no existe', async () => {
       mockReglaRepo.findOne.mockResolvedValue(null);
-      await expect(service.remove('inexistente')).rejects.toThrow(NotFoundException);
+      await expect(service.remove('inexistente')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -129,8 +174,16 @@ describe('ReglasService', () => {
         { empkey: '977', reglaidl: 'por_razon_social' },
       ]);
       mockReglaRepo.find.mockResolvedValue([
-        { reglaidl: 'por_comuna', regladescripcion: 'Agrupar por comuna', reglaconfig: {} },
-        { reglaidl: 'por_razon_social', regladescripcion: 'Por razón social', reglaconfig: {} },
+        {
+          reglaidl: 'por_comuna',
+          regladescripcion: 'Agrupar por comuna',
+          reglaconfig: {},
+        },
+        {
+          reglaidl: 'por_razon_social',
+          regladescripcion: 'Por razón social',
+          reglaconfig: {},
+        },
       ]);
 
       const result = await service.findReglasDisponibles('977');

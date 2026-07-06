@@ -20,11 +20,15 @@ describe('extraeTagLista', () => {
   });
 
   it('concatena múltiples tags encontrados con ";"', () => {
-    expect(extraeTagLista(['RznSocRecep', 'DirRecep'], xml)).toBe('Aceros SA;Av Test 123');
+    expect(extraeTagLista(['RznSocRecep', 'DirRecep'], xml)).toBe(
+      'Aceros SA;Av Test 123',
+    );
   });
 
   it('omite tags ausentes en la concatenación', () => {
-    expect(extraeTagLista(['CmnaRecep', 'TagInexistente', 'CiudadRecep'], xml)).toBe('RENCA;SANTIAGO');
+    expect(
+      extraeTagLista(['CmnaRecep', 'TagInexistente', 'CiudadRecep'], xml),
+    ).toBe('RENCA;SANTIAGO');
   });
 
   it('retorna string vacío cuando todos los tags están ausentes', () => {
@@ -41,7 +45,8 @@ describe('extraeTagLista', () => {
   });
 
   it('soporta tags en cualquier nodo del XML (no solo Receptor)', () => {
-    const xmlDetalle = '<DTE><Emisor><RznSoc>Empresa Emisora</RznSoc></Emisor></DTE>';
+    const xmlDetalle =
+      '<DTE><Emisor><RznSoc>Empresa Emisora</RznSoc></Emisor></DTE>';
     expect(extraeTagLista(['RznSoc'], xmlDetalle)).toBe('Empresa Emisora');
   });
 });

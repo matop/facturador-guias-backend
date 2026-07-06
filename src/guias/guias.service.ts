@@ -34,7 +34,11 @@ export class GuiasService {
     return this.guiaRepository.find({ where: { empkey, gclirut } });
   }
 
-  async findById(empkey: string, guitipo: number, guifolio: string): Promise<Guia> {
+  async findById(
+    empkey: string,
+    guitipo: number,
+    guifolio: string,
+  ): Promise<Guia> {
     const guia = await this.guiaRepository.findOne({
       where: { empkey, guitipo, guifolio },
     });
@@ -52,11 +56,15 @@ export class GuiasService {
     fechaInicial: string,
     fechaFinal: string,
   ): Promise<{ synced: number; clientesCreated: number }> {
-    const rows = await this.backofficeAdapterService.getGuias(rut, fechaInicial, fechaFinal);
+    const rows = await this.backofficeAdapterService.getGuias(
+      rut,
+      fechaInicial,
+      fechaFinal,
+    );
 
     const guias = rows
-      .filter(row => row['Folio'] && row['Codigo Tipo'])
-      .map(row => {
+      .filter((row) => row['Folio'] && row['Codigo Tipo'])
+      .map((row) => {
         const guia = new Guia();
         guia.empkey = empkey;
         guia.guitipo = parseInt(row['Codigo Tipo'], 10);
@@ -102,11 +110,14 @@ export class GuiasService {
     for (let i = 0; i < uniqueGuiasList.length; i += XML_FETCH_CHUNK_SIZE) {
       const chunk = uniqueGuiasList.slice(i, i + XML_FETCH_CHUNK_SIZE);
       const fetched = await Promise.all(
-        chunk.map(g => this.xmlParserService.fetchDocument(g.guifilepath)),
+        chunk.map((g) => this.xmlParserService.fetchDocument(g.guifilepath)),
       );
       for (let j = 0; j < chunk.length; j++) {
         const doc = fetched[j];
-        const result = await this.clientesService.findOrCreate(empkey, doc.receptor);
+        const result = await this.clientesService.findOrCreate(
+          empkey,
+          doc.receptor,
+        );
         if (result.created) clientesCreated++;
         seenRuts.set(chunk[j].gclirut, { rawXml: doc.rawXml });
       }
@@ -119,8 +130,14 @@ export class GuiasService {
       await manager.save(Guia, guias);
 
       const impuestos: GuiaImpuesto[] = rows
-        .filter(row => row['Folio'] && row['Codigo Tipo'] && row['Monto IVA'] && row['Monto IVA'] !== '0')
-        .map(row => {
+        .filter(
+          (row) =>
+            row['Folio'] &&
+            row['Codigo Tipo'] &&
+            row['Monto IVA'] &&
+            row['Monto IVA'] !== '0',
+        )
+        .map((row) => {
           const imp = new GuiaImpuesto();
           imp.empkey = empkey;
           imp.guitipo = parseInt(row['Codigo Tipo'], 10);
@@ -142,19 +159,29 @@ export class GuiasService {
       }
 
       if (seenRuts.size > 0) {
-        const items = Array.from(seenRuts.entries()).map(([gclirut, { rawXml }]) => ({
-          gclirut,
-          xml: rawXml,
-        }));
-        const agrupadores = await this.groupingService.batchComputeAgrupadores(empkey, items);
+        const items = Array.from(seenRuts.entries()).map(
+          ([gclirut, { rawXml }]) => ({
+            gclirut,
+            xml: rawXml,
+          }),
+        );
+        const agrupadores = await this.groupingService.batchComputeAgrupadores(
+          empkey,
+          items,
+        );
 
         for (const guia of guias) {
           if (!guia.gclirut) continue;
-          const agrupadorResult = agrupadores.get(normalizeToXml(toCsvRut(guia.gclirut))) ?? null;
+          const agrupadorResult =
+            agrupadores.get(normalizeToXml(toCsvRut(guia.gclirut))) ?? null;
           if (agrupadorResult !== null) {
             await manager.update(
               Guia,
-              { empkey: guia.empkey, guitipo: guia.guitipo, guifolio: guia.guifolio },
+              {
+                empkey: guia.empkey,
+                guitipo: guia.guitipo,
+                guifolio: guia.guifolio,
+              },
               {
                 guireglaidl: agrupadorResult.guiReglaidl,
                 guivaloragrupador: agrupadorResult.guiValorAgrupador,

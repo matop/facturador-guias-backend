@@ -22,7 +22,8 @@ export class FacturasController {
     @Query('periodo') periodo: string,
     @Query('rut') rut: string,
   ) {
-    if (!periodo) throw new BadRequestException('periodo es obligatorio (YYYY-MM)');
+    if (!periodo)
+      throw new BadRequestException('periodo es obligatorio (YYYY-MM)');
     if (!rut) throw new BadRequestException('rut es obligatorio');
     return this.facturasService.sync(empkey, periodo, rut);
   }
@@ -32,7 +33,8 @@ export class FacturasController {
     @Param('empkey') empkey: string,
     @Query('periodo') periodo: string,
   ) {
-    if (!periodo) throw new BadRequestException('periodo es obligatorio (YYYY-MM)');
+    if (!periodo)
+      throw new BadRequestException('periodo es obligatorio (YYYY-MM)');
     return this.facturasService.getFacturasPorPeriodo(empkey, periodo);
   }
 
@@ -52,7 +54,8 @@ export class FacturasController {
     @Query('periodo') periodo: string,
     @Query('rut') rut: string,
   ) {
-    if (!periodo) throw new BadRequestException('periodo es obligatorio (YYYY-MM)');
+    if (!periodo)
+      throw new BadRequestException('periodo es obligatorio (YYYY-MM)');
     if (!rut) throw new BadRequestException('rut es obligatorio');
     return this.facturasService.generar(empkey, periodo, rut);
   }
@@ -62,7 +65,8 @@ export class FacturasController {
     @Param('empkey') empkey: string,
     @Query('periodo') periodo: string,
   ) {
-    if (!periodo) throw new BadRequestException('periodo es obligatorio (YYYY-MM)');
+    if (!periodo)
+      throw new BadRequestException('periodo es obligatorio (YYYY-MM)');
     return this.facturasService.limpiar(empkey, periodo);
   }
 
@@ -73,7 +77,9 @@ export class FacturasController {
     @Body() body: { periodo: string; gclirut: string; reglaidl: string },
   ) {
     if (!body.periodo || !body.gclirut || !body.reglaidl) {
-      throw new BadRequestException('periodo, gclirut y reglaidl son obligatorios');
+      throw new BadRequestException(
+        'periodo, gclirut y reglaidl son obligatorios',
+      );
     }
     if (!rut) throw new BadRequestException('rut es obligatorio');
     return this.facturasService.crearManual(empkey, body, rut);
@@ -85,7 +91,8 @@ export class FacturasController {
     @Query('periodo') periodo: string,
     @Query('estado') estado?: string,
   ) {
-    if (!periodo) throw new BadRequestException('periodo es obligatorio (YYYY-MM)');
+    if (!periodo)
+      throw new BadRequestException('periodo es obligatorio (YYYY-MM)');
     return this.facturasService.listarProformas(empkey, periodo, estado);
   }
 
@@ -114,9 +121,7 @@ export class FacturasController {
   }
 
   @Post(':empkey/facturas/emision')
-  async emitirPendientes(
-    @Param('empkey') empkey: string,
-  ) {
+  async emitirPendientes(@Param('empkey') empkey: string) {
     return this.facturasService.emitirPendientes(empkey);
   }
 }

@@ -31,7 +31,9 @@ describe('ReglasController', () => {
 
   describe('GET /reglas/empresa/:empkey', () => {
     it('delega en service.findByEmpresa con el empkey', async () => {
-      mockService.findByEmpresa.mockResolvedValue([{ empkey: '977', reglaidl: 'por_comuna' }]);
+      mockService.findByEmpresa.mockResolvedValue([
+        { empkey: '977', reglaidl: 'por_comuna' },
+      ]);
       const result = await controller.findByEmpresa('977');
       expect(mockService.findByEmpresa).toHaveBeenCalledWith('977');
       expect(result).toHaveLength(1);
@@ -48,8 +50,17 @@ describe('ReglasController', () => {
 
   describe('POST /reglas', () => {
     it('crea y retorna la regla', async () => {
-      const dto = { reglaidl: 'por_comuna', regladescripcion: 'Agrupar por comuna', fn: 'extraeTagLista' as const, reglaTags: ['CmnaRecep'] };
-      const regla = { reglaidl: 'por_comuna', regladescripcion: 'Agrupar por comuna', reglaconfig: { fn: 'extraeTagLista', reglaTags: ['CmnaRecep'] } };
+      const dto = {
+        reglaidl: 'por_comuna',
+        regladescripcion: 'Agrupar por comuna',
+        fn: 'extraeTagLista' as const,
+        reglaTags: ['CmnaRecep'],
+      };
+      const regla = {
+        reglaidl: 'por_comuna',
+        regladescripcion: 'Agrupar por comuna',
+        reglaconfig: { fn: 'extraeTagLista', reglaTags: ['CmnaRecep'] },
+      };
       mockService.create.mockResolvedValue(regla);
 
       const result = await controller.create(dto);
@@ -61,12 +72,20 @@ describe('ReglasController', () => {
 
   describe('PUT /reglas/:id', () => {
     it('actualiza y retorna la regla', async () => {
-      const regla = { reglaidl: 'por_comuna', regladescripcion: 'nueva desc', reglaconfig: { fn: 'extraeTagLista', reglaTags: ['TagB'] } };
+      const regla = {
+        reglaidl: 'por_comuna',
+        regladescripcion: 'nueva desc',
+        reglaconfig: { fn: 'extraeTagLista', reglaTags: ['TagB'] },
+      };
       mockService.update.mockResolvedValue(regla);
 
-      const result = await controller.update('por_comuna', { regladescripcion: 'nueva desc' });
+      const result = await controller.update('por_comuna', {
+        regladescripcion: 'nueva desc',
+      });
 
-      expect(mockService.update).toHaveBeenCalledWith('por_comuna', { regladescripcion: 'nueva desc' });
+      expect(mockService.update).toHaveBeenCalledWith('por_comuna', {
+        regladescripcion: 'nueva desc',
+      });
       expect(result.regladescripcion).toBe('nueva desc');
     });
   });

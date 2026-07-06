@@ -5,10 +5,12 @@
  *
  * normalizeToXml: CSV → XML format (idempotent — skips if already has hyphen)
  */
-export type CsvRut = string & { readonly _brand: 'CsvRut' }
-export type XmlRut = string & { readonly _brand: 'XmlRut' }
+export type CsvRut = string & { readonly _brand: 'CsvRut' };
+export type XmlRut = string & { readonly _brand: 'XmlRut' };
 
-export function toCsvRut(s: string): CsvRut { return s as CsvRut }
+export function toCsvRut(s: string): CsvRut {
+  return s as CsvRut;
+}
 
 export function normalizeToXml(rut: CsvRut): XmlRut {
   if (rut.includes('-')) return rut as unknown as XmlRut;

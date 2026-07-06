@@ -28,7 +28,9 @@ export class GroupingService {
     gclirut: string,
     xml: string,
   ): Promise<AgrupadorResult | null> {
-    const result = await this.batchComputeAgrupadores(empkey, [{ gclirut, xml }]);
+    const result = await this.batchComputeAgrupadores(empkey, [
+      { gclirut, xml },
+    ]);
     return result.get(gclirut) ?? null;
   }
 
@@ -43,11 +45,11 @@ export class GroupingService {
     const result = new Map<string, AgrupadorResult | null>();
     if (items.length === 0) return result;
 
-    const gcliruts = items.map(i => i.gclirut);
+    const gcliruts = items.map((i) => i.gclirut);
 
     // Batch fetch clients
     const clientes = await this.clienteRepository.find({
-      where: gcliruts.map(gclirut => ({ empkey, gclirut })),
+      where: gcliruts.map((gclirut) => ({ empkey, gclirut })),
     });
     const clienteMap = new Map<string, string | null>();
     for (const c of clientes) {
@@ -55,18 +57,20 @@ export class GroupingService {
     }
 
     // Batch fetch reglas for unique reglaidls
-    const reglaidls = [...new Set(
-      clientes.map(c => c.reglaidl).filter((r): r is string => r !== null),
-    )];
+    const reglaidls = [
+      ...new Set(
+        clientes.map((c) => c.reglaidl).filter((r): r is string => r !== null),
+      ),
+    ];
     if (reglaidls.length === 0) {
       for (const { gclirut } of items) result.set(gclirut, null);
       return result;
     }
 
     const reglas = await this.reglaRepository.find({
-      where: reglaidls.map(reglaidl => ({ reglaidl })),
+      where: reglaidls.map((reglaidl) => ({ reglaidl })),
     });
-    const reglaMap = new Map(reglas.map(r => [r.reglaidl, r.reglaconfig]));
+    const reglaMap = new Map(reglas.map((r) => [r.reglaidl, r.reglaconfig]));
 
     // Compute per item
     for (const { gclirut, xml } of items) {
@@ -82,7 +86,8 @@ export class GroupingService {
         continue;
       }
 
-      const handler = REGLA_REGISTRY[reglaconfig.fn as keyof typeof REGLA_REGISTRY];
+      const handler =
+        REGLA_REGISTRY[reglaconfig.fn as keyof typeof REGLA_REGISTRY];
       if (!handler) {
         result.set(gclirut, null);
         continue;

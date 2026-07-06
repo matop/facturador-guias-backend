@@ -29,7 +29,10 @@ export class FacturacionService {
     return factura;
   }
 
-  async getGuiasByFactura(empkey: string, gfackey: string): Promise<FacturaGuia[]> {
+  async getGuiasByFactura(
+    empkey: string,
+    gfackey: string,
+  ): Promise<FacturaGuia[]> {
     return this.facturaGuiaRepository.find({
       where: { empkey, gfackey },
     });

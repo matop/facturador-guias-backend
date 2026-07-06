@@ -1,4 +1,8 @@
-import { Injectable, BadGatewayException, UnprocessableEntityException } from '@nestjs/common';
+import {
+  Injectable,
+  BadGatewayException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 export interface EmitirDteInput {
@@ -69,7 +73,9 @@ export class BackofficeAdapterService {
       );
     }
     if (!response.ok) {
-      const errBody = await response.json().catch(() => ({})) as { message?: string };
+      const errBody = (await response.json().catch(() => ({}))) as {
+        message?: string;
+      };
       throw new UnprocessableEntityException(
         errBody.message ?? `HTTP ${response.status} al emitir DTE`,
       );
