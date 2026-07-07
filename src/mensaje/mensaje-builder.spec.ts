@@ -9,6 +9,7 @@ import {
   type GuiaParaMensaje,
   type MensajeInput,
   type DetalleItemParaMensaje,
+  type ReferenciaExternaParaMensaje,
 } from './mensaje-builder.js';
 
 // ─── Factories ─────────────────────────────────────────────────────────────────
@@ -262,6 +263,123 @@ describe('buildMensaje — Referencias', () => {
     const lines = mensaje.split('\r\n');
     expect(lines.filter((l) => l.startsWith('4:|'))).toHaveLength(1);
     expect(lines.filter((l) => l.startsWith('5:|'))).toHaveLength(25);
+  });
+});
+
+// ─── Referencias Externas (OC / HES) ───────────────────────────────────────────
+
+const makeReferenciaExterna = (
+  tipo: ReferenciaExternaParaMensaje['tipo'],
+  folio: string,
+  overrides: Partial<ReferenciaExternaParaMensaje> = {},
+): ReferenciaExternaParaMensaje => ({
+  tipo,
+  folio,
+  fecha: '2026-05-10',
+  ...overrides,
+});
+
+describe('buildMensaje — Referencias Externas (OC/HES)', () => {
+  it('sin OC/HES no agrega líneas adicionales (regression guard)', () => {
+    const { mensaje } = buildMensaje(baseInput(makeGuias(1)));
+    const lines = mensaje.split('\r\n');
+    expect(lines.filter((l) => l.startsWith('5:|'))).toHaveLength(1);
+  });
+
+  it('con 1 OC agrega línea 5:|801| con RAZON REFERENCIA fija', () => {
+    const { mensaje } = buildMensaje(
+      baseInput(makeGuias(1), {
+        referenciasExternas: [
+          makeReferenciaExterna('801', '111', { fecha: '2026-05-10' }),
+        ],
+      }),
+    );
+    const lines = mensaje.split('\r\n');
+    expect(lines).toContain('5:|801|111|10/05/2026|Orden de Compra');
+  });
+
+  it('con OC/HES presentes, el header 4:| declara RAZON REFERENCIA y la línea 5:| de guía queda con el campo vacío (mismo número de campos, exigido por Enternet)', () => {
+    const guia = makeGuia('64261', { fechaEmision: '2026-04-06' });
+    const { mensaje } = buildMensaje(
+      baseInput([guia], {
+        referenciasExternas: [makeReferenciaExterna('801', '111')],
+      }),
+    );
+    const lines = mensaje.split('\r\n');
+    expect(lines).toContain(
+      '4:|TIPO DE REFERENCIA|FOLIO|FECHA|RAZON REFERENCIA',
+    );
+    expect(lines).toContain('5:|52|64261|06/04/2026|');
+  });
+
+  it('con 1 HES agrega línea 5:|HES| con RAZON REFERENCIA fija', () => {
+    const { mensaje } = buildMensaje(
+      baseInput(makeGuias(1), {
+        referenciasExternas: [
+          makeReferenciaExterna('HES', '222', { fecha: '2026-05-11' }),
+        ],
+      }),
+    );
+    const lines = mensaje.split('\r\n');
+    expect(lines).toContain(
+      '5:|HES|222|11/05/2026|Hoja de Entrada de Servicios',
+    );
+  });
+
+  it('orden de líneas 5:|: guías primero, luego OC, luego HES', () => {
+    const { mensaje } = buildMensaje(
+      baseInput(makeGuias(1), {
+        referenciasExternas: [
+          makeReferenciaExterna('HES', '222'),
+          makeReferenciaExterna('801', '111'),
+        ],
+      }),
+    );
+    const refs = mensaje
+      .split('\r\n')
+      .filter((l) => l.startsWith('5:|'))
+      .map((l) => l.split('|')[1]);
+    expect(refs).toEqual(['52', '801', 'HES']);
+  });
+
+  it('dedup por (tipo, folio): misma OC repetida (2 guías) → una sola línea', () => {
+    const { mensaje } = buildMensaje(
+      baseInput(makeGuias(2), {
+        referenciasExternas: [
+          makeReferenciaExterna('801', '111'),
+          makeReferenciaExterna('801', '111'),
+        ],
+      }),
+    );
+    const lines = mensaje.split('\r\n').filter((l) => l.startsWith('5:|801|'));
+    expect(lines).toHaveLength(1);
+  });
+
+  it('NO deduplica OC folio 123 con HES folio 123 (clave (tipo,folio), no folio solo)', () => {
+    const { mensaje } = buildMensaje(
+      baseInput(makeGuias(1), {
+        referenciasExternas: [
+          makeReferenciaExterna('801', '123'),
+          makeReferenciaExterna('HES', '123'),
+        ],
+      }),
+    );
+    const lines = mensaje.split('\r\n');
+    expect(lines).toContain('5:|801|123|10/05/2026|Orden de Compra');
+    expect(lines).toContain(
+      '5:|HES|123|10/05/2026|Hoja de Entrada de Servicios',
+    );
+  });
+
+  it('conversión de fecha con padding de día/mes de un dígito', () => {
+    const { mensaje } = buildMensaje(
+      baseInput(makeGuias(1), {
+        referenciasExternas: [
+          makeReferenciaExterna('801', '111', { fecha: '2026-01-05' }),
+        ],
+      }),
+    );
+    expect(mensaje).toContain('5:|801|111|05/01/2026|Orden de Compra');
   });
 });
 

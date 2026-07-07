@@ -28,7 +28,9 @@ import {
   type MensajeResult,
   type ModoDetalle,
   type DetalleItemParaMensaje,
+  type ReferenciaExternaParaMensaje,
 } from '../mensaje/mensaje-builder.js';
+import { parseReferencias } from '../xml/xml-parser.utils.js';
 import type { FetchedDocument } from '../xml/xml-parser.utils.js';
 
 export interface FacturaResumenDto {
@@ -589,16 +591,10 @@ export class FacturasService {
     return cliente?.modoDetalle === 'POR_PRODUCTO' ? 'POR_PRODUCTO' : 'SG';
   }
 
-  private async _construirDetalleItems(
-    guias: { guifilepath: string; guifechaemision: string }[],
-    primerDoc: FetchedDocument,
-  ): Promise<DetalleItemParaMensaje[]> {
-    const restoDocs = await Promise.all(
-      guias
-        .slice(1)
-        .map((g) => this.xmlParserService.fetchDocument(g.guifilepath)),
-    );
-    const docs = [primerDoc, ...restoDocs];
+  private _construirDetalleItems(
+    guias: { guifechaemision: string }[],
+    docs: FetchedDocument[],
+  ): DetalleItemParaMensaje[] {
     return docs.flatMap((d, i) =>
       d.detalle.map((item) => ({
         nmbItem: item.nmbItem,
@@ -612,23 +608,47 @@ export class FacturasService {
     );
   }
 
+  /**
+   * Extrae las referencias a OC/HES de cada guía de la factura. Las
+   * `descartadas` (TpoDocRef no reconocido) se loguean, no bloquean la
+   * emisión — ver parseReferencias en xml-parser.utils.ts.
+   */
+  private _extraerReferenciasExternas(
+    docs: FetchedDocument[],
+  ): ReferenciaExternaParaMensaje[] {
+    const referencias: ReferenciaExternaParaMensaje[] = [];
+    for (const doc of docs) {
+      const parsed = parseReferencias(doc.rawXml);
+      referencias.push(...parsed.referencias);
+      for (const descartada of parsed.descartadas) {
+        this.logger.warn(
+          `Referencia descartada al extraer OC/HES: tipo=${descartada.tipo} — ${descartada.motivo}`,
+        );
+      }
+    }
+    return referencias;
+  }
+
   private async _emitir(factura: Factura): Promise<ResultadoDTE> {
     const guias = await this._cargarGuiasParaEmision(
       factura.empkey,
       factura.gfackey,
     );
-    const primerDoc = await this.xmlParserService.fetchDocument(
-      guias[0].guifilepath,
+    // Se fetchea el XML de todas las guías (no solo la primera): las
+    // referencias a OC/HES pueden venir en cualquiera de ellas.
+    const docs = await Promise.all(
+      guias.map((g) => this.xmlParserService.fetchDocument(g.guifilepath)),
     );
-    const { receptor } = primerDoc;
+    const { receptor } = docs[0];
     const modoDetalle = await this._resolveModoDetalle(
       factura.empkey,
       factura.gclirut,
     );
     const detalleItems =
       modoDetalle === 'POR_PRODUCTO'
-        ? await this._construirDetalleItems(guias, primerDoc)
+        ? this._construirDetalleItems(guias, docs)
         : [];
+    const referenciasExternas = this._extraerReferenciasExternas(docs);
     // Enternet exige que la fecha de emisión sea la de hoy — no la de creación de la proforma
     // (que puede ser de días/meses atrás si quedó pendiente de aprobación).
     factura.gfacfecha = todayInChile();
@@ -653,6 +673,7 @@ export class FacturasService {
       })),
       modoDetalle,
       detalleItems,
+      referenciasExternas,
     });
     const rutUsuario =
       this.configService.get<string>('FACTURACION_RUT_USUARIO') ??
@@ -678,15 +699,16 @@ export class FacturasService {
       throw new NotFoundException(`Proforma no encontrada: gfackey=${gfackey}`);
 
     const guias = await this._cargarGuiasParaEmision(empkey, gfackey);
-    const primerDoc = await this.xmlParserService.fetchDocument(
-      guias[0].guifilepath,
+    const docs = await Promise.all(
+      guias.map((g) => this.xmlParserService.fetchDocument(g.guifilepath)),
     );
-    const { receptor } = primerDoc;
+    const { receptor } = docs[0];
     const modoDetalle = await this._resolveModoDetalle(empkey, factura.gclirut);
     const detalleItems =
       modoDetalle === 'POR_PRODUCTO'
-        ? await this._construirDetalleItems(guias, primerDoc)
+        ? this._construirDetalleItems(guias, docs)
         : [];
+    const referenciasExternas = this._extraerReferenciasExternas(docs);
 
     return buildMensaje({
       transaccionIdL: `${empkey}-${gfackey}`,
@@ -709,6 +731,7 @@ export class FacturasService {
       })),
       modoDetalle,
       detalleItems,
+      referenciasExternas,
     });
   }
 

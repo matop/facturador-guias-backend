@@ -1,6 +1,13 @@
 // MensajeBuilder — genera el string Mensaje en formato Enternet V5 (pipe-delimited).
 // Módulo puro: sin side-effects, sin NestJS DI, sin HTTP. Testeable en aislamiento.
 
+import type {
+  TipoReferenciaExterna,
+  ReferenciaExterna,
+} from '../xml/xml-parser.utils.js';
+
+export type { TipoReferenciaExterna };
+
 export interface GuiaParaMensaje {
   folio: string;
   fechaEmision: string; // YYYY-MM-DD
@@ -16,9 +23,42 @@ export type ModoDetalle = 'SG' | 'POR_PRODUCTO';
  * Umbral de referencias individuales. Sobre este número, el Detalle colapsa
  * a una sola línea "Segun Guias:" y la Referencia pasa a modo Global — ver
  * CONTEXT.md "Modo de Detalle de Factura" / "Split de Proforma por Volumen".
- * Cuenta solo guías por ahora (OC/HES aún no están en el pipeline).
+ * Cuenta guías + OC deduplicadas + HES deduplicadas (total de referencias).
  */
 export const MAX_REFERENCIAS_INDIVIDUALES = 40;
+
+/** Referencia a OC/HES extraída de una guía — ver parseReferencias en xml-parser.utils.ts. */
+export type ReferenciaExternaParaMensaje = ReferenciaExterna;
+
+const RAZON_REFERENCIA_EXTERNA: Record<TipoReferenciaExterna, string> = {
+  '801': 'Orden de Compra',
+  HES: 'Hoja de Entrada de Servicios',
+};
+
+/**
+ * Deduplica por clave (tipo, folio) — una OC y una HES pueden compartir folio
+ * (numeraciones de terceros independientes), por eso no se deduplica por folio
+ * solo. Preserva el orden de primera aparición.
+ */
+function dedupeReferenciasExternas(
+  referencias: ReferenciaExternaParaMensaje[],
+): {
+  oc: ReferenciaExternaParaMensaje[];
+  hes: ReferenciaExternaParaMensaje[];
+} {
+  const vistos = new Set<string>();
+  const oc: ReferenciaExternaParaMensaje[] = [];
+  const hes: ReferenciaExternaParaMensaje[] = [];
+
+  for (const r of referencias) {
+    const key = `${r.tipo}|${r.folio}`;
+    if (vistos.has(key)) continue;
+    vistos.add(key);
+    (r.tipo === '801' ? oc : hes).push(r);
+  }
+
+  return { oc, hes };
+}
 
 export interface DetalleItemParaMensaje {
   nmbItem: string;
@@ -44,6 +84,7 @@ export interface MensajeInput {
   guias: GuiaParaMensaje[];
   modoDetalle?: ModoDetalle; // default 'SG'
   detalleItems?: DetalleItemParaMensaje[]; // ignorado salvo POR_PRODUCTO
+  referenciasExternas?: ReferenciaExternaParaMensaje[]; // OC/HES, ya extraídas de las guías, sin deduplicar
 }
 
 export interface MensajeResult {
@@ -205,9 +246,12 @@ export function buildMensaje(input: MensajeInput): MensajeResult {
     guias,
     modoDetalle,
     detalleItems,
+    referenciasExternas,
   } = input;
 
   if (guias.length === 0) throw new Error('La proforma no tiene guías');
+
+  const { oc, hes } = dedupeReferenciasExternas(referenciasExternas ?? []);
 
   const fechaVenc = addDias(fechaDocumento, diasCredito);
 
@@ -227,7 +271,8 @@ export function buildMensaje(input: MensajeInput): MensajeResult {
   // Período de facturación (S.G.): derivado de la fecha de la primera guía
   const periodo = guias[0].fechaEmision.substring(0, 7);
 
-  const isGlobal = guias.length > MAX_REFERENCIAS_INDIVIDUALES;
+  const totalReferencias = guias.length + oc.length + hes.length;
+  const isGlobal = totalReferencias > MAX_REFERENCIAS_INDIVIDUALES;
 
   const lines: string[] = [];
 
@@ -256,8 +301,21 @@ export function buildMensaje(input: MensajeInput): MensajeResult {
       : `2:|ITEM|TIPO ITEM|DESCRIPCION|CANTIDAD|PRECIO|DESCUENTO MONTO|TOTAL LINEA`,
   );
   if (isGlobal) {
-    const folios = guias.map((g) => g.folio).join(' ');
-    lines.push(`3:|1|AFECTO|Segun Guias:|1|${sumNeto}|0|${sumNeto}|${folios}`);
+    // OC/HES colapsan junto con las guías en el mismo campo, sin listarse
+    // aparte — ver PRD-referencias-oc-hes.md "Interacción con Modo Global
+    // simultáneo". Un segmento OC:/HES: se omite por completo si no hay
+    // ninguna referencia de ese tipo (no queda "- OC: " colgando vacío).
+    // El separador NO puede ser "|": el Mensaje V5 completo es pipe-delimited,
+    // así que un "|" dentro de este campo se cuenta como columna extra y
+    // Enternet rechaza con [ParseErr001] (confirmado en QA 2026-07-06, ver
+    // referencias-oc-hes.md).
+    const segmentos = [guias.map((g) => g.folio).join(' ')];
+    if (oc.length) segmentos.push(`OC: ${oc.map((r) => r.folio).join(' ')}`);
+    if (hes.length) segmentos.push(`HES: ${hes.map((r) => r.folio).join(' ')}`);
+    const descripcionAdicional = segmentos.join(' - ');
+    lines.push(
+      `3:|1|AFECTO|Segun Guias:|1|${sumNeto}|0|${sumNeto}|${descripcionAdicional}`,
+    );
   } else if (modoDetalle === 'POR_PRODUCTO') {
     lines.push(...buildDetallePorProducto(detalleItems ?? []));
   } else {
@@ -280,9 +338,30 @@ export function buildMensaje(input: MensajeInput): MensajeResult {
   // DEBITO" — consistente con que no exista un mecanismo funcional para
   // referencia Global en Facturas vía este canal.
   if (!isGlobal) {
-    lines.push(`4:|TIPO DE REFERENCIA|FOLIO|FECHA`);
+    // Enternet valida que el número de campos de cada línea 5:| corresponda
+    // exactamente con las etiquetas declaradas en 4:| ([ParseErr001] si no
+    // coinciden, confirmado en QA 2026-07-06). Las líneas de OC/HES agregan un
+    // 4to campo (RAZON REFERENCIA) — cuando hay al menos una, TODAS las líneas
+    // 5:| (incluidas las de guía) deben declarar ese campo, vacío para guías.
+    const tieneReferenciasExternas = oc.length > 0 || hes.length > 0;
+    lines.push(
+      tieneReferenciasExternas
+        ? `4:|TIPO DE REFERENCIA|FOLIO|FECHA|RAZON REFERENCIA`
+        : `4:|TIPO DE REFERENCIA|FOLIO|FECHA`,
+    );
     for (const g of guias) {
-      lines.push(`5:|52|${g.folio}|${formatDateSlash(g.fechaEmision)}`);
+      const linea = `5:|52|${g.folio}|${formatDateSlash(g.fechaEmision)}`;
+      lines.push(tieneReferenciasExternas ? `${linea}|` : linea);
+    }
+    for (const r of oc) {
+      lines.push(
+        `5:|801|${r.folio}|${formatDateSlash(r.fecha)}|${RAZON_REFERENCIA_EXTERNA['801']}`,
+      );
+    }
+    for (const r of hes) {
+      lines.push(
+        `5:|HES|${r.folio}|${formatDateSlash(r.fecha)}|${RAZON_REFERENCIA_EXTERNA['HES']}`,
+      );
     }
   }
 

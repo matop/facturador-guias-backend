@@ -1,5 +1,5 @@
 # Estado del Proyecto — guias-middleware
-Sesiones: 2026-05-28, 2026-05-29 (×2), 2026-05-30, 2026-06-01 (×3), 2026-06-02 (×4), 2026-06-03 (×4), 2026-06-19, 2026-06-30, 2026-07-01 (×2), 2026-07-02 (×3), 2026-07-03
+Sesiones: 2026-05-28, 2026-05-29 (×2), 2026-05-30, 2026-06-01 (×3), 2026-06-02 (×4), 2026-06-03 (×4), 2026-06-19, 2026-06-30, 2026-07-01 (×2), 2026-07-02 (×3), 2026-07-03, 2026-07-06 (×7, branch `worktree-oc-hes-prd-grill`, PR #9 marcado Ready for review)
 
 ## Estado de Componentes
 | Componente | Estado | Nota |
@@ -12,6 +12,7 @@ Sesiones: 2026-05-28, 2026-05-29 (×2), 2026-05-30, 2026-06-01 (×3), 2026-06-02
 | Regla Agrupadora v4 | ✅ Implementada | `extraeTagLista` + `REGLA_REGISTRY` + `reglaconfig jsonb` |
 | Detalle+Referencia Factura (DTE 33) — Casos 1/2/3 | ✅ Validados en QA real | `src/mensaje/mensaje-builder.ts` — Caso 1 (S.G.) validado en QA con PDF real; Casos 2/3 (Por Producto — Precio Constante/Variable) **emisión real confirmada 2026-07-02** (`gfackey=98`, folioSii=411208, guías sintéticas). |
 | Detalle+Referencia Factura (DTE 33) — Caso 4 (Global) | ⏳ Bloqueado — bug confirmado del lado de Enternet | `src/mensaje/mensaje-builder.ts` — Detalle (1 línea "Segun Guias:") funcional y confirmado en QA (folioSii=411211). Bloque `<Referencia>`/`IndGlobal` sigue en código **EXPERIMENTAL** (rama `if (isGlobal)` al final de `buildMensaje`) dejado a propósito sin revertir — Enternet confirmó que el problema es de su parser/generador de XML (no del Mensaje V5 enviado) y está corrigiéndolo. Reintentar cuando avisen. Ver Historial 2026-07-03 y `docs/consulta-enternet-referencia-global.md`. |
+| Referencias OC (801) / HES en Factura | ✅ Confirmado en QA real (sintético) — PR #9 Ready for review — falta XML real de cliente | `parseReferencias()` en `src/xml/xml-parser.utils.ts` + integración en `mensaje-builder.ts` (PR #9, branch `worktree-oc-hes-prd-grill`, **Ready for review** desde 2026-07-06). Wireado en `facturas.service.ts` desde commit `4ea5fd6`. **Emisión real confirmada**: combinadas (`gfackey=108`, folioSii=411212), OC sola (folioSii=411213) y HES sola (folioSii=411214), todas ≤40 refs totales. **Hallazgo `isGlobal`×chunking de 40 (sesión 5) resuelto de nuestro lado (sesión 7)**: se corrigió el separador de `DESCRIPCION ADICIONAL` (`|`→`-`, rompía el conteo de columnas pipe-delimited) — confirmado en QA que elimina el `ParseErr001`. El modo Global (>40 refs) con OC/HES sigue sin poder emitir, pero por el bug YA CONOCIDO y bloqueado del bloque EXPERIMENTAL de Caso 4 (ajeno a OC/HES, pendiente de que Enternet corrija su parser) — aceptado explícitamente como no bloqueante. Falta: XML real de cliente con OC/HES poblada (hoy solo probado con fixtures sintéticos). Ver `docs/PRD-referencias-oc-hes.md` y memoria `referencias-oc-hes.md`. |
 | GroupingService batch | ✅ Funcional | Evita N+1, 2 queries |
 | assignRegla + recomputo | ✅ Funcional | RUT en query usa XmlRut. **Corrección 2026-06-30**: no existe distinción real "primera activación" vs "cambio" en el código actual — comportamiento es uniforme, ver Historial 2026-06-30 |
 | Proforma — modelo `factura`+`facturaguias` | ✅ Implementado | `gde.facturaguias` tabla puente factura↔guía; `factura.gclirut`/`reglaidl` propios; chunking `MAX_GUIAS_POR_FACTURA=40` (confirmado E2E 2026-07-02); estados +`ANULADA` vía `anular`/`limpiar` |
@@ -20,7 +21,7 @@ Sesiones: 2026-05-28, 2026-05-29 (×2), 2026-05-30, 2026-06-01 (×3), 2026-06-02
 | PRD discover-por-cliente | ✅ Completo | service + controller + tests — 2026-05-27 |
 | Migración SQL 007 | ✅ Aplicada | BD local actualizada 2026-05-29 |
 | Limpieza código legacy | ✅ Completo | `src/empresa/` + 7 DTOs huérfanos + `toXmlRut` eliminados — 2026-05-29 |
-| Tests unitarios | ✅ **210 tests verdes** | 15 suites — +6 tests Caso 4 (Global) — 2026-07-02 |
+| Tests unitarios | ✅ **236/238 verdes** | 16 suites — 2 skips preexistentes sin relación (Caso 4 Global) — branch `worktree-oc-hes-prd-grill`, 2026-07-06 |
 | FacturasService / Proformas | ✅ Funcional | `empresaRepository` eliminado — `sync` usa `?rut=` query param — 2026-05-29 |
 | MensajeBuilder V5 | ✅ Implementado | `src/mensaje/mensaje-builder.ts` — módulo puro, 39 tests — 2026-06-02 |
 | Preview Mensaje endpoint | ✅ **Aprobado en QA** | Modo 1 (<20 guías) y Modo 2 (≥20) verificados contra servidor real — 2026-06-02 |
@@ -34,6 +35,116 @@ Sesiones: 2026-05-28, 2026-05-29 (×2), 2026-05-30, 2026-06-01 (×3), 2026-06-02
 | proforma-transitions.ts | ✅ Creado | assertPuedeAprobar / assertPuedeAnular — 2026-05-29 |
 
 ## Historial Técnico
+
+### 2026-07-06 (sesión 7) — Fix del separador de DESCRIPCION ADICIONAL, confirmado en QA: elimina el ParseErr001, revela el bug real pendiente (bloqueado en Enternet)
+
+**Contexto:** el usuario pidió arreglar el separador de `DESCRIPCION ADICIONAL` (causa raíz identificada en la sesión 6) para comprobar en QA real que efectivamente era eso lo que rompía OC/HES con 40 guías.
+
+**Fix (commit siguiente):** `mensaje-builder.ts` línea ~311, `segmentos.join(' | ')` → `segmentos.join(' - ')`. El Mensaje V5 es pipe-delimited de punta a punta, así que ningún separador legible dentro de un campo puede usar `|`. Tests actualizados en `mensaje-builder-referencias-global.spec.ts` (4 asserts con `' | '`/`'| OC'`/`'| HES'` → `' - '`/`'- OC'`/`'- HES'`). Suite completa: 236/238 verdes (mismos 2 skips), lint y build limpios.
+
+**Re-test contra Enternet QA real (`test-oc-hes-chunking-sintetico.js --reset --aprobar`):**
+- OC N=40 y HES N=40: el `[ParseErr001]` **desapareció** — el Detalle (línea `3:|`) ya no se rechaza por conteo de columnas. Confirma que el separador era la causa raíz de ese error específico.
+- Pero N=40 **sigue fallando**, ahora por un error distinto y ya conocido: `[FirmaErr002] Falla en el Proceso de Firma del XML, cvc-datatype-valid.1.2.1: '-  -' is not a valid value for 'date'` — el bloque EXPERIMENTAL de `buildMensaje` (líneas `TIPO/FOLIO/ACCION REFERENCIA` + `5:|52|0|{fecha}`) que se agrega siempre que `isGlobal=true`. Este es exactamente el bug de Enternet ya documentado y pausado en `enternet-v5-referencia-global-en-progreso.md` — no relacionado con OC/HES, no es un hallazgo nuevo.
+- OC N=39 y HES N=39: sin cambios (ya `EMITIDA` de la sesión 6, `isGlobal=false` no pasa por este código en absoluto).
+
+**Conclusión:** el fix del separador era necesario y correcto (elimina un bug real y propio), pero no alcanza para que 40 guías + 1 OC/HES emitan — el modo Global sigue bloqueado por el bug del lado de Enternet, ahora sin el ruido del `ParseErr001` encima. El plan de "resolver el hallazgo `isGlobal`×chunking antes de sacar el PR de draft" pasa a depender 100% de que Enternet corrija su parser (ver Pendientes) — de nuestro lado ya no queda nada más que arreglar en este camino.
+
+**Archivos modificados:** `src/mensaje/mensaje-builder.ts`, `src/mensaje/mensaje-builder-referencias-global.spec.ts`.
+
+---
+
+### 2026-07-06 (sesión 6) — Confirmado en QA real: OC y HES por separado con 40 guías rompen la emisión; con 39 funcionan
+
+**Contexto:** siguiente paso del hallazgo abierto #3 de la sesión 5 (interacción `isGlobal` × chunking de 40). El usuario pidió probar la emisión real de OC y HES **por separado** (no combinadas, ya confirmado con ambas juntas en folioSii=411212) con 40 guías cada una, y si fallaba, repetir con 39.
+
+**Script nuevo:** `scripts/test-oc-hes-chunking-sintetico.js --tipo=oc|hes --n=<N> [--reset] [--aprobar]` — inserta N guías sintéticas directo en BD (bypass de `crearManual`, igual que `test-caso4-global-sintetico.js`, para controlar el N exacto sin el chunking de `MAX_GUIAS_POR_FACTURA`), donde solo la primera guía lleva la `<Referencia>` externa (OC o HES, fixtures reusados de `test/fixtures/oc-hes/`) y el resto son guías planas (fixture de `test/fixtures/caso4-global/guia-global.xml`). Folios no se solapan entre corridas de distinto `(tipo, N)`.
+
+**Resultado — los 4 casos confirmaron exactamente la hipótesis del hallazgo #3:**
+- OC, N=40 (total 41 referencias > 40 → `isGlobal`): **RECHAZADO**, `gfackey=109`.
+- OC, N=39 (total 40 referencias, no > 40 → modo individual): **EMITIDA, folioSii=411213**, `gfackey=110`.
+- HES, N=40: **RECHAZADO**, `gfackey=111` (mismo error).
+- HES, N=39: **EMITIDA, folioSii=411214**, `gfackey=112`.
+
+**Causa raíz del rechazo en N=40 (más específica que la hipótesis original del hallazgo #3):** no es (solo) que el modo Global esté roto en general — es que `segmentos.join(' | ')` en `mensaje-builder.ts` (línea ~311) usa `" | "` como separador legible entre los segmentos de guías/OC/HES dentro de un único campo `DESCRIPCION ADICIONAL`, pero como todo el Mensaje V5 es pipe-delimited, ese `|` literal se cuenta como un separador de columna más. Enternet rechaza con `[ParseErr001] Numero de campos del detalle no coincide con el número de etiquetas en la linea 15`, señalando exactamente la línea `3:|...|994300 ... 994339 | OC: 555001` — el header `2:|` declara 8 columnas pero la línea `3:|` con el segmento `OC:`/`HES:` agregado tiene 9 (por el `|` de separación). El bloque EXPERIMENTAL final de `buildMensaje` (líneas `TIPO/FOLIO/ACCION REFERENCIA`) nunca llega a ejecutarse contra Enternet porque el rechazo ocurre antes, al parsear el Detalle.
+
+**Nota:** el caso 4 puro (solo guías, sin OC/HES, folioSii=411211) no tiene este problema porque `segmentos` tiene un solo elemento y `join(' | ')` no agrega ningún `|` de más.
+
+**Archivos modificados:** `scripts/test-oc-hes-chunking-sintetico.js` (nuevo, activo permanente reusable).
+
+**Pendiente:** decidir el fix real para el hallazgo #3 con esta causa raíz más específica — candidatos: usar un separador que no sea `|` dentro de `DESCRIPCION ADICIONAL` (ej. `;` o espacio), o evitar que `isGlobal` se dispare por el borde exacto de chunking cuando la causa es solo 1 OC/HES agregada a 40 guías ya en modo individual. Sigue sin resolverse antes de marcar el PR #9 como "Ready for review" (mismo pendiente #2 de la sesión 5, ahora con más información).
+
+---
+
+### 2026-07-06 (sesión 5) — Code review de PR #9 (8 ángulos + verify), 2 fixes aplicados, 2 hallazgos abiertos
+
+**Contexto:** retomando el handoff de la sesión 4 (paso sugerido: correr `code-review` antes de marcar PR #9 como "Ready for review"). Se corrió una revisión con 8 agentes finder en paralelo (line-by-line, removed-behavior, cross-file, reuse, simplification, efficiency, altitude, conventions) sobre `git diff main...HEAD`, seguida de verificación manual (lectura directa del código + diff) de cada candidato antes de reportar.
+
+**Fixes aplicados (commit `0dd64da`, pusheado):**
+1. `xml-parser.utils.ts` — `parseReferencias` descartaba en silencio una 2da+ ocurrencia del mismo tipo (801/HES) dentro de una guía (`if (vistos.has(tipo)) continue`), sin la visibilidad que sí tienen los `TpoDocRef` no reconocidos (`descartadas` + log). Ahora también reporta la repetida en `descartadas`.
+2. `mensaje-builder.ts` — `TipoReferenciaExterna`/`ReferenciaExternaParaMensaje` redeclaraban el mismo shape que `TipoReferenciaExterna`/`ReferenciaExterna` en `xml-parser.utils.ts`. Ahora se importan en vez de redeclararse.
+
+**Hallazgos abiertos — requieren decisión, no se tocaron (ver comentario en PR #9):**
+3. **Interacción `isGlobal` × chunking de 40 guías** (`mensaje-builder.ts:273`): `isGlobal` ahora cuenta `guias + oc + hes` contra el mismo umbral (40) que `MAX_GUIAS_POR_FACTURA` usa para trocear proformas grandes. Un chunk de exactamente 40 guías + cualquier OC/HES activa el modo Global — hoy confirmado roto en el parser de Enternet y pausado (ver fila "Caso 4 Global" arriba). Una factura normal podría caer sin aviso en el camino sabido-roto.
+4. **Fetch de todas las guías en `_emitir`/`previewMensaje`**: ya documentado como cambio de comportamiento explícito en la sesión 3 (no es hallazgo nuevo) — se re-confirma acá que sigue siendo un trade-off consciente, no un bug, probablemente inevitable dado que OC/HES pueden venir en cualquier guía.
+
+**Tests:** 236/238 verdes (mismos 2 skips preexistentes) tras los 2 fixes — se extendieron 2 tests existentes en `xml-parser.service.spec.ts` para cubrir el nuevo reporte en `descartadas`.
+
+**Pendiente:** sigue en pie el punto de la sesión 4 — conseguir un XML real de cliente con OC/HES poblada antes de marcar el PR #9 como "Ready for review". El hallazgo #3 de arriba también debería resolverse (o aceptarse explícitamente) antes de sacar el PR de draft.
+
+---
+
+### 2026-07-06 (sesión 4) — Emisión real OC/HES confirmada en Enternet QA, bug de header `4:|` corregido
+
+**Contexto:** continuación directa de la sesión 3 del mismo día (wiring de `parseReferencias` en `facturas.service.ts`, commit `4ea5fd6`). El usuario pidió "probar la emisión para ver cómo responde QA Enternet" — el paso pendiente #2 de la sesión anterior.
+
+**Preparación:** se creó `scripts/test-oc-hes-sintetico.js` + `test/fixtures/oc-hes/{guia-oc,guia-hes}.xml` (mismo patrón `data:` URL usado en `test-por-producto-sintetico.js`/`test-caso4-global-sintetico.js`): 2 guías sintéticas (`empkey=1163`, emisor `968880004`, `RutUsuario=16714595-7`), una con `<Referencia><TpoDocRef>801</TpoDocRef>...` (OC folio 555001) y otra con `<TpoDocRef>HES</TpoDocRef>` (folio 777002). El servidor de desarrollo se corrió sobre el propio worktree (no sobre el checkout principal) para que `preview-mensaje`/`aprobar` ejercitaran el código de la branch `worktree-oc-hes-prd-grill`, no `main`.
+
+**Primer intento real (`PATCH /aprobar`) — RECHAZADO por Enternet QA:**
+```
+[DTEErr001] No fue posible emitir el documento. | [ParseErr001] Número de campos de la
+linea de referencia no coincide con el número de etiquetas en la linea 19/20 |
+[4:|TIPO DE REFERENCIA|FOLIO|FECHA] | [5:|801|555001|10/01/2026|Orden de Compra]
+```
+El preview (`preview-mensaje`, que no valida contra Enternet) se veía correcto y no detectó el problema — solo `/aprobar` contra QA real lo expuso.
+
+**Causa raíz (confirmada releyendo la spec V5, `docs/FormatodeIntegracinbasadoenEtiquetasEstndarv5.html`):** el header `4:|` declara las columnas de las líneas `5:|` siguientes, y Enternet valida que el número de campos corresponda exactamente. La spec sí documenta un campo opcional `RAZON REFERENCIA` (C90) para un 4to campo — pero el código emitía el header fijo de 3 columnas (`4:|TIPO DE REFERENCIA|FOLIO|FECHA`) incluso cuando las líneas de OC/HES agregaban una 4ta (la razón fija "Orden de Compra"/"Hoja de Entrada de Servicios").
+
+**Fix en `src/mensaje/mensaje-builder.ts` (commit `b6f7086`):** cuando hay al menos una OC/HES, el header pasa a 4 columnas (`4:|TIPO DE REFERENCIA|FOLIO|FECHA|RAZON REFERENCIA`) y las líneas `5:|52|...` de guía agregan un 4to campo vacío (`5:|52|{folio}|{fecha}|`) para mantener la correspondencia exigida. Sin OC/HES, el header sigue igual que antes (sin afectar Casos 1-4 ya validados).
+
+**Segundo intento — EMITIDA:** `gfackey=108` (empkey 1163) → **EMITIDA, folioSii=411212**. Se descargó el XML final (`linkXml`) y se verificaron los 4 bloques `<Referencia>` generados por Enternet: 2× `TpoDocRef=52` (guías, sin `RazonRef`) + 1× `TpoDocRef=801` + 1× `TpoDocRef=HES` (ambos con `<RazonRef>` poblado con el texto fijo esperado) — confirma el diseño de punta a punta contra QA real.
+
+**Archivos modificados:**
+- `src/mensaje/mensaje-builder.ts` — fix de header/campo vacío descrito arriba.
+- `src/mensaje/mensaje-builder.spec.ts` — test nuevo verificando header de 4 columnas + campo vacío en línea de guía cuando hay OC/HES.
+- `scripts/test-oc-hes-sintetico.js` (nuevo) + `test/fixtures/oc-hes/guia-{oc,hes}.xml` (nuevos) — activos permanentes reusables con `--reset`/`--aprobar`.
+
+**Tests:** 236/238 verdes (mismos 2 skips preexistentes de Caso 4 Global, sin relación). Lint y build limpios.
+
+**Pendiente:** conseguir un XML real de cliente con OC/HES poblada (hoy solo se validó con fixtures sintéticos) antes de marcar el PR #9 como "Ready for review".
+
+---
+
+### 2026-07-06 (sesión 3) — Prueba con datos sintéticos + wiring de OC/HES en `facturas.service.ts`
+
+**Contexto:** trabajo en el worktree `worktree-oc-hes-prd-grill` (PR #9, draft), que ya traía `parseReferencias()` + integración en `mensaje-builder.ts` implementados con TDD en una sesión anterior del mismo día (ver `docs/PRD-referencias-oc-hes.md` y memoria `referencias-oc-hes.md` para el diseño completo — no se repite acá). El usuario pidió primero "probar la feature con datos sintéticos" y luego "wirear `parseReferencias` en `facturas.service.ts`".
+
+**Prueba con datos sintéticos (no commiteada, script ad-hoc descartado al terminar):** usando `buildGuiaXml` (`src/xml/xml-test-builders.ts`) + `parseReferencias` + `buildMensaje` directamente (sin pasar por NestJS ni DB), se confirmaron 4 casos: modo individual con OC+HES en guías distintas, modo Global (30 guías + 13 OC/HES = 43 > 40, colapsa en `DESCRIPCION ADICIONAL`), `TpoDocRef` desconocido (`52`) descartado sin bloquear, y `801`/`HES` sin `FolioRef` lanza error. Sirvió para confirmar el comportamiento antes de tocar el service real — ningún archivo de producción se tocó en este paso.
+
+**Wiring en `facturas.service.ts` (commit `4ea5fd6`, pusheado a `worktree-oc-hes-prd-grill`):**
+- `_emitir` y `previewMensaje`: antes solo fetcheaban el XML de la primera guía (salvo modo `POR_PRODUCTO`, que fetcheaba todas). Ahora ambos hacen `Promise.all(guias.map(fetchDocument))` **siempre**, porque OC/HES pueden venir en cualquier guía, no solo la primera.
+- Nuevo método privado `_extraerReferenciasExternas(docs)`: corre `parseReferencias(doc.rawXml)` por cada doc fetcheado, concatena las `referencias` (sin dedup — lo hace `buildMensaje` internamente por `(tipo, folio)`) y loguea cada `descartada` (`TpoDocRef` no reconocido) con `this.logger.warn`, sin bloquear la emisión.
+- `_construirDetalleItems` dejó de fetchear por su cuenta (ya no es `async`) — recibe los `docs` ya fetcheados una sola vez, reusados tanto para detalle-por-producto como para extracción de referencias.
+- **Cambio de comportamiento explícito:** se eliminó la optimización previa "modo SG/cliente=null → solo 1 fetchDocument aunque haya 2+ guías" (ya no aplica: ahora siempre se fetchea 1 XML por guía). El test que verificaba esa optimización se actualizó para reflejar el nuevo comportamiento (`facturas.service.spec.ts`).
+
+**Archivos modificados:**
+- `src/facturas/facturas.service.ts` — cambios descritos arriba.
+- `src/facturas/facturas.service.spec.ts` — 3 tests nuevos (OC+HES en 2 guías → líneas `5:` en el Mensaje; `TpoDocRef` desconocido no bloquea; `previewMensaje` incluye OC/HES) + 1 test existente actualizado (fetch de todas las guías incluso en modo SG).
+
+**Tests:** 235/237 verdes (2 skips preexistentes de Caso 4 Global, sin relación). Lint y build limpios.
+
+**Pendiente (no bloqueante):** conseguir un XML real de cliente con OC/HES poblada (sigue sin existir) y validar con una emisión real contra Enternet QA antes de sacar el PR #9 de draft.
+
+---
 
 ### 2026-07-03 — Reintentos Caso 4 (Global) en QA real, bug confirmado del lado de Enternet
 
@@ -382,8 +493,9 @@ ALTER TABLE gde.factura ADD COLUMN IF NOT EXISTS gfacfolio_sii int,
 - [x] Implementar Casos 2/3 (Por Producto) — ✅ ya estaban implementados con TDD antes de 2026-07-02 (drift de documentación corregido esa sesión), ver ADR 0002.
 - [x] Implementar Caso 4 (Global/overflow >40 refs) en `mensaje-builder.ts` — ✅ 2026-07-02, **pero sin validar en QA** (ver Historial sesión 3). El pendiente real ahora es la validación empírica, no la implementación.
 - [ ] **Validar Caso 4 con emisión real contra Enternet QA** — 2026-07-03: fixture y script ya armados (`scripts/test-caso4-global-sintetico.js`), reintentado varias veces contra QA. **Bug confirmado del lado de Enternet** (parser no completa `FchRef` del bloque `IndGlobal=1` generado desde `ACCION REFERENCIA=5`, ver Historial 2026-07-03). Bloqueado hasta que Enternet corrija su parser — no seguir iterando desde nuestro lado hasta tener novedades. Código experimental queda sin revertir en `mensaje-builder.ts` para reintentar rápido con `--reset --aprobar`.
-- [ ] Deduplicar OC (801) y HES en el conteo de "total de referencias" de Caso 4 — hoy el umbral de 40 solo cuenta guías porque `parseReferencias()` no existe en el código.
-- [ ] OPEN-1: confirmar `TpoDocRef=HES` en XML de guía (DTE 52) de entrada — falta XML real con `<Referencia>` HES
+- [x] Deduplicar OC (801) y HES en el conteo de "total de referencias" de Caso 4 — ✅ 2026-07-06: `parseReferencias()` implementado, `isGlobal` ahora cuenta `guias.length + oc.length + hes.length > 40`. Ver PR #9 (draft) y memoria `referencias-oc-hes.md`.
+- [x] **Validar OC/HES con emisión real en QA** — ✅ 2026-07-06 (sesión 4, combinadas, folioSii=411212; sesión 6, por separado con 39 guías, folioSii=411213/411214; sesión 7, fix de separador confirmado). PR #9 marcado "Ready for review" 2026-07-06. Sigue pendiente (no bloqueante, aceptado explícitamente): (1) XML real de cliente con `<Referencia>` 801/HES poblada para confirmar el parseo de entrada — sigue sin existir; (2) modo Global con OC/HES (>40 refs) sigue bloqueado por el bug de Enternet en el bloque EXPERIMENTAL, ajeno a OC/HES — depende de que Enternet corrija su parser.
+- [ ] OPEN-1: confirmar `TpoDocRef=HES` en XML de guía (DTE 52) de entrada — falta XML real con `<Referencia>` HES (mismo bloqueador que el ítem anterior)
 
 ### Baja prioridad
 - [ ] Filtro `IndTraslado=1` — solo guías que constituyen venta deben facturarse
@@ -394,6 +506,10 @@ ALTER TABLE gde.factura ADD COLUMN IF NOT EXISTS gfacfolio_sii int,
 - [ ] Campo "descripción adicional" en Enternet (no impreso en PDF) — investigar si es real y distinto de `GLOSA`, sin bloquear nada
 
 ## Lecciones Aprendidas
+
+### Agregadas 2026-07-06 (sesión 3)
+- Cuando una feature nueva necesita un dato que solo está disponible fetcheando el XML completo de cada guía (OC/HES puede estar en cualquiera), no hay forma de mantener una optimización previa que fetcheaba solo la primera guía "porque alcanzaba" — hay que aceptar el costo de red adicional y actualizar los tests que asumían la optimización vieja, en vez de buscar un atajo que reintroduzca el gap de cobertura.
+- Antes de wirear una función pura ya testeada con TDD (`parseReferencias`) dentro de un service con muchos tests existentes, correr primero un script sintético ad-hoc (sin tocar el service) para confirmar el comportamiento esperado extremo a extremo — permite separar "¿la lógica pura funciona?" de "¿el wiring rompe algo existente?" y depurar cada capa por separado.
 
 ### Agregadas 2026-07-02 (sesión 3)
 - Cuando un spec de integración documenta un campo como aplicable solo a un tipo de documento específico (ej. `ACCION REFERENCIA` "SOLO SI ES NOTA DE CREDITO O DEBITO"), no asumir que el proveedor externo lo valida estrictamente — puede aceptarlo igual para otro tipo de documento, o ignorarlo silenciosamente. La única forma de saberlo es probar contra el ambiente real; no bloquear la implementación esperando que el spec sea 100% preciso, pero sí dejar la hipótesis marcada como no confirmada en la documentación hasta testear.
@@ -481,3 +597,4 @@ ALTER TABLE gde.factura ADD COLUMN IF NOT EXISTS gfacfolio_sii int,
 - Diseño de Detalle+Referencia Factura (DTE 33): Casos 1 (S.G.), 2 y 3 (Por Producto) **implementados con TDD** (`mensaje-builder.ts`, ADR 0002). Caso 1 validado con dev senior 2026-07-01: texto `"Facturación según guías período {periodo}"`, sin `GLOSA`. Caso 4 (Global) **implementado 2026-07-02 pero sin validar en QA** — ver Historial sesión 3 e Historial Técnico.
 - **Caso 4 (Global) — mecanismo de Referencia es hipótesis sin confirmar:** `mensaje-builder.ts` agrega `1:|TIPO DOC REFERENCIA|52`, `1:|FOLIO DOC REFERENCIA|0`, `1:|ACCION REFERENCIA|5` al encabezado cuando hay más de 40 guías, basado en la tabla `ACCION REFERENCIA` del spec V5 — que el spec documenta como aplicable solo a NC/ND, no a Factura. Nadie ha probado todavía si Enternet genera `IndGlobal=1`/`FolioRef=0` con este input. No asumir que funciona sin antes hacer una emisión real de prueba.
 - **Fix redondeo IVA/MONTO TOTAL (2026-07-02):** `sumIva` y `sumDoc` en `buildMensaje` deben derivarse de los totales agregados (`round(sumNeto × 19%)`, `sumNeto+sumIva+sumExento`), no sumar `totiva`/`totdoc` ya redondeados por guía — con muchas guías (40+) el drift de redondeo acumulado rompe la validación de Enternet.
+- **Referencias OC (801) / HES (2026-07-06):** implementadas en branch `worktree-oc-hes-prd-grill` (PR #9, draft) — `parseReferencias()` (`xml-parser.utils.ts`) extrae OC/HES del `<Referencia>` de cada guía (dedup 1:1 fase 1, tipo desconocido se descarta sin bloquear, `FolioRef`/`FchRef` faltante sí bloquea). Wireado en `facturas.service.ts`: `_emitir`/`previewMensaje` ahora fetchean el XML de **todas** las guías (ya no solo la primera) para poder extraer referencias de cualquiera de ellas. Sin XML real de cliente con OC/HES ni emisión QA validada todavía — no asumir que el parseo de entrada es correcto contra datos reales hasta confirmar.

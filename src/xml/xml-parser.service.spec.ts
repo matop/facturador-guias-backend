@@ -1,4 +1,5 @@
 import { XmlParserService } from './xml-parser.service.js';
+import { buildGuiaXml } from './xml-test-builders.js';
 
 const SAMPLE_XML = `<?xml version="1.0" encoding="UTF-8"?>
 <DTE xmlns="http://www.sii.cl/SiiDte">
@@ -173,6 +174,129 @@ describe('XmlParserService', () => {
 
     it('retorna mapa vacío para string vacío', () => {
       expect(service.parseKv('')).toEqual(new Map());
+    });
+  });
+
+  describe('parseReferencias', () => {
+    it('guía sin <Referencia> retorna vacío', () => {
+      const xml = buildGuiaXml();
+      const result = service.parseReferencias(xml);
+      expect(result).toEqual({ referencias: [], descartadas: [] });
+    });
+
+    it('guía con solo OC', () => {
+      const xml = buildGuiaXml({
+        referencias: [{ tipo: '801', folio: '111', fecha: '2026-05-10' }],
+      });
+      const result = service.parseReferencias(xml);
+      expect(result.referencias).toEqual([
+        { tipo: '801', folio: '111', fecha: '2026-05-10' },
+      ]);
+      expect(result.descartadas).toEqual([]);
+    });
+
+    it('guía con solo HES', () => {
+      const xml = buildGuiaXml({
+        referencias: [{ tipo: 'HES', folio: '222', fecha: '2026-05-11' }],
+      });
+      const result = service.parseReferencias(xml);
+      expect(result.referencias).toEqual([
+        { tipo: 'HES', folio: '222', fecha: '2026-05-11' },
+      ]);
+    });
+
+    it('guía con OC y HES', () => {
+      const xml = buildGuiaXml({
+        referencias: [
+          { tipo: '801', folio: '111', fecha: '2026-05-10' },
+          { tipo: 'HES', folio: '222', fecha: '2026-05-11' },
+        ],
+      });
+      const result = service.parseReferencias(xml);
+      expect(result.referencias).toEqual([
+        { tipo: '801', folio: '111', fecha: '2026-05-10' },
+        { tipo: 'HES', folio: '222', fecha: '2026-05-11' },
+      ]);
+    });
+
+    it('guía con 2+ OC toma la primera ocurrencia, no bloquea, reporta la repetida en descartadas', () => {
+      const xml = buildGuiaXml({
+        referencias: [
+          { tipo: '801', folio: '111', fecha: '2026-05-10' },
+          { tipo: '801', folio: '999', fecha: '2026-05-20' },
+        ],
+      });
+      const result = service.parseReferencias(xml);
+      expect(result.referencias).toEqual([
+        { tipo: '801', folio: '111', fecha: '2026-05-10' },
+      ]);
+      expect(result.descartadas).toHaveLength(1);
+      expect(result.descartadas[0].tipo).toBe('801');
+    });
+
+    it('guía con 2+ HES toma la primera ocurrencia, no bloquea, reporta la repetida en descartadas', () => {
+      const xml = buildGuiaXml({
+        referencias: [
+          { tipo: 'HES', folio: '222', fecha: '2026-05-11' },
+          { tipo: 'HES', folio: '888', fecha: '2026-05-21' },
+        ],
+      });
+      const result = service.parseReferencias(xml);
+      expect(result.referencias).toEqual([
+        { tipo: 'HES', folio: '222', fecha: '2026-05-11' },
+      ]);
+      expect(result.descartadas).toHaveLength(1);
+      expect(result.descartadas[0].tipo).toBe('HES');
+    });
+
+    it('TpoDocRef no reconocido (52 dentro de la guía) se ignora y aparece en descartadas', () => {
+      const xml = buildGuiaXml({
+        referencias: [{ tipo: '52', folio: '333', fecha: '2026-05-12' }],
+      });
+      const result = service.parseReferencias(xml);
+      expect(result.referencias).toEqual([]);
+      expect(result.descartadas).toHaveLength(1);
+      expect(result.descartadas[0].tipo).toBe('52');
+    });
+
+    it('TpoDocRef desconocido (código inventado) se ignora y aparece en descartadas', () => {
+      const xml = buildGuiaXml({
+        referencias: [{ tipo: 'XYZ', folio: '444', fecha: '2026-05-13' }],
+      });
+      const result = service.parseReferencias(xml);
+      expect(result.referencias).toEqual([]);
+      expect(result.descartadas).toHaveLength(1);
+      expect(result.descartadas[0].tipo).toBe('XYZ');
+    });
+
+    it('801 sin FolioRef lanza error identificando tipo', () => {
+      const xml = buildGuiaXml({
+        referencias: [{ tipo: '801', fecha: '2026-05-10' }],
+      });
+      expect(() => service.parseReferencias(xml)).toThrow(/801/);
+    });
+
+    it('801 sin FchRef lanza error identificando tipo y folio', () => {
+      const xml = buildGuiaXml({
+        referencias: [{ tipo: '801', folio: '555' }],
+      });
+      expect(() => service.parseReferencias(xml)).toThrow(/801/);
+      expect(() => service.parseReferencias(xml)).toThrow(/555/);
+    });
+
+    it('HES sin FolioRef lanza error identificando tipo', () => {
+      const xml = buildGuiaXml({
+        referencias: [{ tipo: 'HES', fecha: '2026-05-10' }],
+      });
+      expect(() => service.parseReferencias(xml)).toThrow(/HES/);
+    });
+
+    it('HES sin FchRef lanza error identificando tipo y folio', () => {
+      const xml = buildGuiaXml({
+        referencias: [{ tipo: 'HES', folio: '666' }],
+      });
+      expect(() => service.parseReferencias(xml)).toThrow(/HES/);
+      expect(() => service.parseReferencias(xml)).toThrow(/666/);
     });
   });
 

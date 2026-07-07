@@ -124,3 +124,11 @@ Sigue pendiente (no bloqueante, en paralelo): conseguir un XML real de un client
 ## Próximo paso
 
 Con ambos ángulos resueltos, el diseño está completo para empezar implementación con TDD (mismo patrón que Casos 1-4: `parseReferencias` primero con datos sintéticos, luego integración en `mensaje-builder.ts`, luego validación con emisión real en QA).
+
+### Estado (sesión 2026-07-06, TDD)
+
+✅ Hechos: `parseReferencias(xml)` en `xml-parser.utils.ts` con todos los casos de la matriz de arriba (dedup 1:1 por tipo, tipo no reconocido → descartada, `801`/`HES` incompleto → throw); integración en `mensaje-builder.ts` (`MensajeInput.referenciasExternas`, dedup por `(tipo, folio)`, líneas individuales `5:|801|.../5:|HES|...` con RAZON REFERENCIA fija, colapso en `DESCRIPCION ADICIONAL` cuando el total supera 40). Builder `buildGuiaXml` en `src/xml/xml-test-builders.ts`. Suite completa: 232/234 verdes (2 skips preexistentes de Caso 4, no relacionados).
+
+✅ Wireado en `facturas.service.ts` y validado con emisión real contra Enternet QA (folioSii=411212/411213/411214) — ver `docs/ESTADO.md` para el detalle sesión por sesión (fix de separador, hallazgo isGlobal×chunking).
+
+Pendiente (no bloqueante): conseguir un XML real de cliente con OC/HES poblada para confirmar el parseo de entrada (sigue sin existir, ver "Plan de validación con dato real").

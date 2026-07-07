@@ -1,5 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { parseDocument, parseDetalle, parseKv } from './xml-parser.utils.js';
+import {
+  parseDocument,
+  parseDetalle,
+  parseKv,
+  parseReferencias,
+} from './xml-parser.utils.js';
 
 // Re-export types so existing importers don't break
 export type {
@@ -8,6 +13,10 @@ export type {
   DetalleItem,
   DteDocument,
   FetchedDocument,
+  TipoReferenciaExterna,
+  ReferenciaExterna,
+  ReferenciaDescartada,
+  ParseReferenciasResult,
 } from './xml-parser.utils.js';
 
 @Injectable()
@@ -24,4 +33,5 @@ export class XmlParserService {
   parseDocument = parseDocument;
   parseDetalle = parseDetalle;
   parseKv = parseKv;
+  parseReferencias = parseReferencias;
 }
