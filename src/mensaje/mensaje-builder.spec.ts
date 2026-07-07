@@ -326,7 +326,7 @@ describe('buildMensaje — Referencias Externas (OC/HES)', () => {
     );
   });
 
-  it('orden de líneas 5:|: guías primero, luego OC, luego HES', () => {
+  it('orden de líneas 5:|: OC primero, luego HES, luego guías', () => {
     const { mensaje } = buildMensaje(
       baseInput(makeGuias(1), {
         referenciasExternas: [
@@ -339,7 +339,7 @@ describe('buildMensaje — Referencias Externas (OC/HES)', () => {
       .split('\r\n')
       .filter((l) => l.startsWith('5:|'))
       .map((l) => l.split('|')[1]);
-    expect(refs).toEqual(['52', '801', 'HES']);
+    expect(refs).toEqual(['801', 'HES', '52']);
   });
 
   it('dedup por (tipo, folio): misma OC repetida (2 guías) → una sola línea', () => {

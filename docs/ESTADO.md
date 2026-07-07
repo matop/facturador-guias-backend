@@ -1,5 +1,5 @@
 # Estado del Proyecto — guias-middleware
-Sesiones: 2026-05-28, 2026-05-29 (×2), 2026-05-30, 2026-06-01 (×3), 2026-06-02 (×4), 2026-06-03 (×4), 2026-06-19, 2026-06-30, 2026-07-01 (×2), 2026-07-02 (×3), 2026-07-03, 2026-07-06 (×7, branch `worktree-oc-hes-prd-grill`, PR #9 marcado Ready for review)
+Sesiones: 2026-05-28, 2026-05-29 (×2), 2026-05-30, 2026-06-01 (×3), 2026-06-02 (×4), 2026-06-03 (×4), 2026-06-19, 2026-06-30, 2026-07-01 (×2), 2026-07-02 (×3), 2026-07-03, 2026-07-06 (×7, branch `worktree-oc-hes-prd-grill`, PR #9 marcado Ready for review, luego mergeado), 2026-07-07 (branch `worktree-oc-hes-orden-oc-hes-guias`)
 
 ## Estado de Componentes
 | Componente | Estado | Nota |
@@ -12,7 +12,7 @@ Sesiones: 2026-05-28, 2026-05-29 (×2), 2026-05-30, 2026-06-01 (×3), 2026-06-02
 | Regla Agrupadora v4 | ✅ Implementada | `extraeTagLista` + `REGLA_REGISTRY` + `reglaconfig jsonb` |
 | Detalle+Referencia Factura (DTE 33) — Casos 1/2/3 | ✅ Validados en QA real | `src/mensaje/mensaje-builder.ts` — Caso 1 (S.G.) validado en QA con PDF real; Casos 2/3 (Por Producto — Precio Constante/Variable) **emisión real confirmada 2026-07-02** (`gfackey=98`, folioSii=411208, guías sintéticas). |
 | Detalle+Referencia Factura (DTE 33) — Caso 4 (Global) | ⏳ Bloqueado — bug confirmado del lado de Enternet | `src/mensaje/mensaje-builder.ts` — Detalle (1 línea "Segun Guias:") funcional y confirmado en QA (folioSii=411211). Bloque `<Referencia>`/`IndGlobal` sigue en código **EXPERIMENTAL** (rama `if (isGlobal)` al final de `buildMensaje`) dejado a propósito sin revertir — Enternet confirmó que el problema es de su parser/generador de XML (no del Mensaje V5 enviado) y está corrigiéndolo. Reintentar cuando avisen. Ver Historial 2026-07-03 y `docs/consulta-enternet-referencia-global.md`. |
-| Referencias OC (801) / HES en Factura | ✅ Confirmado en QA real (sintético) — PR #9 Ready for review — falta XML real de cliente | `parseReferencias()` en `src/xml/xml-parser.utils.ts` + integración en `mensaje-builder.ts` (PR #9, branch `worktree-oc-hes-prd-grill`, **Ready for review** desde 2026-07-06). Wireado en `facturas.service.ts` desde commit `4ea5fd6`. **Emisión real confirmada**: combinadas (`gfackey=108`, folioSii=411212), OC sola (folioSii=411213) y HES sola (folioSii=411214), todas ≤40 refs totales. **Hallazgo `isGlobal`×chunking de 40 (sesión 5) resuelto de nuestro lado (sesión 7)**: se corrigió el separador de `DESCRIPCION ADICIONAL` (`|`→`-`, rompía el conteo de columnas pipe-delimited) — confirmado en QA que elimina el `ParseErr001`. El modo Global (>40 refs) con OC/HES sigue sin poder emitir, pero por el bug YA CONOCIDO y bloqueado del bloque EXPERIMENTAL de Caso 4 (ajeno a OC/HES, pendiente de que Enternet corrija su parser) — aceptado explícitamente como no bloqueante. Falta: XML real de cliente con OC/HES poblada (hoy solo probado con fixtures sintéticos). Ver `docs/PRD-referencias-oc-hes.md` y memoria `referencias-oc-hes.md`. |
+| Referencias OC (801) / HES en Factura | ✅ Confirmado en QA real (sintético) — mergeado a `main` (PR #8/#9) — validado por dev senior en revisión 2026-07-07 — falta XML real de cliente | `parseReferencias()` en `src/xml/xml-parser.utils.ts` + integración en `mensaje-builder.ts`. Wireado en `facturas.service.ts`. **Emisión real confirmada**: combinadas (`gfackey=108`, folioSii=411212), OC sola (folioSii=411213) y HES sola (folioSii=411214), todas ≤40 refs totales. **Hallazgo `isGlobal`×chunking de 40 resuelto**: se corrigió el separador de `DESCRIPCION ADICIONAL` (`|`→`-`, rompía el conteo de columnas pipe-delimited) — confirmado en QA que elimina el `ParseErr001`. El modo Global (>40 refs) con OC/HES sigue sin poder emitir, pero por el bug YA CONOCIDO y bloqueado del bloque EXPERIMENTAL de Caso 4 (ajeno a OC/HES, pendiente de que Enternet corrija su parser) — aceptado explícitamente como no bloqueante. **Orden de referencias cambiado 2026-07-07 (branch `worktree-oc-hes-orden-oc-hes-guias`)**: OC > HES > guías (antes era guías > OC > HES), pedido explícito del dev senior en revisión. Falta: XML real de cliente con OC/HES poblada (hoy solo probado con fixtures sintéticos). Ver `docs/PRD-referencias-oc-hes.md` y memoria `referencias-oc-hes.md`. |
 | GroupingService batch | ✅ Funcional | Evita N+1, 2 queries |
 | assignRegla + recomputo | ✅ Funcional | RUT en query usa XmlRut. **Corrección 2026-06-30**: no existe distinción real "primera activación" vs "cambio" en el código actual — comportamiento es uniforme, ver Historial 2026-06-30 |
 | Proforma — modelo `factura`+`facturaguias` | ✅ Implementado | `gde.facturaguias` tabla puente factura↔guía; `factura.gclirut`/`reglaidl` propios; chunking `MAX_GUIAS_POR_FACTURA=40` (confirmado E2E 2026-07-02); estados +`ANULADA` vía `anular`/`limpiar` |
@@ -35,6 +35,18 @@ Sesiones: 2026-05-28, 2026-05-29 (×2), 2026-05-30, 2026-06-01 (×3), 2026-06-02
 | proforma-transitions.ts | ✅ Creado | assertPuedeAprobar / assertPuedeAnular — 2026-05-29 |
 
 ## Historial Técnico
+
+### 2026-07-07 — Feedback del dev senior en revisión de PR #9: reordenar OC > HES > guías
+
+**Contexto:** revisión de PR #9 (ya mergeado a `main` en este punto) con el dev senior. Validó que la interacción OC/HES con guías referenciadas se ve bien, y pidió por separado un cambio de orden: cuando hay OC y/o HES junto con guías referenciadas en la Factura, el orden debe ser **OC > HES > guías** (antes era guías > OC > HES).
+
+**Cambio:** `mensaje-builder.ts` — en modo individual (líneas `5:|`) se reordenaron los 3 loops (antes guías→OC→HES, ahora OC→HES→guías); en modo Global, el array `segmentos` de `DESCRIPCION ADICIONAL` se reordena igual (antes `[guías, OC, HES]`, ahora `[OC, HES, guías]`). Tests actualizados en `mensaje-builder.spec.ts` (test explícito de orden) y `mensaje-builder-referencias-global.spec.ts` (assert exacto del `DESCRIPCION ADICIONAL` + los 2 tests de "solo OC"/"solo HES" que ya no esperan un separador `-` líder). `docs/PRD-referencias-oc-hes.md` actualizado con el formato exacto y el nuevo orden.
+
+**Resultado:** 236/238 tests unitarios verdes (mismos 2 skips preexistentes de Caso 4). Cambio de comportamiento puro, sin nuevos casos de borde. Branch nuevo `worktree-oc-hes-orden-oc-hes-guias` desde `main` (el branch original `worktree-oc-hes-prd-grill` ya estaba mergeado vía PR #9 y quedó diverged/stale).
+
+**Archivos modificados:** `src/mensaje/mensaje-builder.ts`, `src/mensaje/mensaje-builder.spec.ts`, `src/mensaje/mensaje-builder-referencias-global.spec.ts`, `docs/PRD-referencias-oc-hes.md`.
+
+---
 
 ### 2026-07-06 (sesión 7) — Fix del separador de DESCRIPCION ADICIONAL, confirmado en QA: elimina el ParseErr001, revela el bug real pendiente (bloqueado en Enternet)
 
