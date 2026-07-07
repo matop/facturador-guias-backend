@@ -13,6 +13,11 @@ import {
  * FchRef porque bloquear la emisión (Mensaje V5) es correcto ahí, pero esta
  * función corre en el pipeline de agrupación, donde ningún handler del
  * REGLA_REGISTRY lanza — se atrapa el throw y se trata como "sin esa referencia".
+ * Nota: como el throw ocurre a nivel de todo el XML (no por referencia
+ * individual) y no se puede acceder al resultado parcial ya acumulado, si la
+ * guía trae una referencia válida junto a otra malformada, ambas se pierden
+ * (no solo la malformada) — es la única semántica posible sin duplicar el
+ * parseo de bloques de `parseReferencias`.
  */
 export function extraeReferenciaPorTipo(
   tiposReferencia: TipoReferenciaExterna[],

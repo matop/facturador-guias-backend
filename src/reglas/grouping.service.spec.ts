@@ -1,4 +1,5 @@
 import { GroupingService } from './grouping.service.js';
+import { buildGuiaXml } from '../xml/xml-test-builders.js';
 
 // ── GroupingService tests ─────────────────────────────────────────────────────
 //
@@ -265,6 +266,76 @@ describe('GroupingService', () => {
       ]);
 
       expect(mockReglaRepo.find).not.toHaveBeenCalled();
+    });
+
+    // Regla real: extraeReferenciaPorTipo con tiposReferencia ['801', 'HES'].
+    // Cuatro guías del mismo cliente, cada una con una combinación distinta de
+    // referencias — verifica que el agrupador resultante junta OC+HES entre sí
+    // y separa OC-sola y HES-sola en sus propios grupos.
+    it('agrupa por combinación real de OC/HES: OC+HES junto, OC sola y HES sola quedan en grupos distintos', async () => {
+      const gcliruts = [
+        'guia-oc-hes-a',
+        'guia-oc-hes-b',
+        'guia-solo-oc',
+        'guia-solo-hes',
+      ];
+      mockClienteRepo.find.mockResolvedValue(
+        gcliruts.map((gclirut) => ({
+          empkey: '977',
+          gclirut,
+          reglaidl: 'por_oc_hes',
+        })),
+      );
+      mockReglaRepo.find.mockResolvedValue([
+        {
+          reglaidl: 'por_oc_hes',
+          reglaconfig: {
+            fn: 'extraeReferenciaPorTipo',
+            tiposReferencia: ['801', 'HES'],
+          },
+        },
+      ]);
+
+      const xmlOcHesA = buildGuiaXml({
+        referencias: [
+          { tipo: '801', folio: '111', fecha: '2026-05-10' },
+          { tipo: 'HES', folio: '222', fecha: '2026-05-11' },
+        ],
+      });
+      const xmlOcHesB = buildGuiaXml({
+        referencias: [
+          { tipo: 'HES', folio: '222', fecha: '2026-05-11' }, // orden invertido en el XML
+          { tipo: '801', folio: '111', fecha: '2026-05-10' },
+        ],
+      });
+      const xmlSoloOc = buildGuiaXml({
+        referencias: [{ tipo: '801', folio: '111', fecha: '2026-05-10' }],
+      });
+      const xmlSoloHes = buildGuiaXml({
+        referencias: [{ tipo: 'HES', folio: '222', fecha: '2026-05-11' }],
+      });
+
+      const result = await service.batchComputeAgrupadores('977', [
+        { gclirut: 'guia-oc-hes-a', xml: xmlOcHesA },
+        { gclirut: 'guia-oc-hes-b', xml: xmlOcHesB },
+        { gclirut: 'guia-solo-oc', xml: xmlSoloOc },
+        { gclirut: 'guia-solo-hes', xml: xmlSoloHes },
+      ]);
+
+      const valorOcHesA = result.get('guia-oc-hes-a')?.guiValorAgrupador;
+      const valorOcHesB = result.get('guia-oc-hes-b')?.guiValorAgrupador;
+      const valorSoloOc = result.get('guia-solo-oc')?.guiValorAgrupador;
+      const valorSoloHes = result.get('guia-solo-hes')?.guiValorAgrupador;
+
+      // Caso OC+HES: mismo valor sin importar el orden en el XML → mismo grupo.
+      expect(valorOcHesA).toBe('111;222');
+      expect(valorOcHesB).toBe('111;222');
+      // Caso OC sola y caso HES sola: cada uno su propio valor, distinto del combo.
+      expect(valorSoloOc).toBe('111');
+      expect(valorSoloHes).toBe('222');
+
+      const valores = [valorOcHesA, valorOcHesB, valorSoloOc, valorSoloHes];
+      expect(new Set(valores).size).toBe(3); // 3 grupos: {A,B}, {solo OC}, {solo HES}
     });
   });
 });

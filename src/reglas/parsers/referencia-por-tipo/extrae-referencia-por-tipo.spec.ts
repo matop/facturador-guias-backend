@@ -67,4 +67,17 @@ describe('extraeReferenciaPorTipo', () => {
     expect(() => extraeReferenciaPorTipo(['HES'], xml)).not.toThrow();
     expect(extraeReferenciaPorTipo(['HES'], xml)).toBe('');
   });
+
+  it('si una OC válida convive con una HES malformada en la misma guía, se pierden ambas (no solo la malformada)', () => {
+    // parseReferencias lanza a nivel de todo el XML sin devolver lo ya
+    // acumulado, así que no hay forma de rescatar la OC válida sin duplicar
+    // su parseo de bloques — comportamiento documentado, no un bug a arreglar.
+    const xml = buildGuiaXml({
+      referencias: [
+        { tipo: '801', folio: '111', fecha: '2026-05-10' },
+        { tipo: 'HES', folio: '666' }, // sin fecha
+      ],
+    });
+    expect(extraeReferenciaPorTipo(['801', 'HES'], xml)).toBe('');
+  });
 });
