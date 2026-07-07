@@ -54,7 +54,8 @@ export class ReglasService {
     if (dto.regladescripcion) regla.regladescripcion = dto.regladescripcion;
     if (dto.fn && dto.reglaTags)
       regla.reglaconfig = { fn: dto.fn, reglaTags: dto.reglaTags };
-    else if (dto.reglaTags) regla.reglaconfig.reglaTags = dto.reglaTags;
+    else if (dto.reglaTags && regla.reglaconfig.fn === 'extraeTagLista')
+      regla.reglaconfig.reglaTags = dto.reglaTags;
     return this.reglaRepository.save(regla);
   }
 

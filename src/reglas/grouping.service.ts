@@ -86,8 +86,7 @@ export class GroupingService {
         continue;
       }
 
-      const handler =
-        REGLA_REGISTRY[reglaconfig.fn as keyof typeof REGLA_REGISTRY];
+      const handler = REGLA_REGISTRY[reglaconfig.fn];
       if (!handler) {
         result.set(gclirut, null);
         continue;
