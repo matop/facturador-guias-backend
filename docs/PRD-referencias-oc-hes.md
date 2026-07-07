@@ -44,7 +44,7 @@ OC y HES cuentan hacia el **total de referencias** que determina el modo individ
 
 Cuando el total (guías + OC deduplicadas + HES deduplicadas) supera 40 y se activa Global, **OC/HES colapsan junto con las guías** en el mismo campo `DESCRIPCION ADICIONAL` del Detalle — no se listan aparte en líneas `5:|` individuales, ni se ignoran/descartan.
 
-Formato exacto: `"{folios guía espacio-separados} | OC: {folios OC espacio-separados} | HES: {folios HES espacio-separados}"`. Si no hay OC (o no hay HES), se omite ese segmento completo — no queda `"| OC: "` colgando vacío. Mismo separador (espacio) dentro de cada segmento que el ya confirmado para guías.
+Formato exacto: `"OC: {folios OC espacio-separados} - HES: {folios HES espacio-separados} - {folios guía espacio-separados}"` (orden OC > HES > guías, pedido explícito del dev senior en revisión 2026-07-07). Si no hay OC (o no hay HES), se omite ese segmento completo — no queda `"- OC: "` colgando vacío. Mismo separador (espacio) dentro de cada segmento que el ya confirmado para guías; el separador entre segmentos es `" - "` (no `"|"`, para no romper el conteo de columnas del Mensaje V5 pipe-delimited).
 
 Se descartó la alternativa de listar OC/HES individuales vía `4:|`/`5:|` aun con guías en modo Global, porque el mecanismo de Referencia confirmado y funcionando contra Enternet QA (emisión real, folioSii=411211) es **omitir el bloque `<Referencia>` por completo** en modo Global (ver `docs/detalle-factura.md`, sección Caso 4). Reintroducir líneas `5:|` solo para OC/HES arriesgaría reproducir el bug de parser de Enternet ya confirmado (genera bloques `<Referencia>` contradictorios), sin necesidad — el propio umbral de 40 ya asume que "demasiadas referencias para listar individualmente" aplica al conjunto completo, no solo a guías.
 
@@ -85,7 +85,7 @@ Ambos comparten archivo para que otros specs (ej. `facturas.service.spec.ts`, si
 **Archivo de test separado** (no mezclado con los specs existentes de Detalle/Referencia) para los casos borde donde OC/HES empujan el total de referencias sobre 40 sin que la cantidad de guías por sí sola lo haga. Ej.:
 - 38 guías + 1 OC + 1 HES = 40 refs exactas → modo individual.
 - 38 guías + 2 OC + 1 HES = 41 refs → dispara modo Global.
-- Global con OC y HES presentes → `DESCRIPCION ADICIONAL` = `"{folios guía} | OC: {folios OC} | HES: {folios HES}"`.
+- Global con OC y HES presentes → `DESCRIPCION ADICIONAL` = `"OC: {folios OC} - HES: {folios HES} - {folios guía}"`.
 - Global con guías > 40 pero sin ninguna OC/HES → sin segmentos `OC:`/`HES:` (formato ya confirmado en Caso 4, sin regresión).
 - Global con OC pero sin HES (o viceversa) → solo el segmento correspondiente aparece, sin `"| HES: "` vacío colgando.
 

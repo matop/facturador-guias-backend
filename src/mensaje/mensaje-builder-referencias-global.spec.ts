@@ -107,7 +107,7 @@ describe('buildMensaje — umbral 40 con OC/HES sumando al total', () => {
     const detalle = mensaje.split('\r\n').find((l) => l.startsWith('3:|'))!;
     const foliosGuias = guias.map((g) => g.folio).join(' ');
     expect(detalle).toBe(
-      `3:|1|AFECTO|Segun Guias:|1|${41000}|0|${41000}|${foliosGuias} - OC: 900 901 - HES: 950`,
+      `3:|1|AFECTO|Segun Guias:|1|${41000}|0|${41000}|OC: 900 901 - HES: 950 - ${foliosGuias}`,
     );
   });
 
@@ -128,7 +128,7 @@ describe('buildMensaje — umbral 40 con OC/HES sumando al total', () => {
       }),
     );
     const detalle = mensaje.split('\r\n').find((l) => l.startsWith('3:|'))!;
-    expect(detalle).toContain('- OC: 900');
+    expect(detalle).toContain('OC: 900');
     expect(detalle).not.toContain('HES:');
   });
 
@@ -140,7 +140,7 @@ describe('buildMensaje — umbral 40 con OC/HES sumando al total', () => {
       }),
     );
     const detalle = mensaje.split('\r\n').find((l) => l.startsWith('3:|'))!;
-    expect(detalle).toContain('- HES: 950');
+    expect(detalle).toContain('HES: 950');
     expect(detalle).not.toContain('OC:');
   });
 });

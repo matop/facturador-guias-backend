@@ -309,9 +309,10 @@ export function buildMensaje(input: MensajeInput): MensajeResult {
     // así que un "|" dentro de este campo se cuenta como columna extra y
     // Enternet rechaza con [ParseErr001] (confirmado en QA 2026-07-06, ver
     // referencias-oc-hes.md).
-    const segmentos = [guias.map((g) => g.folio).join(' ')];
+    const segmentos: string[] = [];
     if (oc.length) segmentos.push(`OC: ${oc.map((r) => r.folio).join(' ')}`);
     if (hes.length) segmentos.push(`HES: ${hes.map((r) => r.folio).join(' ')}`);
+    segmentos.push(guias.map((g) => g.folio).join(' '));
     const descripcionAdicional = segmentos.join(' - ');
     lines.push(
       `3:|1|AFECTO|Segun Guias:|1|${sumNeto}|0|${sumNeto}|${descripcionAdicional}`,
@@ -349,10 +350,6 @@ export function buildMensaje(input: MensajeInput): MensajeResult {
         ? `4:|TIPO DE REFERENCIA|FOLIO|FECHA|RAZON REFERENCIA`
         : `4:|TIPO DE REFERENCIA|FOLIO|FECHA`,
     );
-    for (const g of guias) {
-      const linea = `5:|52|${g.folio}|${formatDateSlash(g.fechaEmision)}`;
-      lines.push(tieneReferenciasExternas ? `${linea}|` : linea);
-    }
     for (const r of oc) {
       lines.push(
         `5:|801|${r.folio}|${formatDateSlash(r.fecha)}|${RAZON_REFERENCIA_EXTERNA['801']}`,
@@ -362,6 +359,10 @@ export function buildMensaje(input: MensajeInput): MensajeResult {
       lines.push(
         `5:|HES|${r.folio}|${formatDateSlash(r.fecha)}|${RAZON_REFERENCIA_EXTERNA['HES']}`,
       );
+    }
+    for (const g of guias) {
+      const linea = `5:|52|${g.folio}|${formatDateSlash(g.fechaEmision)}`;
+      lines.push(tieneReferenciasExternas ? `${linea}|` : linea);
     }
   }
 
