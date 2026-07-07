@@ -166,6 +166,42 @@
               "options": { "raw": { "language": "json" } }
             }
           }
+        },
+        {
+          "name": "PUT asignar modo de detalle a cliente",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/empresas/:empkey/clientes/:rut/modo-detalle",
+              "host": ["{{baseUrl}}"],
+              "path": ["empresas", ":empkey", "clientes", ":rut", "modo-detalle"],
+              "variable": [
+                { "key": "empkey", "value": "{{empkey}}" },
+                { "key": "rut", "value": "{{rut}}" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"modoDetalle\": \"SG\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "modoDetalle debe ser 'SG' o 'POR_PRODUCTO'. Vive en gde.clientes.modo_detalle (ADR-0001)."
+          }
+        },
+        {
+          "name": "POST recomputar guias del periodo",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/empresas/:empkey/guias/recomputar?periodo={{periodo}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["empresas", ":empkey", "guias", "recomputar"],
+              "variable": [{ "key": "empkey", "value": "{{empkey}}" }],
+              "query": [{ "key": "periodo", "value": "{{periodo}}" }]
+            },
+            "description": "Recomputa agrupadores de TODAS las guias del periodo (reaplica reglas vigentes)."
+          }
         }
       ]
     },
@@ -317,6 +353,52 @@
               ]
             }
           }
+        },
+        {
+          "name": "POST retry emision (lote FALLIDA)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/empresas/:empkey/facturas/emision",
+              "host": ["{{baseUrl}}"],
+              "path": ["empresas", ":empkey", "facturas", "emision"],
+              "variable": [{ "key": "empkey", "value": "{{empkey}}" }]
+            },
+            "description": "Reintenta emitir todas las proformas en estado FALLIDA de la empresa."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Referencias OC/HES (PR #9)",
+      "item": [
+        {
+          "name": "GET preview-mensaje ejemplo OC+HES (gfackey=108)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/empresas/{{empkey}}/facturas/proforma/108/preview-mensaje",
+              "host": ["{{baseUrl}}"],
+              "path": ["empresas", "{{empkey}}", "facturas", "proforma", "108", "preview-mensaje"]
+            },
+            "description": "Proforma sintetica confirmada en QA (empkey 1163): 2 guias, una con OC folio 555001 y otra con HES folio 777002. Ya fue emitida (folioSii=411212), este preview es solo para mostrar el Mensaje V5 resultante con las lineas 5:|801|.. y 5:|HES|... Sembrada con scripts/test-oc-hes-sintetico.js."
+          }
+        },
+        {
+          "name": "PATCH aprobar proforma con OC/HES (seed nueva)",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/empresas/:empkey/facturas/proforma/:gfackey/aprobar",
+              "host": ["{{baseUrl}}"],
+              "path": ["empresas", ":empkey", "facturas", "proforma", ":gfackey", "aprobar"],
+              "variable": [
+                { "key": "empkey", "value": "{{empkey}}" },
+                { "key": "gfackey", "value": "" }
+              ]
+            },
+            "description": "Mismo endpoint que 'PATCH aprobar proforma' en la carpeta Facturas. Para demostrar OC/HES en vivo: correr `node scripts/test-oc-hes-sintetico.js --reset` (crea una proforma BORRADOR nueva), poner el gfackey que imprime el script en la variable, y llamar este request. NO reusar gfackey=108/99/100 (ya emitidos, aprobar fallara con estado invalido)."
+          }
         }
       ]
     },
@@ -392,6 +474,24 @@
               ],
               "query": [{ "key": "empkey", "value": "{{empkey}}" }]
             }
+          }
+        },
+        {
+          "name": "POST sync guias desde reporte",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/guias/sync",
+              "host": ["{{baseUrl}}"],
+              "path": ["guias", "sync"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empkey\": \"{{empkey}}\",\n  \"rut\": \"{{rut}}\",\n  \"fechaInicial\": \"2026-06-01\",\n  \"fechaFinal\": \"2026-06-30\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "syncFromReporte: sincroniza guias desde el reporte externo para el rango de fechas dado."
           }
         }
       ]
