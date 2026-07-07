@@ -48,13 +48,22 @@ const CASOS = {
     ],
   },
   3: {
-    periodo: '2026-03',
-    esperado: 'Caso 3 (Arriendo Contenedor 40 Pies): 3 tramos — (01-03 al 05-03)=15000, (10-03)=18000, (15-03)=15000 — SIN código',
+    // Período movido de 2026-03 a 2025-12 — 2026-03 quedó contaminado con
+    // guías sueltas (guitipo 994/995, folios 994xxx) de
+    // test-oc-hes-chunking-sintetico.js (sesión 2026-07-06), que crearManual
+    // agrupa junto con estas por compartir cliente+regla+período. 2026-07 (mes
+    // actual) tampoco sirve: el chequeo de "Proforma activa" compara contra
+    // gfacfecha (fecha de creación/aprobación = hoy) de CUALQUIER proforma de
+    // este cliente+regla, no contra el período pedido — cualquier proforma
+    // creada hoy (2026-07-07) cae dentro del rango de período 2026-07 y
+    // bloquea nuevas. 2025-12 está limpio de guías y fuera del rango de hoy.
+    periodo: '2025-12',
+    esperado: 'Caso 3 (Arriendo Contenedor 40 Pies): 3 tramos — (01-12 al 02-12)=15000, (03-12)=18000, (04-12)=15000 — SIN código',
     guias: [
-      { folio: 990014, file: 'caso3-precio-variable/guia-1.xml', fecha: '2026-03-01', neto: 15000 },
-      { folio: 990015, file: 'caso3-precio-variable/guia-2.xml', fecha: '2026-03-05', neto: 15000 },
-      { folio: 990016, file: 'caso3-precio-variable/guia-3.xml', fecha: '2026-03-10', neto: 18000 },
-      { folio: 990017, file: 'caso3-precio-variable/guia-4.xml', fecha: '2026-03-15', neto: 15000 },
+      { folio: 990018, file: 'caso3-precio-variable/guia-1.xml', fecha: '2025-12-01', neto: 15000 },
+      { folio: 990019, file: 'caso3-precio-variable/guia-2.xml', fecha: '2025-12-02', neto: 15000 },
+      { folio: 990020, file: 'caso3-precio-variable/guia-3.xml', fecha: '2025-12-03', neto: 18000 },
+      { folio: 990021, file: 'caso3-precio-variable/guia-4.xml', fecha: '2025-12-04', neto: 15000 },
     ],
   },
 };
