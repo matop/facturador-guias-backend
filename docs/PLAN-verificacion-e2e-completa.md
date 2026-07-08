@@ -40,7 +40,9 @@ Cada sesión termina con: qué se confirmó, qué se encontró roto (si algo), y
 
 ### Sesión 1 — Tracer bullet base: sync real → `extraeTagLista` → `generarProformas` → `aprobar`
 
-**Objetivo:** confirmar el camino 100% natural para el `fn` que ya está en producción, con un cliente real (no dedicado a pruebas) y sin ningún script de bypass.
+**Estado (2026-07-08): cerrada sin ejecutar, no bloqueante.** Decisión del usuario: `extraeTagLista` ya está en uso productivo desde 2026-05 con folios reales (ver gap table arriba), y encontrar un cliente QA no contaminado por scripts sintéticos depende de terceros (tiempo de espera de semanas, ya ocurrido antes). El costo de re-confirmar este camino con un tracer bullet dedicado no se justifica frente al gap real (Sesión 2). Se retoma solo si aparece evidencia concreta de que el camino natural de `extraeTagLista` está roto.
+
+**Objetivo original (referencia, no ejecutado):** confirmar el camino 100% natural para el `fn` que ya está en producción, con un cliente real (no dedicado a pruebas) y sin ningún script de bypass.
 
 1. Elegir un cliente real de QA con regla `extraeTagLista` ya asignada, que **no** haya sido tocado por los scripts sintéticos de sesiones anteriores (evitar `empkey=1163`/cliente `76407930-2` si es posible, o usar un período limpio de ese cliente — confirmar con `SELECT to_char(guifechaemision,'YYYY-MM'), count(*) ... GROUP BY 1` antes de elegir).
 2. `POST /empresas/:empkey/sync?rut=...` real contra `backoffice-adapter` — NO insertar guías a mano.
@@ -48,13 +50,17 @@ Cada sesión termina con: qué se confirmó, qué se encontró roto (si algo), y
 4. `POST /empresas/:empkey/facturas/proforma/generar?rut=&periodo=` (no `crearManual`) — confirmar que agrupa correctamente por `(gclirut, guireglaidl)` y produce el número esperado de proformas BORRADOR.
 5. `PATCH /aprobar` sobre una proforma real → confirmar `EMITIDA` con folioSii nuevo.
 
-**Criterio de éxito:** 1 folioSii real producido por el camino natural completo, sin ningún script de bypass, con un cliente no contaminado por pruebas previas.
+**Criterio de éxito (si se retoma):** 1 folioSii real producido por el camino natural completo, sin ningún script de bypass, con un cliente no contaminado por pruebas previas.
 
 ### Sesión 2 — Cerrar el gap de `extraeReferenciaPorTipo`: wiring de API + tracer bullet propio
 
+**Estado (2026-07-08): próxima sesión a ejecutar** — prioridad del usuario tras cerrar Sesión 1 sin ejecutar. Aquí está el gap real (nunca ejercitado vía API/sync real).
+
 **Objetivo:** llevar `extraeReferenciaPorTipo` (agrupar por OC/HES) del estado "función pura testeada" a "camino real ejercitado de punta a punta".
 
-1. Wirear `CreateReglaDto`/`ReglasController` para aceptar `fn: 'extraeReferenciaPorTipo'` (pendiente documentado desde PR #10 — hoy el DTO solo valida `extraeTagLista`).
+**Nota de scope/PR:** el paso 1 (wiring del DTO/controller) es un cambio de código autocontenido y testeable en aislamiento — va en un PR chico y separado (mismo patrón que PR #10/#11). Los pasos 2-5 (crear regla, sync, generar, aprobar) son la sesión de verificación en sí — no generan PR propio, se documentan acá y en `ESTADO.md`.
+
+1. Wirear `CreateReglaDto`/`ReglasController` para aceptar `fn: 'extraeReferenciaPorTipo'` (pendiente documentado desde PR #10 — hoy el DTO solo valida `extraeTagLista`). **PR separado.**
 2. Crear una regla real de este tipo (ej. agrupar por OC) vía `POST /reglas`, asignarla a un cliente de prueba vía `PUT /empresas/:empkey/clientes/:rut/regla`.
 3. Sync real (o, si no hay guías reales con `<Referencia>` OC/HES disponibles, el mínimo de guías sintéticas necesario pero pasando por el `sync` real, no por insert directo) → confirmar que `guivaloragrupador` refleja el folio de OC/HES esperado, incluyendo: guía con ambas referencias (concatenadas con `;`), guía con solo una, guía sin ninguna.
 4. `generarProformas` → confirmar que agrupa por folio de OC/HES (cada proforma = una OC/HES distinta), no por cliente+regla plano como en el caso normal.
@@ -95,8 +101,8 @@ Cada sesión termina con: qué se confirmó, qué se encontró roto (si algo), y
 
 ## Estado de avance
 
-- [ ] Sesión 1 — tracer bullet base (`extraeTagLista`)
-- [ ] Sesión 2 — `extraeReferenciaPorTipo` wireado + tracer bullet
+- [x] Sesión 1 — tracer bullet base (`extraeTagLista`) — **cerrada sin ejecutar 2026-07-08**, ver nota en la sesión (decisión del usuario, no bloqueante)
+- [ ] Sesión 2 — `extraeReferenciaPorTipo` wireado + tracer bullet — **próxima a ejecutar**
 - [ ] Sesión 3 — multi-cliente/multi-regla
 - [ ] Sesión 4 — `assignRegla`/recompute a volumen real
 - [ ] Sesión 5 — cierre y consolidación
