@@ -115,6 +115,33 @@ describe('ReglasService', () => {
       mockReglaRepo.findOne.mockResolvedValue({ reglaidl: dto.reglaidl });
       await expect(service.create(dto)).rejects.toThrow(ConflictException);
     });
+
+    it('crea una regla extraeReferenciaPorTipo con tiposReferencia', async () => {
+      const ocHesDto = {
+        reglaidl: 'por_oc',
+        regladescripcion: 'Agrupar por OC/HES',
+        fn: 'extraeReferenciaPorTipo' as const,
+        tiposReferencia: ['801', 'HES'] as const,
+      };
+      const reglaCreada = {
+        reglaidl: ocHesDto.reglaidl,
+        regladescripcion: ocHesDto.regladescripcion,
+        reglaconfig: {
+          fn: 'extraeReferenciaPorTipo',
+          tiposReferencia: ['801', 'HES'],
+        },
+      };
+      mockReglaRepo.findOne.mockResolvedValue(null);
+      mockReglaRepo.create.mockReturnValue(reglaCreada);
+      mockReglaRepo.save.mockResolvedValue(reglaCreada);
+
+      const result = await service.create(ocHesDto as any);
+
+      expect(result.reglaconfig).toEqual({
+        fn: 'extraeReferenciaPorTipo',
+        tiposReferencia: ['801', 'HES'],
+      });
+    });
   });
 
   describe('update', () => {
@@ -145,6 +172,60 @@ describe('ReglasService', () => {
       await expect(service.update('inexistente', {})).rejects.toThrow(
         NotFoundException,
       );
+    });
+
+    it('cambia el fn de extraeTagLista a extraeReferenciaPorTipo', async () => {
+      const regla = {
+        reglaidl: 'por_oc',
+        regladescripcion: 'vieja',
+        reglaconfig: { fn: 'extraeTagLista', reglaTags: ['TagA'] },
+      };
+      mockReglaRepo.findOne.mockResolvedValue(regla);
+      mockReglaRepo.save.mockResolvedValue({
+        ...regla,
+        reglaconfig: {
+          fn: 'extraeReferenciaPorTipo',
+          tiposReferencia: ['801', 'HES'],
+        },
+      });
+
+      const result = await service.update('por_oc', {
+        fn: 'extraeReferenciaPorTipo',
+        tiposReferencia: ['801', 'HES'],
+      } as any);
+
+      expect(result.reglaconfig).toEqual({
+        fn: 'extraeReferenciaPorTipo',
+        tiposReferencia: ['801', 'HES'],
+      });
+    });
+
+    it('actualiza solo tiposReferencia cuando la regla ya es extraeReferenciaPorTipo', async () => {
+      const regla = {
+        reglaidl: 'por_oc',
+        regladescripcion: 'desc',
+        reglaconfig: {
+          fn: 'extraeReferenciaPorTipo',
+          tiposReferencia: ['801'],
+        },
+      };
+      mockReglaRepo.findOne.mockResolvedValue(regla);
+      mockReglaRepo.save.mockResolvedValue({
+        ...regla,
+        reglaconfig: {
+          fn: 'extraeReferenciaPorTipo',
+          tiposReferencia: ['HES'],
+        },
+      });
+
+      const result = await service.update('por_oc', {
+        tiposReferencia: ['HES'],
+      } as any);
+
+      expect(result.reglaconfig).toEqual({
+        fn: 'extraeReferenciaPorTipo',
+        tiposReferencia: ['HES'],
+      });
     });
   });
 
