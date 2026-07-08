@@ -58,6 +58,37 @@ describe('GroupingService', () => {
       });
     });
 
+    it('computa el agrupador aunque gclirut/reglaidl vengan con padding bpchar', async () => {
+      // gde.clientes.gclirut es character(20) y reglaidl character(30): TypeORM
+      // los devuelve con espacios de relleno. El input (rutXml normalizado) NO
+      // los tiene. La búsqueda SQL ignora el padding, pero el Map en memoria usa
+      // igualdad estricta — de ahí el bug de recompute (guireglaidl/valor NULL).
+      mockClienteRepo.find.mockResolvedValue([
+        {
+          empkey: '977',
+          gclirut: '77004250-K'.padEnd(20, ' '),
+          reglaidl: 'por_comuna'.padEnd(30, ' '),
+        },
+      ]);
+      mockReglaRepo.find.mockResolvedValue([
+        {
+          reglaidl: 'por_comuna'.padEnd(30, ' '),
+          reglaconfig: { fn: 'extraeTagLista', reglaTags: ['CmnaRecep'] },
+        },
+      ]);
+
+      const result = await service.computeAgrupador(
+        '977',
+        '77004250-K',
+        xmlRenca,
+      );
+
+      expect(result).toEqual({
+        guiReglaidl: 'por_comuna',
+        guiValorAgrupador: 'RENCA',
+      });
+    });
+
     it('retorna null si el cliente no existe en BD', async () => {
       mockClienteRepo.find.mockResolvedValue([]);
 

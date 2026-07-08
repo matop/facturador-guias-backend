@@ -47,19 +47,26 @@ export class GroupingService {
 
     const gcliruts = items.map((i) => i.gclirut);
 
-    // Batch fetch clients
+    // Batch fetch clients.
+    // gclirut es character(20) y reglaidl character(30) en la BD: TypeORM los
+    // devuelve con padding de espacios. La búsqueda SQL (bpchar) ignora el
+    // padding, pero los Map en memoria usan igualdad estricta, así que hay que
+    // recortar antes de indexar — de lo contrario el lookup del recompute falla
+    // y guireglaidl/guivaloragrupador quedan NULL.
     const clientes = await this.clienteRepository.find({
       where: gcliruts.map((gclirut) => ({ empkey, gclirut })),
     });
     const clienteMap = new Map<string, string | null>();
     for (const c of clientes) {
-      clienteMap.set(c.gclirut, c.reglaidl ?? null);
+      clienteMap.set(c.gclirut.trim(), c.reglaidl?.trim() ?? null);
     }
 
     // Batch fetch reglas for unique reglaidls
     const reglaidls = [
       ...new Set(
-        clientes.map((c) => c.reglaidl).filter((r): r is string => r !== null),
+        clientes
+          .map((c) => c.reglaidl?.trim() ?? null)
+          .filter((r): r is string => r !== null),
       ),
     ];
     if (reglaidls.length === 0) {
@@ -70,7 +77,9 @@ export class GroupingService {
     const reglas = await this.reglaRepository.find({
       where: reglaidls.map((reglaidl) => ({ reglaidl })),
     });
-    const reglaMap = new Map(reglas.map((r) => [r.reglaidl, r.reglaconfig]));
+    const reglaMap = new Map(
+      reglas.map((r) => [r.reglaidl.trim(), r.reglaconfig]),
+    );
 
     // Compute per item
     for (const { gclirut, xml } of items) {
