@@ -685,9 +685,9 @@ describe('buildMensaje — Caso 4 (Global)', () => {
     expect(lines.filter((l) => l.startsWith('4:|'))).toHaveLength(1);
     expect(lines.filter((l) => l.startsWith('5:|'))).toHaveLength(1);
     expect(lines).toContain('4:|TIPO DE REFERENCIA|FOLIO|FECHA');
-    expect(
-      lines.find((l) => l.startsWith('5:|')),
-    ).toBe(`5:|52|0|${'20/05/2026'}`);
+    expect(lines.find((l) => l.startsWith('5:|'))).toBe(
+      `5:|52|0|${'20/05/2026'}`,
+    );
   });
 
   it('más de 40 guías → agrega TIPO/FOLIO/ACCION REFERENCIA en el encabezado (Referencia Global)', () => {
