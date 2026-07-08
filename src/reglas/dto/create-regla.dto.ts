@@ -4,7 +4,9 @@ import {
   IsIn,
   IsArray,
   ArrayNotEmpty,
+  ValidateIf,
 } from 'class-validator';
+import type { TipoReferenciaExterna } from '../../xml/xml-parser.utils.js';
 
 export class CreateReglaDto {
   @IsString()
@@ -15,13 +17,20 @@ export class CreateReglaDto {
   @IsNotEmpty()
   regladescripcion!: string;
 
-  /** Hoy la única función soportada es extraeTagLista */
-  @IsIn(['extraeTagLista'])
-  fn!: 'extraeTagLista';
+  @IsIn(['extraeTagLista', 'extraeReferenciaPorTipo'])
+  fn!: 'extraeTagLista' | 'extraeReferenciaPorTipo';
 
-  /** Tags XML a extraer, ej: ["CmnaRecep", "DirRecep"] */
+  /** Tags XML a extraer, ej: ["CmnaRecep", "DirRecep"] — requerido si fn=extraeTagLista */
+  @ValidateIf((dto: CreateReglaDto) => dto.fn === 'extraeTagLista')
   @IsArray()
   @ArrayNotEmpty()
   @IsString({ each: true })
-  reglaTags!: string[];
+  reglaTags?: string[];
+
+  /** Tipos de referencia externa a agrupar ('801'=OC, 'HES') — requerido si fn=extraeReferenciaPorTipo */
+  @ValidateIf((dto: CreateReglaDto) => dto.fn === 'extraeReferenciaPorTipo')
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsIn(['801', 'HES'], { each: true })
+  tiposReferencia?: TipoReferenciaExterna[];
 }

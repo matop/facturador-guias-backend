@@ -68,6 +68,29 @@ describe('ReglasController', () => {
       expect(mockService.create).toHaveBeenCalledWith(dto);
       expect(result.reglaidl).toBe('por_comuna');
     });
+
+    it('crea y retorna una regla extraeReferenciaPorTipo', async () => {
+      const dto = {
+        reglaidl: 'por_oc_hes',
+        regladescripcion: 'Agrupar por OC/HES',
+        fn: 'extraeReferenciaPorTipo' as const,
+        tiposReferencia: ['801' as const, 'HES' as const],
+      };
+      const regla = {
+        reglaidl: 'por_oc_hes',
+        regladescripcion: 'Agrupar por OC/HES',
+        reglaconfig: {
+          fn: 'extraeReferenciaPorTipo',
+          tiposReferencia: ['801', 'HES'],
+        },
+      };
+      mockService.create.mockResolvedValue(regla);
+
+      const result = await controller.create(dto);
+
+      expect(mockService.create).toHaveBeenCalledWith(dto);
+      expect(result.reglaidl).toBe('por_oc_hes');
+    });
   });
 
   describe('PUT /reglas/:id', () => {

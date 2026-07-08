@@ -8,6 +8,17 @@ import { Repository } from 'typeorm';
 import { Regla } from './entities/regla.entity.js';
 import { ReglaEmpresa } from './entities/regla-empresa.entity.js';
 import type { CreateReglaDto } from './dto/create-regla.dto.js';
+import type { ReglaConfig } from './parsers/regla-config.types.js';
+
+function buildReglaConfig(dto: {
+  fn: CreateReglaDto['fn'];
+  reglaTags?: string[];
+  tiposReferencia?: CreateReglaDto['tiposReferencia'];
+}): ReglaConfig {
+  return dto.fn === 'extraeTagLista'
+    ? { fn: 'extraeTagLista', reglaTags: dto.reglaTags! }
+    : { fn: 'extraeReferenciaPorTipo', tiposReferencia: dto.tiposReferencia! };
+}
 
 @Injectable()
 export class ReglasService {
@@ -41,7 +52,7 @@ export class ReglasService {
     const regla = this.reglaRepository.create({
       reglaidl: dto.reglaidl,
       regladescripcion: dto.regladescripcion,
-      reglaconfig: { fn: dto.fn, reglaTags: dto.reglaTags },
+      reglaconfig: buildReglaConfig(dto),
     });
     return this.reglaRepository.save(regla);
   }
@@ -52,10 +63,21 @@ export class ReglasService {
     });
     if (!regla) throw new NotFoundException(`Regla '${id}' no encontrada`);
     if (dto.regladescripcion) regla.regladescripcion = dto.regladescripcion;
-    if (dto.fn && dto.reglaTags)
-      regla.reglaconfig = { fn: dto.fn, reglaTags: dto.reglaTags };
-    else if (dto.reglaTags && regla.reglaconfig.fn === 'extraeTagLista')
+    if (dto.fn === 'extraeTagLista' && dto.reglaTags) {
+      regla.reglaconfig = { fn: 'extraeTagLista', reglaTags: dto.reglaTags };
+    } else if (dto.fn === 'extraeReferenciaPorTipo' && dto.tiposReferencia) {
+      regla.reglaconfig = {
+        fn: 'extraeReferenciaPorTipo',
+        tiposReferencia: dto.tiposReferencia,
+      };
+    } else if (dto.reglaTags && regla.reglaconfig.fn === 'extraeTagLista') {
       regla.reglaconfig.reglaTags = dto.reglaTags;
+    } else if (
+      dto.tiposReferencia &&
+      regla.reglaconfig.fn === 'extraeReferenciaPorTipo'
+    ) {
+      regla.reglaconfig.tiposReferencia = dto.tiposReferencia;
+    }
     return this.reglaRepository.save(regla);
   }
 

@@ -115,6 +115,32 @@ describe('ReglasService', () => {
       mockReglaRepo.findOne.mockResolvedValue({ reglaidl: dto.reglaidl });
       await expect(service.create(dto)).rejects.toThrow(ConflictException);
     });
+
+    it('crea una regla extraeReferenciaPorTipo', async () => {
+      const dtoRef = {
+        reglaidl: 'por_oc_hes',
+        regladescripcion: 'Agrupar por OC/HES',
+        fn: 'extraeReferenciaPorTipo' as const,
+        tiposReferencia: ['801' as const, 'HES' as const],
+      };
+      mockReglaRepo.findOne.mockResolvedValue(null);
+      mockReglaRepo.create.mockReturnValue({
+        ...dtoRef,
+        reglaconfig: { fn: dtoRef.fn, tiposReferencia: dtoRef.tiposReferencia },
+      });
+      mockReglaRepo.save.mockResolvedValue({
+        reglaidl: dtoRef.reglaidl,
+        regladescripcion: dtoRef.regladescripcion,
+        reglaconfig: { fn: dtoRef.fn, tiposReferencia: dtoRef.tiposReferencia },
+      });
+
+      const result = await service.create(dtoRef);
+
+      expect(result.reglaconfig).toEqual({
+        fn: 'extraeReferenciaPorTipo',
+        tiposReferencia: ['801', 'HES'],
+      });
+    });
   });
 
   describe('update', () => {
@@ -138,6 +164,26 @@ describe('ReglasService', () => {
       });
 
       expect(result.regladescripcion).toBe('nueva');
+    });
+
+    it('actualiza reglaconfig a extraeReferenciaPorTipo', async () => {
+      const regla = {
+        reglaidl: 'por_oc_hes',
+        regladescripcion: 'vieja',
+        reglaconfig: { fn: 'extraeTagLista', reglaTags: ['TagA'] },
+      };
+      mockReglaRepo.findOne.mockResolvedValue(regla);
+      mockReglaRepo.save.mockImplementation(async (r) => r);
+
+      const result = await service.update('por_oc_hes', {
+        fn: 'extraeReferenciaPorTipo',
+        tiposReferencia: ['801', 'HES'],
+      });
+
+      expect(result.reglaconfig).toEqual({
+        fn: 'extraeReferenciaPorTipo',
+        tiposReferencia: ['801', 'HES'],
+      });
     });
 
     it('lanza NotFoundException si no existe', async () => {
