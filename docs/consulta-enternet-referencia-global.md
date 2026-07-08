@@ -140,3 +140,42 @@ No se seguirá iterando desde nuestro lado hasta tener novedades de ellos.
 `src/mensaje/mensaje-builder.ts` (dentro de `buildMensaje`, rama `if (isGlobal)` al final) que
 genera `TIPO/FOLIO/ACCION REFERENCIA` + línea `5:|52|0|{fecha}` — no se revirtió para poder
 reintentar sin rearmar el código cuando Enternet confirme el fix.
+
+## Resuelto — 2026-07-08, hotfix de Enternet
+
+Enternet aplicó un hotfix a su parser el 2026-07-08. Reintentamos el mismo Mensaje V5 (sin
+cambios de nuestro lado) contra QA con `scripts/test-caso4-global-sintetico.js --reset
+--aprobar` y esta vez **se emitió correctamente**: `gfackey=127`, `folioSii=411219`.
+
+XML de salida verificado (descargado desde `linkXml` de la respuesta de `/aprobar`):
+
+```xml
+<Referencia>
+    <NroLinRef>1</NroLinRef>
+    <TpoDocRef>52</TpoDocRef>
+    <IndGlobal>1</IndGlobal>
+    <FolioRef>0</FolioRef>
+    <FchRef>2026-07-08</FchRef>
+    <RazonRef>Referencia global</RazonRef>
+</Referencia>
+<Referencia>
+    <NroLinRef>2</NroLinRef>
+    <TpoDocRef>52</TpoDocRef>
+    <FolioRef>0</FolioRef>
+    <FchRef>2026-07-08</FchRef>
+</Referencia>
+```
+
+`FchRef` ahora sale correcto en **ambos** bloques (antes el bloque `NroLinRef=1` salía con
+`FchRef` vacío, `'-  -'`, rompiendo la firma XML con `FirmaErr002`). Enternet sigue armando dos
+`<Referencia>` separadas en vez de fusionarlas en una (el bloque `NroLinRef=2` no lleva
+`IndGlobal`), pero como ambas traen fecha válida, la firma y validación del SII pasan sin
+error. No se investigó más allá porque el resultado práctico (emisión válida, folio SII real)
+ya cumple el objetivo — si en el futuro el SII u otro sistema exige una sola `<Referencia>`
+global limpia, retomar con Enternet la fusión de bloques.
+
+**Código promovido de EXPERIMENTAL a definitivo** en `mensaje-builder.ts` (bloque `if
+(isGlobal)` tras los Totales) — ver commit correspondiente. Tests de `mensaje-builder.spec.ts`
+(Caso 4 Global) actualizados: los 2 `it.skip` que asumían ausencia de `4:|`/`5:|`/header de
+referencia fueron reemplazados por asserts que confirman su presencia. 252/252 unit tests
+verdes.

@@ -676,21 +676,26 @@ describe('buildMensaje — Caso 4 (Global)', () => {
     expect(detalle).toContain(`|${41 * 500}|0|${41 * 500}|`);
   });
 
-  // Skipped: bloque EXPERIMENTAL isGlobal en mensaje-builder.ts SÍ genera estas líneas
-  // a propósito, pausado hasta que Enternet corrija su parser (ver memoria
-  // enternet-v5-referencia-global-en-progreso.md). NO revertir el bloque para
-  // hacer pasar este test.
-  it.skip('más de 40 guías → no genera líneas 4:|/5:| individuales de referencia', () => {
+  // Bug de Enternet (FchRef vacío en el bloque IndGlobal=1) corregido de su
+  // lado el 2026-07-08, confirmado con emisión real en QA (gfackey=127,
+  // folioSii=411219) — ver enternet-v5-referencia-global-en-progreso.md.
+  it('más de 40 guías → genera 1 sola línea 4:|/5:| de Referencia Global (folio=0, TIPO=52)', () => {
     const { mensaje } = buildMensaje(baseInput(makeGuias(41)));
     const lines = mensaje.split('\r\n');
-    expect(lines.filter((l) => l.startsWith('4:|'))).toHaveLength(0);
-    expect(lines.filter((l) => l.startsWith('5:|'))).toHaveLength(0);
+    expect(lines.filter((l) => l.startsWith('4:|'))).toHaveLength(1);
+    expect(lines.filter((l) => l.startsWith('5:|'))).toHaveLength(1);
+    expect(lines).toContain('4:|TIPO DE REFERENCIA|FOLIO|FECHA');
+    expect(
+      lines.find((l) => l.startsWith('5:|')),
+    ).toBe(`5:|52|0|${'20/05/2026'}`);
   });
 
-  it.skip('más de 40 guías → NO agrega campos de referencia en el encabezado (hipótesis descartada, ver comentario en mensaje-builder.ts)', () => {
+  it('más de 40 guías → agrega TIPO/FOLIO/ACCION REFERENCIA en el encabezado (Referencia Global)', () => {
     const { mensaje } = buildMensaje(baseInput(makeGuias(41)));
     const lines = mensaje.split('\r\n');
-    expect(lines.filter((l) => l.includes('REFERENCIA'))).toHaveLength(0);
+    expect(lines).toContain('1:|TIPO DOC REFERENCIA|52');
+    expect(lines).toContain('1:|FOLIO DOC REFERENCIA|0');
+    expect(lines).toContain('1:|ACCION REFERENCIA|5');
   });
 });
 
