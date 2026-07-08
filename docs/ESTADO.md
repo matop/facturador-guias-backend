@@ -1,5 +1,5 @@
 # Estado del Proyecto — guias-middleware
-Sesiones: 2026-05-28, 2026-05-29 (×2), 2026-05-30, 2026-06-01 (×3), 2026-06-02 (×4), 2026-06-03 (×4), 2026-06-19, 2026-06-30, 2026-07-01 (×2), 2026-07-02 (×3), 2026-07-03, 2026-07-06 (×7, branch `worktree-oc-hes-prd-grill`, PR #9 marcado Ready for review, luego mergeado), 2026-07-07 (×3: branch `worktree-oc-hes-orden-oc-hes-guias` PR #11 mergeado; triage/PRs #10 #12 mergeados; branch `worktree-test-caso1-real` PR #13 mergeado — Caso 1 confirmado aislado en QA real), 2026-07-08 (Caso 4 Global cerrado; wiring API de extraeReferenciaPorTipo)
+Sesiones: 2026-05-28, 2026-05-29 (×2), 2026-05-30, 2026-06-01 (×3), 2026-06-02 (×4), 2026-06-03 (×4), 2026-06-19, 2026-06-30, 2026-07-01 (×2), 2026-07-02 (×3), 2026-07-03, 2026-07-06 (×7, branch `worktree-oc-hes-prd-grill`, PR #9 marcado Ready for review, luego mergeado), 2026-07-07 (×3: branch `worktree-oc-hes-orden-oc-hes-guias` PR #11 mergeado; triage/PRs #10 #12 mergeados; branch `worktree-test-caso1-real` PR #13 mergeado — Caso 1 confirmado aislado en QA real), 2026-07-08 (Caso 4 Global cerrado; wiring API de extraeReferenciaPorTipo; branch `worktree-fusion-referencia-por-tipo-definitiva` PR #18 mergeado — fusión de PR #14+#17, PR #17 cerrado sin mergear)
 
 ## Estado de Componentes
 | Componente | Estado | Nota |
@@ -21,7 +21,8 @@ Sesiones: 2026-05-28, 2026-05-29 (×2), 2026-05-30, 2026-06-01 (×3), 2026-06-02
 | PRD discover-por-cliente | ✅ Completo | service + controller + tests — 2026-05-27 |
 | Migración SQL 007 | ✅ Aplicada | BD local actualizada 2026-05-29 |
 | Limpieza código legacy | ✅ Completo | `src/empresa/` + 7 DTOs huérfanos + `toXmlRut` eliminados — 2026-05-29 |
-| Tests unitarios | ✅ **252/252 verdes, 0 skips** | 17 suites — verificado 2026-07-08 tras cerrar Caso 4 Global (los 2 skips preexistentes se reemplazaron por asserts reales) |
+| Tests unitarios | ✅ **263/263 verdes, 0 skips** | 18 suites — 252 tras Caso 4 Global; +11 con el wiring API de `extraeReferenciaPorTipo` (specs DTO/service/controller) consolidado en PR #18 (2026-07-08) |
+| Wiring API `extraeReferenciaPorTipo` (`POST/PUT /reglas`) | ✅ **En main (PR #18)** | `CreateReglaDto` acepta `fn: 'extraeReferenciaPorTipo'` + `tiposReferencia` (`@ValidateIf`); `ReglasService` arma el `reglaconfig`. Implementado 2× en paralelo (PR #14 + PR #17); PR #18 fusionó lo mejor de ambos (core+specs de #14, test controller + script E2E + handoff de #17) y se mergeó; PR #17 cerrado sin mergear. **Falta E2E real**: recompute no aplica la regla (bug abierto, ver Pendientes). |
 | FacturasService / Proformas | ✅ Funcional | `empresaRepository` eliminado — `sync` usa `?rut=` query param — 2026-05-29 |
 | MensajeBuilder V5 | ✅ Implementado | `src/mensaje/mensaje-builder.ts` — módulo puro, 39 tests — 2026-06-02 |
 | Preview Mensaje endpoint | ✅ **Aprobado en QA** | Modo 1 (<20 guías) y Modo 2 (≥20) verificados contra servidor real — 2026-06-02 |
@@ -35,6 +36,20 @@ Sesiones: 2026-05-28, 2026-05-29 (×2), 2026-05-30, 2026-06-01 (×3), 2026-06-02
 | proforma-transitions.ts | ✅ Creado | assertPuedeAprobar / assertPuedeAnular — 2026-05-29 |
 
 ## Historial Técnico
+
+### 2026-07-08 — Fusión definitiva del wiring API de `extraeReferenciaPorTipo` (PR #18)
+
+**Contexto:** el wiring de `extraeReferenciaPorTipo` en `/reglas` se implementó **dos veces en paralelo**: PR #14 (`worktree-plan-verificacion-e2e`, mergeado a main 21:17) y PR #17 (`worktree-ejercitar-referencia-por-tipo`, draft creado 21:46 — la sesión no notó que #14 ya había mergeado el mismo feature). El usuario pidió comparar ambas con code-review, tomar lo mejor de cada una y fusionarlo en un PR definitivo.
+
+**Comparación (code-review):**
+- **Lógica core (DTO + service):** equivalente. #14 marginalmente superior — `FUNCIONES_SOPORTADAS as const` para el type de `fn`, reutiliza `buildReglaConfig` dentro de `update` en vez de inlinear literales.
+- **`reglas.service.spec.ts`:** #14 es superset — cubre create + **ambas** ramas de update (cambiar `fn` y actualizar solo `tiposReferencia`); #17 solo cubría cambiar `fn`.
+- **`create-regla.dto.spec.ts`:** solo #14 (7 casos de validación).
+- **Único valioso de #17:** test controller de creación `extraeReferenciaPorTipo`, script E2E (`scripts/test-referencia-por-tipo-e2e.js`) y handoff doc del bug de recompute.
+
+**Resolución:** PR #18 (`worktree-fusion-referencia-por-tipo-definitiva`) partió de main (core + specs superiores de #14) e injertó las 3 piezas únicas de #17. Suite **263/263 verde**, lint 0 errores, build limpio. **PR #18 mergeado (squash)**; **PR #17 cerrado sin mergear** (core redundante con main, valor único ya integrado).
+
+**Archivos:** `src/reglas/reglas.controller.spec.ts` (test controller), `scripts/test-referencia-por-tipo-e2e.js` (harness E2E, nuevo), `docs/2026-07-08-handoff-extrae-referencia-por-tipo-e2e.md` (handoff, nuevo).
 
 ### 2026-07-07 (sesión 9) — Caso 1 (S.G.) confirmado aislado con emisión real en QA
 
@@ -559,7 +574,8 @@ ALTER TABLE gde.factura ADD COLUMN IF NOT EXISTS gfacfolio_sii int,
 - [x] Deduplicar OC (801) y HES en el conteo de "total de referencias" de Caso 4 — ✅ 2026-07-06: `parseReferencias()` implementado, `isGlobal` ahora cuenta `guias.length + oc.length + hes.length > 40`. Ver PR #9 (draft) y memoria `referencias-oc-hes.md`.
 - [x] **Validar OC/HES con emisión real en QA** — ✅ 2026-07-06 (sesión 4, combinadas, folioSii=411212; sesión 6, por separado con 39 guías, folioSii=411213/411214; sesión 7, fix de separador confirmado). PR #9 marcado "Ready for review" 2026-07-06. Sigue pendiente (no bloqueante, aceptado explícitamente): (1) XML real de cliente con `<Referencia>` 801/HES poblada para confirmar el parseo de entrada — sigue sin existir; (2) modo Global con OC/HES (>40 refs) sigue bloqueado por el bug de Enternet en el bloque EXPERIMENTAL, ajeno a OC/HES — depende de que Enternet corrija su parser.
 - [ ] OPEN-1: confirmar `TpoDocRef=HES` en XML de guía (DTE 52) de entrada — falta XML real con `<Referencia>` HES (mismo bloqueador que el ítem anterior)
-- [ ] **Verificación E2E completa del pipeline con datos reales** (2026-07-08) — hasta ahora cada caso de Detalle/Referencia se validó aislado con guías sintéticas insertadas directo en BD o vía `crearManual` (bypass de `sync`/agrupación real). Falta confirmar el camino 100% natural (`sync` real → `GroupingService` → `generarProformas` → `aprobar`) para ambos `fn` de agrupación, incluyendo `extraeReferenciaPorTipo` (nunca wireado a `CreateReglaDto`, nunca ejercitado con sync real). Plan dividido en 5 sesiones tracer-bullet: ver `docs/PLAN-verificacion-e2e-completa.md`.
+- [ ] **Verificación E2E completa del pipeline con datos reales** (2026-07-08) — hasta ahora cada caso de Detalle/Referencia se validó aislado con guías sintéticas insertadas directo en BD o vía `crearManual` (bypass de `sync`/agrupación real). Falta confirmar el camino 100% natural (`sync` real → `GroupingService` → `generarProformas` → `aprobar`) para ambos `fn` de agrupación, incluyendo `extraeReferenciaPorTipo` (ya wireado a `CreateReglaDto` vía PR #18, pero nunca ejercitado con sync real). Plan dividido en 5 sesiones tracer-bullet: ver `docs/PLAN-verificacion-e2e-completa.md`.
+- [ ] **BUG ABIERTO: recompute no aplica la regla nueva** (2026-07-08) — al ejercitar `POST /reglas → PUT .../clientes/:rut/regla?recomputar=true → sync → generar` contra QA real, `guireglaidl`/`guivaloragrupador` quedan `NULL` tras el recompute. Hipótesis de padding `bpchar(30)` en `reglaidl` **descartada con evidencia** (psql + Node/`pg` encuentran la fila con y sin padding). Próximo paso: leer `GroupingService.batchComputeAgrupadores` / `EmpresasService._recomputarGuiasClientePorPeriodo`. Detalle completo en `docs/2026-07-08-handoff-extrae-referencia-por-tipo-e2e.md` y script `scripts/test-referencia-por-tipo-e2e.js`.
 
 ### Baja prioridad
 - [ ] Filtro `IndTraslado=1` — solo guías que constituyen venta deben facturarse
