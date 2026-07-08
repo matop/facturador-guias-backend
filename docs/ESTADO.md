@@ -1,5 +1,5 @@
 # Estado del Proyecto — guias-middleware
-Sesiones: 2026-05-28, 2026-05-29 (×2), 2026-05-30, 2026-06-01 (×3), 2026-06-02 (×4), 2026-06-03 (×4), 2026-06-19, 2026-06-30, 2026-07-01 (×2), 2026-07-02 (×3), 2026-07-03, 2026-07-06 (×7, branch `worktree-oc-hes-prd-grill`, PR #9 marcado Ready for review, luego mergeado), 2026-07-07 (×3: branch `worktree-oc-hes-orden-oc-hes-guias` PR #11 mergeado; triage/PRs #10 #12 mergeados; branch `worktree-test-caso1-real` PR #13 mergeado — Caso 1 confirmado aislado en QA real), 2026-07-08 (Caso 4 Global cerrado; wiring API de extraeReferenciaPorTipo; branch `worktree-fusion-referencia-por-tipo-definitiva` PR #18 mergeado — fusión de PR #14+#17, PR #17 cerrado sin mergear)
+Sesiones: 2026-05-28, 2026-05-29 (×2), 2026-05-30, 2026-06-01 (×3), 2026-06-02 (×4), 2026-06-03 (×4), 2026-06-19, 2026-06-30, 2026-07-01 (×2), 2026-07-02 (×3), 2026-07-03, 2026-07-06 (×7, branch `worktree-oc-hes-prd-grill`, PR #9 marcado Ready for review, luego mergeado), 2026-07-07 (×3: branch `worktree-oc-hes-orden-oc-hes-guias` PR #11 mergeado; triage/PRs #10 #12 mergeados; branch `worktree-test-caso1-real` PR #13 mergeado — Caso 1 confirmado aislado en QA real), 2026-07-08 (Caso 4 Global cerrado; wiring API de extraeReferenciaPorTipo; branch `worktree-fusion-referencia-por-tipo-definitiva` PR #18 mergeado — fusión de PR #14+#17, PR #17 cerrado sin mergear; PR #19 doc-ESTADO mergeado; **branch `fix-recompute-bpchar-padding` PR #20 mergeado — bug de recompute (padding bpchar en Map de GroupingService) diagnosticado, fijado y verificado E2E en QA real**)
 
 ## Estado de Componentes
 | Componente | Estado | Nota |
@@ -8,7 +8,7 @@ Sesiones: 2026-05-28, 2026-05-29 (×2), 2026-05-30, 2026-06-01 (×3), 2026-06-02
 | Clientes findOrCreate | ✅ Funcional | `reglaidl` nullable en DB |
 | Guías bulk insert | ✅ Funcional | `gclirut` normalizado a XML format |
 | Impuestos upsert | ✅ Funcional | IVA cod=14 idempotente |
-| Agrupadores batch | ✅ Funcional | Lookup por RUT XML format |
+| Agrupadores batch | ✅ Funcional | Lookup por RUT XML format. **Fix 2026-07-08 (PR #20)**: las llaves de los `Map` de `batchComputeAgrupadores` se recortan con `.trim()` — las columnas `gclirut`/`reglaidl` son `bpchar` y TypeORM las devuelve con padding, rompía el lookup del recompute. |
 | Regla Agrupadora v4 | ✅ Implementada | `extraeTagLista` + `REGLA_REGISTRY` + `reglaconfig jsonb` |
 | Detalle+Referencia Factura (DTE 33) — Casos 1/2/3 | ✅ Validados en QA real | `src/mensaje/mensaje-builder.ts` — Caso 1 (S.G.) validado en QA con PDF real; **confirmado aislado con emisión real 2026-07-07** (`gfackey=126`, folioSii=411218, 3 guías sintéticas, sin regresión tras OC/HES). Casos 2/3 (Por Producto — Precio Constante/Variable) **emisión real confirmada 2026-07-02** (`gfackey=98`, folioSii=411208, guías sintéticas), reconfirmadas por separado 2026-07-07 (folioSii=411215/411216). |
 | Detalle+Referencia Factura (DTE 33) — Caso 4 (Global) | ✅ **Confirmado en QA real — 2026-07-08** | `src/mensaje/mensaje-builder.ts` — Detalle (1 línea "Segun Guias:") + bloque `<Referencia IndGlobal=1>` confirmados end-to-end (`gfackey=127`, folioSii=411219). Enternet corrigió el bug de su parser (FchRef vacío) el 2026-07-08. Código promovido de EXPERIMENTAL a definitivo, sin cambios funcionales. Ver Historial 2026-07-08 y `docs/consulta-enternet-referencia-global.md`. |
@@ -21,8 +21,8 @@ Sesiones: 2026-05-28, 2026-05-29 (×2), 2026-05-30, 2026-06-01 (×3), 2026-06-02
 | PRD discover-por-cliente | ✅ Completo | service + controller + tests — 2026-05-27 |
 | Migración SQL 007 | ✅ Aplicada | BD local actualizada 2026-05-29 |
 | Limpieza código legacy | ✅ Completo | `src/empresa/` + 7 DTOs huérfanos + `toXmlRut` eliminados — 2026-05-29 |
-| Tests unitarios | ✅ **263/263 verdes, 0 skips** | 18 suites — 252 tras Caso 4 Global; +11 con el wiring API de `extraeReferenciaPorTipo` (specs DTO/service/controller) consolidado en PR #18 (2026-07-08) |
-| Wiring API `extraeReferenciaPorTipo` (`POST/PUT /reglas`) | ✅ **En main (PR #18)** | `CreateReglaDto` acepta `fn: 'extraeReferenciaPorTipo'` + `tiposReferencia` (`@ValidateIf`); `ReglasService` arma el `reglaconfig`. Implementado 2× en paralelo (PR #14 + PR #17); PR #18 fusionó lo mejor de ambos (core+specs de #14, test controller + script E2E + handoff de #17) y se mergeó; PR #17 cerrado sin mergear. **Falta E2E real**: recompute no aplica la regla (bug abierto, ver Pendientes). |
+| Tests unitarios | ✅ **264/264 verdes, 0 skips** | 18 suites — 252 tras Caso 4 Global; +11 con el wiring API de `extraeReferenciaPorTipo` (PR #18); +1 regresión de padding bpchar en `grouping.service.spec.ts` (PR #20, 2026-07-08) |
+| Wiring API `extraeReferenciaPorTipo` (`POST/PUT /reglas`) | ✅ **En main + E2E confirmado (PR #18 + #20)** | `CreateReglaDto` acepta `fn: 'extraeReferenciaPorTipo'` + `tiposReferencia` (`@ValidateIf`); `ReglasService` arma el `reglaconfig`. Implementado 2× en paralelo (PR #14 + PR #17); PR #18 fusionó lo mejor de ambos; PR #17 cerrado sin mergear. **E2E contra QA real confirmado 2026-07-08 (PR #20)** tras corregir el bug de recompute: `990301→555001`, `990302→777002`, proforma `gfackey=133`. Queda OPEN-2 (¿partir proforma por `guivaloragrupador`?, ver Pendientes). |
 | FacturasService / Proformas | ✅ Funcional | `empresaRepository` eliminado — `sync` usa `?rut=` query param — 2026-05-29 |
 | MensajeBuilder V5 | ✅ Implementado | `src/mensaje/mensaje-builder.ts` — módulo puro, 39 tests — 2026-06-02 |
 | Preview Mensaje endpoint | ✅ **Aprobado en QA** | Modo 1 (<20 guías) y Modo 2 (≥20) verificados contra servidor real — 2026-06-02 |
@@ -36,6 +36,23 @@ Sesiones: 2026-05-28, 2026-05-29 (×2), 2026-05-30, 2026-06-01 (×3), 2026-06-02
 | proforma-transitions.ts | ✅ Creado | assertPuedeAprobar / assertPuedeAnular — 2026-05-29 |
 
 ## Historial Técnico
+
+### 2026-07-08 — Bug de recompute resuelto: padding bpchar en Map de GroupingService (PR #20)
+
+**Contexto:** con PR #19 (doc ESTADO de la fusión) ya mergeado, se atacó el BUG ABIERTO que dejó la sesión anterior: `guireglaidl`/`guivaloragrupador` quedaban `NULL` tras `PUT .../clientes/:rut/regla?recomputar=true`.
+
+**Diagnóstico:** la causa raíz es **padding `bpchar` en las llaves de los `Map` en memoria** de `GroupingService.batchComputeAgrupadores`, **no** el SQL. `gde.clientes.gclirut` es `character(20)` y `reglaidl`/`regla.reglaidl` son `character(30)`; TypeORM devuelve esos valores con espacios de relleno. `clienteMap` se indexaba por `c.gclirut` (padded) pero se consultaba con el `rutXml` normalizado (unpadded) → `Map.get` con igualdad estricta falla → `null`. El `find()` SQL (comparación bpchar) ignora el padding y sí traía la fila, por eso la hipótesis previa "padding no es la causa" era falsa: probó la capa SQL, no el `Map`. El path de `sync` no sufría el bug porque ahí ambos lados salen de objetos en memoria unpadded.
+
+**Fix (`src/reglas/grouping.service.ts`):** `.trim()` al construir las llaves de `clienteMap`/`reglaMap` y al derivar `reglaidls`.
+
+**Archivos modificados:**
+- `src/reglas/grouping.service.ts` — trim de padding en las 3 llaves.
+- `src/reglas/grouping.service.spec.ts` — regresión con mock `padEnd(20/30, ' ')` (roja antes del fix).
+- `docs/ESTADO.md` — bug marcado resuelto + OPEN-2.
+
+**Verificación:** suite 264/264, lint 0 errores, build limpio. **E2E contra QA real** (`node scripts/test-referencia-por-tipo-e2e.js --reset`, sin `--aprobar`): recompute → `990301=555001`, `990302=777002`; `generar` creó proforma `gfackey=133`; preview con refs `801/555001`, `HES/777002` + dos `52`. `cliente.reglaidl` restaurado. **PR #20 mergeado.**
+
+**Observación (OPEN-2):** `generar` produjo **1 sola** proforma para dos `guivaloragrupador` distintos — falta confirmar si `extraeReferenciaPorTipo` debe partir la proforma por valor. Ajeno al bug de recompute; depende de `FacturasService.generarProformas`.
 
 ### 2026-07-08 — Fusión definitiva del wiring API de `extraeReferenciaPorTipo` (PR #18)
 
