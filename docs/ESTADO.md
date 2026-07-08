@@ -1,5 +1,5 @@
 # Estado del Proyecto — guias-middleware
-Sesiones: 2026-05-28, 2026-05-29 (×2), 2026-05-30, 2026-06-01 (×3), 2026-06-02 (×4), 2026-06-03 (×4), 2026-06-19, 2026-06-30, 2026-07-01 (×2), 2026-07-02 (×3), 2026-07-03, 2026-07-06 (×7, branch `worktree-oc-hes-prd-grill`, PR #9 marcado Ready for review, luego mergeado), 2026-07-07 (branch `worktree-oc-hes-orden-oc-hes-guias`), 2026-07-08
+Sesiones: 2026-05-28, 2026-05-29 (×2), 2026-05-30, 2026-06-01 (×3), 2026-06-02 (×4), 2026-06-03 (×4), 2026-06-19, 2026-06-30, 2026-07-01 (×2), 2026-07-02 (×3), 2026-07-03, 2026-07-06 (×7, branch `worktree-oc-hes-prd-grill`, PR #9 marcado Ready for review, luego mergeado), 2026-07-07 (×3: branch `worktree-oc-hes-orden-oc-hes-guias` PR #11 mergeado; triage/PRs #10 #12 mergeados; branch `worktree-test-caso1-real` PR #13 mergeado — Caso 1 confirmado aislado en QA real), 2026-07-08 (Caso 4 Global cerrado; wiring API de extraeReferenciaPorTipo)
 
 ## Estado de Componentes
 | Componente | Estado | Nota |
@@ -10,7 +10,7 @@ Sesiones: 2026-05-28, 2026-05-29 (×2), 2026-05-30, 2026-06-01 (×3), 2026-06-02
 | Impuestos upsert | ✅ Funcional | IVA cod=14 idempotente |
 | Agrupadores batch | ✅ Funcional | Lookup por RUT XML format |
 | Regla Agrupadora v4 | ✅ Implementada | `extraeTagLista` + `REGLA_REGISTRY` + `reglaconfig jsonb` |
-| Detalle+Referencia Factura (DTE 33) — Casos 1/2/3 | ✅ Validados en QA real | `src/mensaje/mensaje-builder.ts` — Caso 1 (S.G.) validado en QA con PDF real; Casos 2/3 (Por Producto — Precio Constante/Variable) **emisión real confirmada 2026-07-02** (`gfackey=98`, folioSii=411208, guías sintéticas). |
+| Detalle+Referencia Factura (DTE 33) — Casos 1/2/3 | ✅ Validados en QA real | `src/mensaje/mensaje-builder.ts` — Caso 1 (S.G.) validado en QA con PDF real; **confirmado aislado con emisión real 2026-07-07** (`gfackey=126`, folioSii=411218, 3 guías sintéticas, sin regresión tras OC/HES). Casos 2/3 (Por Producto — Precio Constante/Variable) **emisión real confirmada 2026-07-02** (`gfackey=98`, folioSii=411208, guías sintéticas), reconfirmadas por separado 2026-07-07 (folioSii=411215/411216). |
 | Detalle+Referencia Factura (DTE 33) — Caso 4 (Global) | ✅ **Confirmado en QA real — 2026-07-08** | `src/mensaje/mensaje-builder.ts` — Detalle (1 línea "Segun Guias:") + bloque `<Referencia IndGlobal=1>` confirmados end-to-end (`gfackey=127`, folioSii=411219). Enternet corrigió el bug de su parser (FchRef vacío) el 2026-07-08. Código promovido de EXPERIMENTAL a definitivo, sin cambios funcionales. Ver Historial 2026-07-08 y `docs/consulta-enternet-referencia-global.md`. |
 | Referencias OC (801) / HES en Factura | ✅ Confirmado en QA real (sintético) — mergeado a `main` (PR #8/#9) — validado por dev senior en revisión 2026-07-07 — falta XML real de cliente | `parseReferencias()` en `src/xml/xml-parser.utils.ts` + integración en `mensaje-builder.ts`. Wireado en `facturas.service.ts`. **Emisión real confirmada**: combinadas (`gfackey=108`, folioSii=411212), OC sola (folioSii=411213) y HES sola (folioSii=411214), todas ≤40 refs totales. **Hallazgo `isGlobal`×chunking de 40 resuelto**: se corrigió el separador de `DESCRIPCION ADICIONAL` (`|`→`-`, rompía el conteo de columnas pipe-delimited) — confirmado en QA que elimina el `ParseErr001`. El modo Global (>40 refs) con OC/HES sigue sin poder emitir, pero por el bug YA CONOCIDO y bloqueado del bloque EXPERIMENTAL de Caso 4 (ajeno a OC/HES, pendiente de que Enternet corrija su parser) — aceptado explícitamente como no bloqueante. **Orden de referencias cambiado 2026-07-07 (branch `worktree-oc-hes-orden-oc-hes-guias`)**: OC > HES > guías (antes era guías > OC > HES), pedido explícito del dev senior en revisión. Falta: XML real de cliente con OC/HES poblada (hoy solo probado con fixtures sintéticos). Ver `docs/PRD-referencias-oc-hes.md` y memoria `referencias-oc-hes.md`. |
 | GroupingService batch | ✅ Funcional | Evita N+1, 2 queries |
@@ -35,6 +35,20 @@ Sesiones: 2026-05-28, 2026-05-29 (×2), 2026-05-30, 2026-06-01 (×3), 2026-06-02
 | proforma-transitions.ts | ✅ Creado | assertPuedeAprobar / assertPuedeAnular — 2026-05-29 |
 
 ## Historial Técnico
+
+### 2026-07-07 (sesión 9) — Caso 1 (S.G.) confirmado aislado con emisión real en QA
+
+**Contexto:** con PR #11 ya mergeado y sin diffs/PRs propios pendientes, el usuario pidió probar Caso 1 (S.G. — Según Guías, el modo por defecto) con una emisión real dedicada — hasta ahora solo se había validado con PDF real (sesión 2026-07-01) o como parte de pruebas de chunking (folios 411203-411207), nunca en aislamiento con su propio script reusable como los demás casos.
+
+**Script nuevo:** `scripts/test-caso1-sg-sintetico.js` + `test/fixtures/caso1-sg/guia.xml` (mismo patrón `data:` URL que los demás scripts sintéticos) — 3 guías sintéticas (`empkey=1163`, emisor `968880004`, `guitipo=996`, período `2025-11`), sin `<Referencia>` OC/HES en el XML.
+
+**Resultado:** preview confirmó el formato exacto esperado (1 línea `3:\|1\|AFECTO\|Facturación según guías período 2025-11\|1\|45000\|0\|45000` + 3 líneas `5:\|52\|{folio}\|{fecha}`). Emisión real (`PATCH /aprobar`) → **`gfackey=126` EMITIDA, folioSii=411218**. XML descargado (`linkXml`) verificado: 1 `<Detalle>` con `MontoItem=45000`, 3 bloques `<Referencia TpoDocRef=52>` sin `RazonRef` — exactamente el diseño de Caso 1, sin regresión tras todos los cambios de OC/HES y reordenamientos de la semana.
+
+**Archivos modificados:** `scripts/test-caso1-sg-sintetico.js` (nuevo), `test/fixtures/caso1-sg/guia.xml` (nuevo).
+
+**Tests:** 250/252 verdes (mismos 2 skips preexistentes de Caso 4 Global).
+
+**PR:** #13, branch `worktree-test-caso1-real` — mergeado a `main`.
 
 ### 2026-07-08 — Caso 4 (Global): Enternet corrigió el bug de su parser, `<Referencia IndGlobal=1>` confirmado en QA
 
@@ -651,3 +665,4 @@ ALTER TABLE gde.factura ADD COLUMN IF NOT EXISTS gfacfolio_sii int,
 - **Caso 4 (Global) — `<Referencia IndGlobal=1>` CONFIRMADO en QA, 2026-07-08:** `mensaje-builder.ts` agrega `1:|TIPO DOC REFERENCIA|52`, `1:|FOLIO DOC REFERENCIA|0`, `1:|ACCION REFERENCIA|5` al encabezado cuando hay más de 40 guías. Enternet corrigió el 2026-07-08 el bug de su parser que dejaba `FchRef` vacío en el bloque generado desde este header (bloqueaba la firma XML desde 2026-07-03). Confirmado con emisión real `gfackey=127`, folioSii=411219 — ver `docs/consulta-enternet-referencia-global.md`.
 - **Fix redondeo IVA/MONTO TOTAL (2026-07-02):** `sumIva` y `sumDoc` en `buildMensaje` deben derivarse de los totales agregados (`round(sumNeto × 19%)`, `sumNeto+sumIva+sumExento`), no sumar `totiva`/`totdoc` ya redondeados por guía — con muchas guías (40+) el drift de redondeo acumulado rompe la validación de Enternet.
 - **Referencias OC (801) / HES (2026-07-06):** implementadas en branch `worktree-oc-hes-prd-grill` (PR #9, draft) — `parseReferencias()` (`xml-parser.utils.ts`) extrae OC/HES del `<Referencia>` de cada guía (dedup 1:1 fase 1, tipo desconocido se descarta sin bloquear, `FolioRef`/`FchRef` faltante sí bloquea). Wireado en `facturas.service.ts`: `_emitir`/`previewMensaje` ahora fetchean el XML de **todas** las guías (ya no solo la primera) para poder extraer referencias de cualquiera de ellas. Sin XML real de cliente con OC/HES ni emisión QA validada todavía — no asumir que el parseo de entrada es correcto contra datos reales hasta confirmar.
+- **Diagrama ERD visual de la DB local** en `docs/localho - facturagdes2 - gde.png` (untracked, dejado por el usuario 2026-07-07) — usar solo como fallback visual. Preferir `psql` directo (`\d gde.<tabla>`) contra `facturagdes2`: más barato en tokens y siempre refleja el schema real. Skill `consult-db-schema` (`~/.claude/skills/`) documenta este orden de prioridad.
