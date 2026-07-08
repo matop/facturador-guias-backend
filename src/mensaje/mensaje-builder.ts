@@ -326,18 +326,14 @@ export function buildMensaje(input: MensajeInput): MensajeResult {
   }
 
   // ── Referencias ──
-  // Global: se omite toda referencia (sin header TIPO/FOLIO/ACCION REFERENCIA,
-  // sin líneas 4:|/5:|) — los folios viajan solo en DESCRIPCION ADICIONAL del
-  // Detalle. Se llegó a esto tras 2 hipótesis fallidas contra Enternet QA
-  // 2026-07-03: (1) header ACCION REFERENCIA=5 sin línea 5:| → Enternet
-  // intenta construir <Referencia> sin FchRef y falla la firma del XML
-  // ('-  -' is not a valid value for 'date'); (2) agregar una línea 5:|52|0|
-  // (folio=0) → rechazado por folio de referencia inválido para tipo 52; (3)
-  // agregar header FECHA DOC REFERENCIA → etiqueta no reconocida por el
-  // parser de Enternet ([ParseErr001]). El campo ACCION REFERENCIA está
-  // documentado en la spec V5 como aplicable "SOLO SI ES NOTA DE CREDITO O
-  // DEBITO" — consistente con que no exista un mecanismo funcional para
-  // referencia Global en Facturas vía este canal.
+  // Global: las líneas 4:|/5:| de referencia individual por guía se omiten
+  // acá — el bloque de Referencia Global (header TIPO/FOLIO/ACCION
+  // REFERENCIA + su propia línea 5:|52|0|{fecha}) va después de los Totales,
+  // ver bloque `if (isGlobal)` más abajo. Antes de que Enternet corrigiera su
+  // parser (2026-07-08) este bloque se omitía por completo y los folios
+  // viajaban solo en DESCRIPCION ADICIONAL del Detalle; ver
+  // enternet-v5-referencia-global-en-progreso.md para el historial de
+  // intentos fallidos contra QA 2026-07-03.
   if (!isGlobal) {
     // Enternet valida que el número de campos de cada línea 5:| corresponda
     // exactamente con las etiquetas declaradas en 4:| ([ParseErr001] si no
@@ -372,9 +368,12 @@ export function buildMensaje(input: MensajeInput): MensajeResult {
   lines.push(`1:|IMPUESTO IVA|${sumIva}`);
   lines.push(`1:|MONTO TOTAL|${sumDoc}`);
 
-  // EXPERIMENTAL — reintento manual del intento 2 (ya documentado como
-  // fallido: ErrorRefTipDoc01) a pedido explícito, folio=0 y fecha=hoy.
-  // Revertir tras esta prueba puntual en QA.
+  // Referencia Global (IndGlobal=1): header TIPO/FOLIO/ACCION REFERENCIA +
+  // línea 5:|52|0|{fecha}. Bug de Enternet (FchRef vacío en el bloque armado
+  // desde el header, ver enternet-v5-referencia-global-en-progreso.md)
+  // corregido de su lado el 2026-07-08 — confirmado con emisión real en QA
+  // (gfackey=127, folioSii=411219, XML con FchRef correcto en ambos bloques
+  // <Referencia>).
   if (isGlobal) {
     lines.push(`1:|TIPO DOC REFERENCIA|52`);
     lines.push(`1:|FOLIO DOC REFERENCIA|0`);
