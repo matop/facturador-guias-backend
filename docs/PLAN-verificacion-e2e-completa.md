@@ -54,7 +54,11 @@ Cada sesión termina con: qué se confirmó, qué se encontró roto (si algo), y
 
 ### Sesión 2 — Cerrar el gap de `extraeReferenciaPorTipo`: wiring de API + tracer bullet propio
 
-**Estado (2026-07-08): próxima sesión a ejecutar** — prioridad del usuario tras cerrar Sesión 1 sin ejecutar. Aquí está el gap real (nunca ejercitado vía API/sync real).
+**Estado (2026-07-09): EJECUTADA con éxito.** Tracer bullet completo confirmado de punta a punta contra QA real: `POST /reglas` → `PUT /clientes/:rut/regla?recomputar=true` (recompute OK, agrupó 990301→OC 555001, 990302→HES 777002) → `POST /sync` → `POST /generar` → `PATCH /aprobar`. **Emisión real: folioSii=411228 EMITIDA** (gfackey=139, montoTotal 42840); XML con las 4 referencias correctas (`801/555001`, `HES/777002`, `52/990301`, `52/990302`). El fix de recompute (PR #20) quedó reconfirmado en el server real. El paso 1 (wiring del DTO) ya estaba en main (PR #14) — no requirió cambio.
+
+**Hallazgo abierto (`OPEN-2`, derivado a handoff):** `generar` metió las 2 guías con `guivaloragrupador` distinto en **1 sola proforma** (agrupa solo por `(gclirut, guireglaidl)`, ignora `guivaloragrupador`). El usuario definió la intención: **1 Factura : 1 OC : 1 HES** (particionar por valor de agrupador), distinguiendo "cómo se agrupan las guías" de "qué referencia trae la factura". Se resuelve en sesión dedicada — ver `docs/2026-07-09-handoff-particionado-por-agrupador.md` (incluye riesgo de regresión de `extraeTagLista`, opciones global vs por-regla, y puntos de anclaje en el código).
+
+**Estado original (2026-07-08): próxima sesión a ejecutar** — prioridad del usuario tras cerrar Sesión 1 sin ejecutar. Aquí está el gap real (nunca ejercitado vía API/sync real).
 
 **Objetivo:** llevar `extraeReferenciaPorTipo` (agrupar por OC/HES) del estado "función pura testeada" a "camino real ejercitado de punta a punta".
 
@@ -102,7 +106,7 @@ Cada sesión termina con: qué se confirmó, qué se encontró roto (si algo), y
 ## Estado de avance
 
 - [x] Sesión 1 — tracer bullet base (`extraeTagLista`) — **cerrada sin ejecutar 2026-07-08**, ver nota en la sesión (decisión del usuario, no bloqueante)
-- [ ] Sesión 2 — `extraeReferenciaPorTipo` wireado + tracer bullet — **próxima a ejecutar**
+- [x] Sesión 2 — `extraeReferenciaPorTipo` wireado + tracer bullet — **EJECUTADA 2026-07-09** (folioSii=411228 EMITIDA). Dejó `OPEN-2` (particionado por `guivaloragrupador`) en handoff dedicado.
 - [ ] Sesión 3 — multi-cliente/multi-regla
 - [ ] Sesión 4 — `assignRegla`/recompute a volumen real
 - [ ] Sesión 5 — cierre y consolidación
