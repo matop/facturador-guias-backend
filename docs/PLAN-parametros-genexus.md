@@ -58,7 +58,7 @@ Auth por **pareo de dispositivo** (mecanismo existente del sidecar):
 ### Fase 1 — Sidecar en el servidor
 - [ ] Deploy de `Parameter-device-js` tal cual (PM2, `:3002`), env apuntando al dispositivo/ambiente correcto.
 - [ ] Verificar: `GET /parameter/values?app=Plugin&parametro=MaximoGuias&empkey=<E>` devuelve el valor esperado.
-- [ ] *(Opcional, chico)* agregar endpoint `GET /parameter/value` que devuelva **un único valor resuelto** (`{ parametroId, valor }`) en vez del SDT crudo de GeneXus — así el middleware no depende de la estructura interna de GeneXus.
+- [ ] *(Recomendado, chico)* agregar endpoint `GET /parameter/value` que devuelva **un único valor resuelto** (`{ parametroId, valor }`) en vez del SDT crudo de GeneXus — así el middleware no depende de la estructura interna de GeneXus. Bajo costo y desacopla al middleware del formato interno de GeneXus; conviene hacerlo aunque no sea estrictamente bloqueante.
 
 ### Fase 2 — Cliente `ParametrosModule` en guias-middleware (lo único nuevo)
 - [ ] `ParametrosModule` + `ParametrosService`: cliente HTTP al sidecar.
