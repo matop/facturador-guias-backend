@@ -544,13 +544,127 @@ describe('FacturasService', () => {
       expect(capturedSql).toContain('rut_emisor');
       expect(capturedParams).toContain('921760000');
     });
+
+    it('particiona por guivaloragrupador: mismo cliente+regla con 2 valores distintos (OC/HES) crea 2 proformas', async () => {
+      mockDataSource.query.mockResolvedValueOnce([
+        {
+          empkey: '1',
+          guitipo: 52,
+          guifolio: '100',
+          gclirut: '76123456-0',
+          guireglaidl: 'test_referencia_oc_hes',
+          guivaloragrupador: '555001',
+          guitotneto: '1000',
+          guitotiva: '190',
+          guitotdoc: '1190',
+        },
+        {
+          empkey: '1',
+          guitipo: 52,
+          guifolio: '101',
+          gclirut: '76123456-0',
+          guireglaidl: 'test_referencia_oc_hes',
+          guivaloragrupador: '777002',
+          guitotneto: '2000',
+          guitotiva: '380',
+          guitotdoc: '2380',
+        },
+      ]);
+      // ambos valores sin Proforma activa
+      mockDataSource.query
+        .mockResolvedValueOnce([{ count: '0' }])
+        .mockResolvedValueOnce([{ count: '0' }]);
+
+      mockDataSource.transaction
+        .mockImplementationOnce((cb) =>
+          cb({
+            query: jest
+              .fn()
+              .mockResolvedValueOnce([{ max: '0' }])
+              .mockResolvedValueOnce([{ gfackey: '42' }])
+              .mockResolvedValueOnce([]),
+          }),
+        )
+        .mockImplementationOnce((cb) =>
+          cb({
+            query: jest
+              .fn()
+              .mockResolvedValueOnce([{ max: '1' }])
+              .mockResolvedValueOnce([{ gfackey: '43' }])
+              .mockResolvedValueOnce([]),
+          }),
+        );
+
+      const result = await service.generar('1', '2026-05', '921760000');
+
+      expect(result).toEqual({ created: 2, skipped: 0 });
+    });
+
+    it('un BORRADOR existente para un valor no bloquea la proforma del otro valor', async () => {
+      mockDataSource.query.mockResolvedValueOnce([
+        {
+          empkey: '1',
+          guitipo: 52,
+          guifolio: '100',
+          gclirut: '76123456-0',
+          guireglaidl: 'test_referencia_oc_hes',
+          guivaloragrupador: '555001',
+          guitotneto: '1000',
+          guitotiva: '190',
+          guitotdoc: '1190',
+        },
+        {
+          empkey: '1',
+          guitipo: 52,
+          guifolio: '101',
+          gclirut: '76123456-0',
+          guireglaidl: 'test_referencia_oc_hes',
+          guivaloragrupador: '777002',
+          guitotneto: '2000',
+          guitotiva: '380',
+          guitotdoc: '2380',
+        },
+      ]);
+      // 555001 ya tiene BORRADOR; 777002 no
+      mockDataSource.query
+        .mockResolvedValueOnce([{ count: '1' }])
+        .mockResolvedValueOnce([{ count: '0' }]);
+
+      mockDataSource.transaction.mockImplementationOnce((cb) =>
+        cb({
+          query: jest
+            .fn()
+            .mockResolvedValueOnce([{ max: '0' }])
+            .mockResolvedValueOnce([{ gfackey: '43' }])
+            .mockResolvedValueOnce([]),
+        }),
+      );
+
+      const result = await service.generar('1', '2026-05', '921760000');
+
+      expect(result).toEqual({ created: 1, skipped: 1 });
+    });
   });
 
   // ─── crearManual ───────────────────────────────────────────────────────────
 
   describe('crearManual', () => {
     it('lanza ConflictException si ya existe BORRADOR o APROBADA para la combinación', async () => {
-      mockDataSource.query.mockResolvedValueOnce([{ count: '1' }]); // existing check
+      mockDataSource.query
+        .mockResolvedValueOnce([
+          // guías disponibles
+          {
+            empkey: '1',
+            guitipo: 52,
+            guifolio: '100',
+            gclirut: '76123456-0',
+            guireglaidl: '1_CMNA_STGO',
+            guitotneto: '4202',
+            guitotiva: '798',
+            guitotdoc: '5000',
+          },
+        ])
+        .mockResolvedValueOnce([{ count: '1' }]); // existing check
 
       await expect(
         service.crearManual(
@@ -566,9 +680,7 @@ describe('FacturasService', () => {
     });
 
     it('lanza UnprocessableEntityException si no hay guías disponibles', async () => {
-      mockDataSource.query
-        .mockResolvedValueOnce([{ count: '0' }]) // no BORRADOR existente
-        .mockResolvedValueOnce([]); // no guías disponibles
+      mockDataSource.query.mockResolvedValueOnce([]); // no guías disponibles
 
       await expect(
         service.crearManual(
@@ -597,8 +709,8 @@ describe('FacturasService', () => {
       const firstProforma = makeProforma('42') as Factura;
 
       mockDataSource.query
-        .mockResolvedValueOnce([{ count: '0' }]) // no conflicto
         .mockResolvedValueOnce(guias50) // guías disponibles
+        .mockResolvedValueOnce([{ count: '0' }]) // no conflicto para el grupo
         .mockResolvedValueOnce([
           { cantidad_guias: '40', monto_total: '47600' },
         ]); // buildProformaDto
@@ -649,7 +761,6 @@ describe('FacturasService', () => {
       const proforma = makeProforma('42') as Factura;
 
       mockDataSource.query
-        .mockResolvedValueOnce([{ count: '0' }]) // no conflicto
         .mockResolvedValueOnce([
           // guías disponibles
           {
@@ -663,6 +774,7 @@ describe('FacturasService', () => {
             guitotdoc: '5000',
           },
         ])
+        .mockResolvedValueOnce([{ count: '0' }]) // no conflicto para el grupo
         .mockResolvedValueOnce([{ cantidad_guias: '1', monto_total: '5000' }]); // buildProformaDto
 
       mockDataSource.transaction.mockImplementationOnce((cb) =>
@@ -699,6 +811,81 @@ describe('FacturasService', () => {
       expect(result.cantidadGuias).toBe(1);
       expect(result.montoTotal).toBe('5000');
       expect(result.estado).toBe('BORRADOR');
+    });
+
+    it('particiona por guivaloragrupador: crea una proforma por valor y retorna la primera', async () => {
+      const proforma = makeProforma('42') as Factura;
+
+      mockDataSource.query
+        .mockResolvedValueOnce([
+          // guías disponibles: 2 valores distintos (OC/HES)
+          {
+            empkey: '1',
+            guitipo: 52,
+            guifolio: '100',
+            gclirut: '76123456-0',
+            guireglaidl: '1_CMNA_STGO',
+            guivaloragrupador: '555001',
+            guitotneto: '1000',
+            guitotiva: '190',
+            guitotdoc: '1190',
+          },
+          {
+            empkey: '1',
+            guitipo: 52,
+            guifolio: '101',
+            gclirut: '76123456-0',
+            guireglaidl: '1_CMNA_STGO',
+            guivaloragrupador: '777002',
+            guitotneto: '2000',
+            guitotiva: '380',
+            guitotdoc: '2380',
+          },
+        ])
+        .mockResolvedValueOnce([{ count: '0' }]) // sin conflicto para 555001
+        .mockResolvedValueOnce([{ count: '0' }]) // sin conflicto para 777002
+        .mockResolvedValueOnce([{ cantidad_guias: '1', monto_total: '1190' }]); // buildProformaDto
+
+      mockDataSource.transaction
+        .mockImplementationOnce((cb) =>
+          cb({
+            query: jest
+              .fn()
+              .mockResolvedValueOnce([{ max: '0' }])
+              .mockResolvedValueOnce([{ gfackey: '42' }])
+              .mockResolvedValueOnce([]),
+          }),
+        )
+        .mockImplementationOnce((cb) =>
+          cb({
+            query: jest
+              .fn()
+              .mockResolvedValueOnce([{ max: '1' }])
+              .mockResolvedValueOnce([{ gfackey: '43' }])
+              .mockResolvedValueOnce([]),
+          }),
+        );
+
+      mockFacturaRepo.findOne.mockResolvedValueOnce(proforma);
+      mockClienteRepo.findOne.mockResolvedValueOnce({
+        gclinom: 'CLIENTE TEST',
+      });
+      mockReglaRepo.findOne.mockResolvedValueOnce({
+        regladescripcion: 'SANTIAGO',
+      });
+
+      const result = await service.crearManual(
+        '1',
+        {
+          periodo: '2026-05',
+          gclirut: '76123456-0',
+          reglaidl: '1_CMNA_STGO',
+        },
+        '921760000',
+      );
+
+      expect(result.id).toBe('42');
+      expect(mockDataSource.transaction).toHaveBeenCalledTimes(2);
     });
   });
 

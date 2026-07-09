@@ -213,6 +213,15 @@ async function main() {
     }
     console.log(`[OK] proformas encontradas: ${proformas.map((p) => `gfackey=${p.gfackey}(${p.estado})`).join(', ')}`);
 
+    // OPEN-2: 1 Factura : 1 OC : 1 HES — cada guivaloragrupador distinto debe
+    // caer en su propia Proforma, no mezclarse en una sola por cliente+regla.
+    if (proformas.length !== GUIAS.length) {
+      throw new Error(
+        `Particionado por guivaloragrupador falló: se esperaban ${GUIAS.length} proformas (una por OC/HES), se encontraron ${proformas.length}`,
+      );
+    }
+    console.log(`[OK] particionado por guivaloragrupador: ${proformas.length} proformas (1 por OC/HES), OPEN-2 resuelto`);
+
     for (const { gfackey } of proformas) {
       const previewRes = await fetch(
         `${BASE_URL}/empresas/${EMPKEY}/facturas/proforma/${gfackey}/preview-mensaje`,
