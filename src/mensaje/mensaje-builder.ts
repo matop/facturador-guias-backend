@@ -60,6 +60,36 @@ function dedupeReferenciasExternas(
   return { oc, hes };
 }
 
+/**
+ * Header `4:|` + líneas `5:|` de OC (801) y HES para el bloque de Referencia.
+ * Compartido por el modo individual y el Global: ambos listan las OC/HES
+ * deduplicadas con `RAZON REFERENCIA` como 4to campo. Devuelve el flag
+ * `tieneReferenciasExternas` para que el caller sepa si las líneas `5:|` de
+ * guía (tipo 52) deben declarar ese 4to campo vacío — Enternet exige que todas
+ * las líneas `5:|` de un bloque tengan el mismo número de campos que su header
+ * `4:|`, o rechaza con [ParseErr001] (confirmado en QA 2026-07-06).
+ */
+function buildReferenciasExternasLines(
+  oc: ReferenciaExternaParaMensaje[],
+  hes: ReferenciaExternaParaMensaje[],
+): { header: string; lineas: string[]; tieneReferenciasExternas: boolean } {
+  const tieneReferenciasExternas = oc.length > 0 || hes.length > 0;
+  const header = tieneReferenciasExternas
+    ? `4:|TIPO DE REFERENCIA|FOLIO|FECHA|RAZON REFERENCIA`
+    : `4:|TIPO DE REFERENCIA|FOLIO|FECHA`;
+  const lineas = [
+    ...oc.map(
+      (r) =>
+        `5:|801|${r.folio}|${formatDateSlash(r.fecha)}|${RAZON_REFERENCIA_EXTERNA['801']}`,
+    ),
+    ...hes.map(
+      (r) =>
+        `5:|HES|${r.folio}|${formatDateSlash(r.fecha)}|${RAZON_REFERENCIA_EXTERNA['HES']}`,
+    ),
+  ];
+  return { header, lineas, tieneReferenciasExternas };
+}
+
 export interface DetalleItemParaMensaje {
   nmbItem: string;
   qtyItem: string;
@@ -301,19 +331,16 @@ export function buildMensaje(input: MensajeInput): MensajeResult {
       : `2:|ITEM|TIPO ITEM|DESCRIPCION|CANTIDAD|PRECIO|DESCUENTO MONTO|TOTAL LINEA`,
   );
   if (isGlobal) {
-    // OC/HES colapsan junto con las guías en el mismo campo, sin listarse
-    // aparte — ver PRD-referencias-oc-hes.md "Interacción con Modo Global
-    // simultáneo". Un segmento OC:/HES: se omite por completo si no hay
-    // ninguna referencia de ese tipo (no queda "- OC: " colgando vacío).
-    // El separador NO puede ser "|": el Mensaje V5 completo es pipe-delimited,
-    // así que un "|" dentro de este campo se cuenta como columna extra y
-    // Enternet rechaza con [ParseErr001] (confirmado en QA 2026-07-06, ver
-    // referencias-oc-hes.md).
-    const segmentos: string[] = [];
-    if (oc.length) segmentos.push(`OC: ${oc.map((r) => r.folio).join(' ')}`);
-    if (hes.length) segmentos.push(`HES: ${hes.map((r) => r.folio).join(' ')}`);
-    segmentos.push(guias.map((g) => g.folio).join(' '));
-    const descripcionAdicional = segmentos.join(' - ');
+    // OC/HES ya NO se embeben acá: viajan como <Referencia> reales
+    // (`5:|801|…`/`5:|HES|…`) en el bloque de Referencia Global tras los
+    // Totales (D1-A del plan PLAN-referencias-oc-hes-en-global.md — su lugar
+    // semánticamente correcto, sin duplicar la info). DESCRIPCION ADICIONAL
+    // lleva solo los folios de guía (siempre hay al menos una).
+    // El separador es espacio, NUNCA "|": el Mensaje V5 completo es
+    // pipe-delimited, así que un "|" dentro de este campo se cuenta como
+    // columna extra y Enternet rechaza con [ParseErr001] (confirmado en QA
+    // 2026-07-06, ver referencias-oc-hes.md).
+    const descripcionAdicional = guias.map((g) => g.folio).join(' ');
     lines.push(
       `3:|1|AFECTO|Segun Guias:|1|${sumNeto}|0|${sumNeto}|${descripcionAdicional}`,
     );
@@ -327,35 +354,23 @@ export function buildMensaje(input: MensajeInput): MensajeResult {
 
   // ── Referencias ──
   // Global: las líneas 4:|/5:| de referencia individual por guía se omiten
-  // acá — el bloque de Referencia Global (header TIPO/FOLIO/ACCION
-  // REFERENCIA + su propia línea 5:|52|0|{fecha}) va después de los Totales,
-  // ver bloque `if (isGlobal)` más abajo. Antes de que Enternet corrigiera su
-  // parser (2026-07-08) este bloque se omitía por completo y los folios
-  // viajaban solo en DESCRIPCION ADICIONAL del Detalle; ver
+  // acá — en Global va el bloque de Referencia Global (header TIPO/FOLIO/ACCION
+  // REFERENCIA + OC/HES como 5:|801|/5:|HES| + la línea 5:|52|0|{fecha} de la
+  // referencia global de guías) después de los Totales, ver bloque
+  // `if (isGlobal)` más abajo. Antes de que Enternet corrigiera su parser
+  // (2026-07-08) este bloque se omitía por completo y los folios viajaban solo
+  // en DESCRIPCION ADICIONAL del Detalle; ver
   // enternet-v5-referencia-global-en-progreso.md para el historial de
   // intentos fallidos contra QA 2026-07-03.
   if (!isGlobal) {
-    // Enternet valida que el número de campos de cada línea 5:| corresponda
-    // exactamente con las etiquetas declaradas en 4:| ([ParseErr001] si no
-    // coinciden, confirmado en QA 2026-07-06). Las líneas de OC/HES agregan un
-    // 4to campo (RAZON REFERENCIA) — cuando hay al menos una, TODAS las líneas
-    // 5:| (incluidas las de guía) deben declarar ese campo, vacío para guías.
-    const tieneReferenciasExternas = oc.length > 0 || hes.length > 0;
-    lines.push(
-      tieneReferenciasExternas
-        ? `4:|TIPO DE REFERENCIA|FOLIO|FECHA|RAZON REFERENCIA`
-        : `4:|TIPO DE REFERENCIA|FOLIO|FECHA`,
-    );
-    for (const r of oc) {
-      lines.push(
-        `5:|801|${r.folio}|${formatDateSlash(r.fecha)}|${RAZON_REFERENCIA_EXTERNA['801']}`,
-      );
-    }
-    for (const r of hes) {
-      lines.push(
-        `5:|HES|${r.folio}|${formatDateSlash(r.fecha)}|${RAZON_REFERENCIA_EXTERNA['HES']}`,
-      );
-    }
+    // OC (801) > HES > una línea 52 por guía. El header y las líneas de OC/HES
+    // se arman con el helper compartido (mismo patrón que el bloque Global);
+    // cuando hay OC/HES, TODAS las líneas 5:| —incluidas las de guía— declaran
+    // el 4to campo (RAZON REFERENCIA, vacío para guías) por la regla de
+    // consistencia de campos de Enternet ([ParseErr001]).
+    const { header, lineas, tieneReferenciasExternas } =
+      buildReferenciasExternasLines(oc, hes);
+    lines.push(header, ...lineas);
     for (const g of guias) {
       const linea = `5:|52|${g.folio}|${formatDateSlash(g.fechaEmision)}`;
       lines.push(tieneReferenciasExternas ? `${linea}|` : linea);
@@ -375,11 +390,37 @@ export function buildMensaje(input: MensajeInput): MensajeResult {
   // (gfackey=127, folioSii=411219, XML con FchRef correcto en ambos bloques
   // <Referencia>).
   if (isGlobal) {
+    // Tope SII: máx 40 <Referencia> por DTE. En Global las guías colapsan en
+    // UNA referencia global (52 / folio 0), así que el conteo relevante es
+    // OC + HES + esa global. OC/HES suelen ser pocas; si aun así superan el
+    // tope, frenamos con error claro en vez de truncar en silencio (D2 del
+    // plan). (Enternet además emite hoy una <Referencia> plana redundante
+    // desde la línea 5:|52|0 — quirk transitorio de su parser, no parte del
+    // conteo lógico; ver enternet-v5-referencia-global-en-progreso.md.)
+    if (oc.length + hes.length + 1 > MAX_REFERENCIAS_INDIVIDUALES) {
+      throw new Error(
+        `Modo Global: ${oc.length} OC + ${hes.length} HES + 1 referencia global = ${oc.length + hes.length + 1} excede el tope SII de ${MAX_REFERENCIAS_INDIVIDUALES} <Referencia> por DTE`,
+      );
+    }
+    // El trío 1:|TIPO/FOLIO/ACCION REFERENCIA produce la referencia global
+    // (IndGlobal=1) que representa TODAS las guías. Las OC/HES van como
+    // <Referencia> individuales en el mismo bloque 4:|/5:| — el trío NO
+    // scopea a las líneas 5:| que le siguen, así que salen como TpoDocRef
+    // 801/HES limpios, no contaminados a tipo 52 (confirmado con XML real
+    // 2026-07-09, ver enternet-v5-referencia-global-en-progreso.md §PR #23).
+    // Orden en el mensaje: OC > HES > referencia global de guías. (En el XML
+    // final Enternet ubica la global primero por venir del trío del
+    // encabezado — quirk de su parser, no controlable desde acá.)
     lines.push(`1:|TIPO DOC REFERENCIA|52`);
     lines.push(`1:|FOLIO DOC REFERENCIA|0`);
     lines.push(`1:|ACCION REFERENCIA|5`);
-    lines.push(`4:|TIPO DE REFERENCIA|FOLIO|FECHA`);
-    lines.push(`5:|52|0|${formatDateSlash(fechaDocumento)}`);
+    const { header, lineas, tieneReferenciasExternas } =
+      buildReferenciasExternasLines(oc, hes);
+    lines.push(header, ...lineas);
+    // Cuando hay OC/HES, la línea de la referencia global también declara el
+    // 4to campo (vacío) por la regla de consistencia de Enternet.
+    const globalLine = `5:|52|0|${formatDateSlash(fechaDocumento)}`;
+    lines.push(tieneReferenciasExternas ? `${globalLine}|` : globalLine);
   }
 
   return { mensaje: lines.join('\r\n') };
