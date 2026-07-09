@@ -103,6 +103,51 @@ function chunkArray<T>(arr: T[], size: number): T[][] {
   return chunks;
 }
 
+interface GuiaParaProformaRow {
+  empkey: string;
+  guitipo: number;
+  guifolio: string;
+  gclirut: string;
+  guireglaidl: string;
+  guivaloragrupador: string | null;
+  guitotneto: string;
+  guitotiva: string;
+  guitotdoc: string;
+}
+
+interface GrupoProforma {
+  gclirut: string;
+  reglaidl: string;
+  valorAgrupador: string | null;
+  guias: GuiaParaProformaRow[];
+}
+
+/**
+ * 1 grupo por (gclirut, guireglaidl, guivaloragrupador): cada OC/HES/comuna
+ * distinta cae en su propia Proforma, en vez de mezclarse en una sola por
+ * cliente+regla como ocurría antes de resolver OPEN-2.
+ */
+function agruparPorValorAgrupador(
+  guias: GuiaParaProformaRow[],
+): GrupoProforma[] {
+  const groups = new Map<string, GrupoProforma>();
+  for (const guia of guias) {
+    const key = `${guia.gclirut}|${guia.guireglaidl}|${guia.guivaloragrupador ?? ''}`;
+    let group = groups.get(key);
+    if (!group) {
+      group = {
+        gclirut: guia.gclirut,
+        reglaidl: guia.guireglaidl,
+        valorAgrupador: guia.guivaloragrupador,
+        guias: [],
+      };
+      groups.set(key, group);
+    }
+    group.guias.push(guia);
+  }
+  return [...groups.values()];
+}
+
 /** Fecha de hoy (YYYY-MM-DD) en huso America/Santiago. */
 function todayInChile(): string {
   return new Date()
@@ -236,19 +281,8 @@ export class FacturasService {
     const { fechaInicial, fechaFinal } = periodoToRange(periodo);
 
     // Guías disponibles del período: con regla agrupadora asignada y no bloqueadas
-    const guias = await this.dataSource.query<
-      {
-        empkey: string;
-        guitipo: number;
-        guifolio: string;
-        gclirut: string;
-        guireglaidl: string;
-        guitotneto: string;
-        guitotiva: string;
-        guitotdoc: string;
-      }[]
-    >(
-      `SELECT g.empkey, g.guitipo, g.guifolio, g.gclirut, g.guireglaidl,
+    const guias = await this.dataSource.query<GuiaParaProformaRow[]>(
+      `SELECT g.empkey, g.guitipo, g.guifolio, g.gclirut, g.guireglaidl, g.guivaloragrupador,
               g.guitotneto, g.guitotiva, g.guitotdoc
        FROM gde.guia g
        WHERE g.empkey = $1
@@ -265,32 +299,30 @@ export class FacturasService {
       [empkey, fechaInicial, fechaFinal],
     );
 
-    // Agrupar por (gclirut, reglaidl)
-    const groups = new Map<string, typeof guias>();
-    for (const guia of guias) {
-      const key = `${guia.gclirut}|${guia.guireglaidl}`;
-      if (!groups.has(key)) groups.set(key, []);
-      groups.get(key)!.push(guia);
-    }
+    // Agrupar por (gclirut, reglaidl, guivaloragrupador): 1 proforma por cada
+    // combinación cliente+regla+valor (ej. una por OC, una por HES, una por comuna).
+    const groups = agruparPorValorAgrupador(guias);
 
     let created = 0;
     let skipped = 0;
 
-    for (const [key, groupGuias] of groups) {
-      const sepIdx = key.indexOf('|');
-      const gclirut = key.substring(0, sepIdx);
-      const reglaidl = key.substring(sepIdx + 1);
-
-      // Verificar BORRADOR existente para esta combinación en el período
-      const [existing] = await this.dataSource.query<{ count: string }[]>(
-        `SELECT COUNT(*)::text AS count FROM gde.factura
-         WHERE empkey = $1 AND gclirut = $2 AND reglaidl = $3
-           AND es_proforma = true AND estado = 'BORRADOR'
-           AND gfacfecha BETWEEN $4 AND $5`,
-        [empkey, gclirut, reglaidl, fechaInicial, fechaFinal],
+    for (const {
+      gclirut,
+      reglaidl,
+      valorAgrupador,
+      guias: groupGuias,
+    } of groups) {
+      const yaExiste = await this.existeProformaActivaParaValor(
+        empkey,
+        gclirut,
+        reglaidl,
+        valorAgrupador,
+        fechaInicial,
+        fechaFinal,
+        ['BORRADOR'],
       );
 
-      if (parseInt(existing.count) > 0) {
+      if (yaExiste) {
         skipped++;
         continue;
       }
@@ -305,6 +337,38 @@ export class FacturasService {
     return { created, skipped };
   }
 
+  /** Cuenta cuántas proformas en alguno de `estados` ya cubren guías con ese `valorAgrupador`. */
+  private async existeProformaActivaParaValor(
+    empkey: string,
+    gclirut: string,
+    reglaidl: string,
+    valorAgrupador: string | null,
+    fechaInicial: string,
+    fechaFinal: string,
+    estados: string[],
+  ): Promise<boolean> {
+    const [existing] = await this.dataSource.query<{ count: string }[]>(
+      `SELECT COUNT(*)::text AS count
+       FROM gde.factura f
+       JOIN gde.facturaguias fg ON fg.empkey = f.empkey AND fg.gfackey = f.gfackey
+       JOIN gde.guia g ON g.empkey = fg.empkey AND g.guitipo = fg.guitipo AND g.guifolio = fg.guifolio
+       WHERE f.empkey = $1 AND f.gclirut = $2 AND f.reglaidl = $3
+         AND f.es_proforma = true AND f.estado = ANY($4)
+         AND f.gfacfecha BETWEEN $5 AND $6
+         AND g.guivaloragrupador IS NOT DISTINCT FROM $7`,
+      [
+        empkey,
+        gclirut,
+        reglaidl,
+        estados,
+        fechaInicial,
+        fechaFinal,
+        valorAgrupador,
+      ],
+    );
+    return parseInt(existing.count) > 0;
+  }
+
   async crearManual(
     empkey: string,
     body: CrearProformaBody,
@@ -313,34 +377,9 @@ export class FacturasService {
     const { periodo, gclirut, reglaidl } = body;
     const { fechaInicial, fechaFinal } = periodoToRange(periodo);
 
-    // Verificar que no exista BORRADOR o APROBADA para esta combinación
-    const [existing] = await this.dataSource.query<{ count: string }[]>(
-      `SELECT COUNT(*)::text AS count FROM gde.factura
-       WHERE empkey = $1 AND gclirut = $2 AND reglaidl = $3
-         AND es_proforma = true AND estado IN ('BORRADOR', 'APROBADA')
-         AND gfacfecha BETWEEN $4 AND $5`,
-      [empkey, gclirut, reglaidl, fechaInicial, fechaFinal],
-    );
-    if (parseInt(existing.count) > 0) {
-      throw new ConflictException(
-        `Ya existe una Proforma activa para este cliente y regla en el período ${periodo}`,
-      );
-    }
-
     // Guías disponibles para este cliente + regla + período
-    const guias = await this.dataSource.query<
-      {
-        empkey: string;
-        guitipo: number;
-        guifolio: string;
-        gclirut: string;
-        guireglaidl: string;
-        guitotneto: string;
-        guitotiva: string;
-        guitotdoc: string;
-      }[]
-    >(
-      `SELECT g.empkey, g.guitipo, g.guifolio, g.gclirut, g.guireglaidl,
+    const guias = await this.dataSource.query<GuiaParaProformaRow[]>(
+      `SELECT g.empkey, g.guitipo, g.guifolio, g.gclirut, g.guireglaidl, g.guivaloragrupador,
               g.guitotneto, g.guitotiva, g.guitotdoc
        FROM gde.guia g
        WHERE g.empkey = $1 AND g.gclirut = $2 AND g.guireglaidl = $3
@@ -362,17 +401,43 @@ export class FacturasService {
       );
     }
 
-    const chunks = chunkArray(guias, MAX_GUIAS_POR_FACTURA);
-    const gfackeys: string[] = [];
-    for (const chunk of chunks) {
-      const key = await this.insertProforma(
+    // 1 proforma por cada guivaloragrupador distinto (ej. una por OC, una por HES).
+    const groups = agruparPorValorAgrupador(guias);
+
+    // Verificar conflicto ANTES de insertar nada: si algún grupo ya tiene una
+    // Proforma activa, se aborta completo en vez de crear el resto a medias.
+    for (const { valorAgrupador } of groups) {
+      const yaExiste = await this.existeProformaActivaParaValor(
         empkey,
         gclirut,
         reglaidl,
-        chunk,
-        rutEmisor,
+        valorAgrupador,
+        fechaInicial,
+        fechaFinal,
+        ['BORRADOR', 'APROBADA'],
       );
-      gfackeys.push(key);
+      if (yaExiste) {
+        throw new ConflictException(
+          `Ya existe una Proforma activa para este cliente, regla${
+            valorAgrupador ? ` y agrupador (${valorAgrupador})` : ''
+          } en el período ${periodo}`,
+        );
+      }
+    }
+
+    const gfackeys: string[] = [];
+    for (const { guias: groupGuias } of groups) {
+      const chunks = chunkArray(groupGuias, MAX_GUIAS_POR_FACTURA);
+      for (const chunk of chunks) {
+        const key = await this.insertProforma(
+          empkey,
+          gclirut,
+          reglaidl,
+          chunk,
+          rutEmisor,
+        );
+        gfackeys.push(key);
+      }
     }
     const factura = await this.facturaRepository.findOne({
       where: { empkey, gfackey: gfackeys[0] },
