@@ -81,6 +81,17 @@ Cada sesión termina con: qué se confirmó, qué se encontró roto (si algo), y
 3. `generarProformas` sin `?rut=` (todos los clientes de la empresa) → confirmar el conjunto correcto de proformas por grupo.
 4. Si existe un cliente real con volumen suficiente, intentar activar naturalmente el chunking `MAX_GUIAS_POR_FACTURA=40` y/o Caso 4 (Global) **sin** insertar guías sintéticas — documentar si no existe tal cliente en QA (en cuyo caso el gap de Caso 4/chunking con datos 100% reales queda explícitamente abierto, no se fuerza).
 
+**Resultado (2026-07-10, Issue #32):** EJECUTADA con datos sintéticos (se descartó `empkey=977` real por config de emisor; ver handoff `docs/2026-07-10-handoff-sesion3-multi-cliente-multi-regla.md`). Script `scripts/test-multi-cliente-multi-regla-e2e.js`. Un solo `POST /sync` + un solo `POST /generar` (sin `?rut=`) sobre 2 clientes de `empkey=1163` con reglas distintas produjo **4 proformas correctamente particionadas, 1 `gclirut` cada una, todas EMITIDA**:
+
+| gfackey | cliente | regla / agrupador | folioSii |
+|---------|---------|-------------------|----------|
+| 152 | `81234567-2` | `por_comuna` / SANTIAGO | 411232 |
+| 153 | `81234567-2` | `por_comuna` / PROVIDENCIA | 411233 |
+| 154 | `76407930-2` | `test_referencia_oc_hes` / OC `801\|555001` | 411234 |
+| 155 | `76407930-2` | `test_referencia_oc_hes` / HES `HES\|777002` | 411235 |
+
+Confirma que el batch de agrupadores (`GroupingService`) y `generarProformas` sin `?rut=` no mezclan clientes ni reglas heterogéneas en una sola corrida. Punto 4 (chunking/Global con datos 100% reales) queda abierto (no había cliente real con volumen; no se forzó). **Hallazgo colateral corregido:** el `finally` del script podía corromper el `reglaidl` del cliente compartido `76407930-2` (NULL) si una falla temprana ocurría antes de capturar el valor previo; el script ahora captura *antes* del reset y sólo restaura si capturó (centinela `undefined`). La corrupción dejada por el primer intento se reparó restaurando `reglaidl='por_comuna'` (valor previo confirmado por el log del draft run).
+
 ### Sesión 4 — `assignRegla` / recompute con volumen real
 
 **Objetivo:** confirmar que cambiar de regla y recomputar agrupadores funciona sobre guías reales ya sincronizadas (no las 3-7 guías de fixture de siempre).
@@ -107,6 +118,6 @@ Cada sesión termina con: qué se confirmó, qué se encontró roto (si algo), y
 
 - [x] Sesión 1 — tracer bullet base (`extraeTagLista`) — **cerrada sin ejecutar 2026-07-08**, ver nota en la sesión (decisión del usuario, no bloqueante)
 - [x] Sesión 2 — `extraeReferenciaPorTipo` wireado + tracer bullet — **EJECUTADA 2026-07-09** (folioSii=411228 EMITIDA). Dejó `OPEN-2` (particionado por `guivaloragrupador`) en handoff dedicado.
-- [ ] Sesión 3 — multi-cliente/multi-regla
+- [x] Sesión 3 — multi-cliente/multi-regla — **EJECUTADA 2026-07-10** (Issue #32). 1 `sync` + 1 `generar` sobre 2 clientes bajo `empkey=1163` con reglas distintas (`por_comuna` para el cliente sintético nuevo `81234567-2`, `test_referencia_oc_hes` para `76407930-2`) → **4 proformas aisladas, todas EMITIDA**, sin mezcla de `gclirut`: `folioSii` 411232 (SANTIAGO), 411233 (PROVIDENCIA), 411234 (OC `801\|555001`), 411235 (HES `HES\|777002`). Script: `scripts/test-multi-cliente-multi-regla-e2e.js`. Ver nota de resultado en la sección Sesión 3 arriba.
 - [ ] Sesión 4 — `assignRegla`/recompute a volumen real
 - [ ] Sesión 5 — cierre y consolidación
