@@ -83,7 +83,7 @@ export class GroupingService {
 
     // Compute per item
     for (const { gclirut, xml } of items) {
-      const reglaidl = clienteMap.get(gclirut) ?? null;
+      const reglaidl = clienteMap.get(gclirut.trim()) ?? null;
       if (!reglaidl) {
         result.set(gclirut, null);
         continue;
