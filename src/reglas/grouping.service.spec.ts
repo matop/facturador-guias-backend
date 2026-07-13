@@ -287,6 +287,31 @@ describe('GroupingService', () => {
       expect(result.get('78170790-2')).toBeNull();
     });
 
+    it('resuelve el agrupador aunque el gclirut recibido venga con padding bpchar', async () => {
+      // Si un caller agrupa guías por g.gclirut (character(20), con padding) y
+      // pasa ese valor tal cual como item.gclirut, el lookup interno no debe
+      // fallar en silencio solo porque clienteMap usa claves recortadas.
+      mockClienteRepo.find.mockResolvedValue([
+        { empkey: '977', gclirut: '77004250-K', reglaidl: 'por_comuna' },
+      ]);
+      mockReglaRepo.find.mockResolvedValue([
+        {
+          reglaidl: 'por_comuna',
+          reglaconfig: { fn: 'extraeTagLista', reglaTags: ['CmnaRecep'] },
+        },
+      ]);
+      const gclirutPadded = '77004250-K'.padEnd(20, ' ');
+
+      const result = await service.batchComputeAgrupadores('977', [
+        { gclirut: gclirutPadded, xml: xmlRenca },
+      ]);
+
+      expect(result.get(gclirutPadded)).toEqual({
+        guiReglaidl: 'por_comuna',
+        guiValorAgrupador: 'RENCA',
+      });
+    });
+
     it('no llama a reglaRepo si ningún cliente tiene reglaidl', async () => {
       mockClienteRepo.find.mockResolvedValue([
         { empkey: '977', gclirut: '77004250-K', reglaidl: null },

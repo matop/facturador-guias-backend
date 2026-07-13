@@ -296,6 +296,69 @@ describe('EmpresasService', () => {
     });
   });
 
+  // ─── recomputarTodasLasGuias ─────────────────────────────────────────────────
+
+  describe('recomputarTodasLasGuias', () => {
+    it('recorta el padding de gclirut (character(20)) antes de pasarlo a computeAgrupador', async () => {
+      // gde.guia.gclirut es character(20) en Postgres: TypeORM devuelve el
+      // valor con padding de espacios, igual que gde.clientes.gclirut.
+      const guia = makeGuia(
+        '100',
+        '76407930-2          ',
+        '2026-06-10',
+        '1190',
+      );
+      guia.guifilepath = '/ruta/guia100.xml';
+      mockGuiaRepo.find.mockResolvedValueOnce([guia]);
+      const rawXml = '<DTE><CmnaRecep>PROVIDENCIA</CmnaRecep></DTE>';
+      mockXmlParserService.fetchDocument.mockResolvedValueOnce({
+        rawXml,
+      });
+      mockGroupingService.computeAgrupador.mockResolvedValueOnce({
+        guiReglaidl: 'por_comuna',
+        guiValorAgrupador: 'PROVIDENCIA',
+      });
+      mockGuiaRepo.update.mockResolvedValue(undefined);
+
+      const result = await service.recomputarTodasLasGuias('1163', '2026-06');
+
+      expect(mockGroupingService.computeAgrupador).toHaveBeenCalledWith(
+        '1163',
+        '76407930-2',
+        rawXml,
+      );
+      expect(mockGuiaRepo.update).toHaveBeenCalledWith(
+        { empkey: '1', guitipo: 52, guifolio: '100' },
+        { guireglaidl: 'por_comuna', guivaloragrupador: 'PROVIDENCIA' },
+      );
+      expect(result).toEqual({ procesados: 1, actualizados: 1, errores: 0 });
+    });
+
+    it('XML no accesible: deja la guía en null y cuenta el error sin abortar el resto', async () => {
+      const guiaOk = makeGuia('100', '76407930-2', '2026-06-10', '1190');
+      guiaOk.guifilepath = '/ruta/ok.xml';
+      const guiaRota = makeGuia('101', '76407930-2', '2026-06-11', '500');
+      guiaRota.guifilepath = '/ruta/inexistente.xml';
+      mockGuiaRepo.find.mockResolvedValueOnce([guiaOk, guiaRota]);
+      mockXmlParserService.fetchDocument
+        .mockResolvedValueOnce({ rawXml: '<DTE/>' })
+        .mockRejectedValueOnce(new Error('ENOENT'));
+      mockGroupingService.computeAgrupador.mockResolvedValueOnce({
+        guiReglaidl: 'por_comuna',
+        guiValorAgrupador: 'PROVIDENCIA',
+      });
+      mockGuiaRepo.update.mockResolvedValue(undefined);
+
+      const result = await service.recomputarTodasLasGuias('1163', '2026-06');
+
+      expect(mockGuiaRepo.update).toHaveBeenCalledWith(
+        { empkey: '1', guitipo: 52, guifolio: '101' },
+        { guireglaidl: null, guivaloragrupador: null },
+      );
+      expect(result).toEqual({ procesados: 2, actualizados: 1, errores: 1 });
+    });
+  });
+
   // ─── assignRegla ─────────────────────────────────────────────────────────────
 
   describe('assignRegla', () => {
