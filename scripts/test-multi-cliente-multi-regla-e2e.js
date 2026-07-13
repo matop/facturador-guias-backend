@@ -29,7 +29,7 @@ const { Client } = require('pg');
 
 const EMPKEY = '1163';
 const RUT_EMISOR = '968880004'; // CSV, par vigente junto con FACTURACION_RUT_USUARIO=16714595-7
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3334';
+const BASE_URL = process.env.BASE_URL || 'http://localhost:3334/facturador-guias-backend/api';
 const PERIODO = '2026-09'; // futuro: próximo período libre (usados: 2025-11, 2025-12, 2026-01, 2026-02-10, 2026-03-10, 2026-04, 2026-08)
 
 const FIXTURES_DIR = path.join(__dirname, '..', 'test', 'fixtures', 'oc-hes');

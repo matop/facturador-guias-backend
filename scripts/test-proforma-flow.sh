@@ -6,7 +6,7 @@ EMPKEY="${1:-977}"
 RUT="${2:-921760000}"
 PERIODO="${3:-2026-05}"
 REGLA_OVERRIDE="${4:-}"   # Ej: bash script.sh 977 921760000 2026-05 por_comuna
-BASE="http://localhost:3334"
+BASE="http://localhost:3334/facturador-guias-backend/api"
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
 ok()   { echo -e "${GREEN}[PASS]${NC} $*"; }
