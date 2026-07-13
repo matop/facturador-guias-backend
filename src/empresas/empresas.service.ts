@@ -229,10 +229,15 @@ export class EmpresasService {
       },
     });
 
+    // gclirut es character(20) en Postgres: TypeORM devuelve el valor con
+    // padding de espacios. Hay que recortarlo antes de agrupar, o el lookup
+    // de cliente dentro de GroupingService (que usa claves recortadas) falla
+    // en silencio y deja guireglaidl/guivaloragrupador en NULL para todas.
     const byRut = new Map<string, typeof guias>();
     for (const g of guias) {
-      if (!byRut.has(g.gclirut)) byRut.set(g.gclirut, []);
-      byRut.get(g.gclirut)!.push(g);
+      const rutXml = g.gclirut.trim();
+      if (!byRut.has(rutXml)) byRut.set(rutXml, []);
+      byRut.get(rutXml)!.push(g);
     }
 
     let actualizados = 0;
