@@ -30,7 +30,7 @@ const GCLIRUT = '76407930-2';
 const RUT_EMISOR = '968880004'; // CSV, par vigente junto con FACTURACION_RUT_USUARIO=16714595-7
 const REGLAIDL = 'test_referencia_oc_hes';
 const GUITIPO_SINTETICO = 993; // distinto de 994/995 (chunking), 996 (caso1), 997 (oc-hes), 998 (caso4), 999 (por-producto)
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3334';
+const BASE_URL = process.env.BASE_URL || 'http://localhost:3334/facturador-guias-backend/api';
 const PERIODO = '2026-08'; // futuro: sin datos reales, sin colisión con proformas "activas" del mes en curso
 
 const FIXTURES_DIR = path.join(__dirname, '..', 'test', 'fixtures', 'oc-hes');

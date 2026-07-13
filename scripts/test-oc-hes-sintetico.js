@@ -23,7 +23,7 @@ const GCLIRUT = '76407930-2';
 const REGLAIDL = 'por_razon_social';
 const RUT_EMISOR = '968880004'; // par vigente 2026-07-02 junto con FACTURACION_RUT_USUARIO=16714595-7
 const GUITIPO_SINTETICO = 997; // distinto de 998 (caso4) y 999 (por-producto)
-const BASE_URL = 'http://localhost:3334';
+const BASE_URL = 'http://localhost:3334/facturador-guias-backend/api';
 const PERIODO = '2026-01'; // sin datos reales para este cliente
 
 const FIXTURES_DIR = path.join(__dirname, '..', 'test', 'fixtures', 'oc-hes');

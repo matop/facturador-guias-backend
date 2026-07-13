@@ -30,7 +30,7 @@ const GCLIRUT = '76407930-2';
 const REGLAIDL = 'por_razon_social';
 const RUT_EMISOR = '968880004'; // par vigente 2026-07-02 junto con FACTURACION_RUT_USUARIO=16714595-7
 const GUITIPO_SINTETICO = 998; // distinto de 999 (usado por test-por-producto-sintetico.js)
-const BASE_URL = 'http://localhost:3334';
+const BASE_URL = 'http://localhost:3334/facturador-guias-backend/api';
 const FIXTURE_PATH = path.join(__dirname, '..', 'test', 'fixtures', 'caso4-global', 'guia-global.xml');
 
 const N_GUIAS = 41; // > MAX_REFERENCIAS_INDIVIDUALES (40) para activar isGlobal

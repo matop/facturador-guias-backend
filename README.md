@@ -7,6 +7,7 @@ Backend NestJS que sincroniza guías de despacho electrónicas (DTE tipo 52) des
 
 - NestJS + TypeScript + TypeORM + PostgreSQL
 - Puerto por defecto: `3334`
+- Prefijo global de rutas: `/facturador-guias-backend/api` (ej. `GET /facturador-guias-backend/api/empresas/:empkey/clientes`), seteado en `src/main.ts` vía `app.setGlobalPrefix(...)`
 - Schema de base de datos: `gde` (`synchronize: false` — no usar migraciones automáticas de TypeORM)
 - Gestor de paquetes: **pnpm** (no usar npm)
 
@@ -32,7 +33,10 @@ URL de `backoffice-adapter` (`http://localhost:3333` en local) y credenciales de
 ### Integraciones
 
 - Consume `backoffice-adapter` (`:3333`) vía HTTP para obtener guías raw.
-- Es consumido por `facturaGdes` (`:5173`) vía proxy Vite (`/empresas → localhost:3334`).
+- Es consumido por `facturaGdes` (`:5173`) vía proxy Vite. ⚠️ Tras agregar el prefijo global
+  `/facturador-guias-backend/api`, la config de proxy en el repo de `facturaGdes` (fuera de este
+  repo) debe apuntar a `/facturador-guias-backend/api → localhost:3334`, no a `/empresas →
+  localhost:3334` como antes.
 
 ## Scripts
 
