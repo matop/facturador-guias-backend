@@ -52,13 +52,13 @@ Auth por **pareo de dispositivo** (mecanismo existente del sidecar):
 ### Fase 0 — Confirmaciones (sin código)
 - [x] `Aplicacion_Idl` = `Plugin`.
 - [x] `AlcanceId` = `NULL`/vacío o un `DispositivoId` (acotador opcional).
-- [ ] Definir el parámetro `MaximoGuias` en el servidor GeneXus (igual que `DashboardTopMode`), con su valor default de aplicación y overrides por empresa donde corresponda.
-- [ ] Confirmar el `DispositivoId`/ambiente del servidor de producción/QA donde correrá el sidecar.
+- [ ] Definir el parámetro `MaximoGuias` en el servidor GeneXus (igual que `DashboardTopMode`), con su valor default de aplicación y overrides por empresa donde corresponda. **Estado (2026-07-14): definición generada y escalada a trámite; sin confirmación de que ya esté creada en GeneXus.** Sigue siendo el único bloqueante real de las Fases 1-3.
+- [x] Confirmar el `DispositivoId`/ambiente del servidor de producción/QA donde correrá el sidecar. → `Dispositivo: ServEmisorSB`, `Ambiente: QA` (confirmado).
 
 ### Fase 1 — Sidecar en el servidor
 - [ ] Deploy de `Parameter-device-js` tal cual (PM2, `:3002`), env apuntando al dispositivo/ambiente correcto.
 - [ ] Verificar: `GET /parameter/values?app=Plugin&parametro=MaximoGuias&empkey=<E>` devuelve el valor esperado.
-- [ ] *(Recomendado, chico)* agregar endpoint `GET /parameter/value` que devuelva **un único valor resuelto** (`{ parametroId, valor }`) en vez del SDT crudo de GeneXus — así el middleware no depende de la estructura interna de GeneXus. Bajo costo y desacopla al middleware del formato interno de GeneXus; conviene hacerlo aunque no sea estrictamente bloqueante.
+- [ ] **Dependencia externa bloqueante de Fase 2:** agregar en `Parameter-device-js` un endpoint `GET /parameter/value` que devuelva **un único valor resuelto** (`{ parametroId, valor }`) en vez del SDT crudo de GeneXus. Confirmado (2026-07-14, vía `Parameter-device-sidecar.postman_collection.json`) que hoy **no existe** — solo está `GET /parameter/values` (SDT crudo). Este endpoint se construye en el repo `Parameter-device-js` (fuera de guias-middleware), a cargo del usuario por separado; `ParametrosService` (Fase 2) depende de este contrato para no acoplarse al formato interno de GeneXus.
 
 ### Fase 2 — Cliente `ParametrosModule` en guias-middleware (lo único nuevo)
 - [ ] `ParametrosModule` + `ParametrosService`: cliente HTTP al sidecar.
@@ -94,6 +94,10 @@ Auth por **pareo de dispositivo** (mecanismo existente del sidecar):
 Si ninguno de los candidatos aplica, el plan arranca perfectamente solo con `MaximoGuias`.
 
 ## Pendientes / a confirmar
-1. Definir `MaximoGuias` en GeneXus (Fase 0) — es lo único externo que destraba las Fases 1-3.
-2. `DispositivoId`/ambiente del servidor donde correrá el sidecar.
-3. Validar (o descartar) los parámetros candidatos de arriba.
+
+_Actualizado tras sesión de grilling, 2026-07-14._
+
+1. `MaximoGuias` en GeneXus — **abierto**, en trámite (escalado 2026-07-14, sin fecha de confirmación). Sigue bloqueando las Fases 1-3.
+2. `DispositivoId`/ambiente del servidor — **resuelto**: `ServEmisorSB` / `QA`.
+3. Endpoint `GET /parameter/value` en `Parameter-device-js` — nuevo pendiente explícito, dependencia externa (otro repo, a cargo del usuario), bloqueante de Fase 2.
+4. Candidatos a futuro (`PlazoFacturacionDias`, `PermiteReferenciaGlobal`, `OrdenReferencias`) — sin cambios, no bloquean.
