@@ -1,6 +1,6 @@
 # Estado del Proyecto — guias-middleware
 
-Última actualización: 2026-07-13 (Sesión 4 E2E `assignRegla`/recompute + fix de padding `gclirut` en `GroupingService`, PR #37). Historial completo de sesiones anteriores (mayo–julio 2026)
+Última actualización: 2026-07-14 (fix Issue #48 — exclusión de `EMITIDA` en `facturas.service.ts`, doble facturación). Historial completo de sesiones anteriores (mayo–julio 2026)
 en `docs/archive/HISTORIAL-2026-05-a-07.md` y en `git log`/PRs cerrados en GitHub — no
 duplicar esa narrativa acá, solo el estado vigente y lo pendiente.
 
@@ -16,11 +16,12 @@ duplicar esa narrativa acá, solo el estado vigente y lo pendiente.
 | Proforma (`factura` + `facturaguias`) | ✅ Funcional | partición `(gclirut, guireglaidl, guivaloragrupador)` — 1 proforma por valor de agrupador; chunking `MAX_GUIAS_POR_FACTURA=40`; estados BORRADOR→APROBADA→EMITIDA\|FALLIDA\|ANULADA |
 | Emisión DTE tipo 33 (Enternet REST) | ✅ Funcional | `aprobar` emite automático; `POST /facturas/emision` retry batch de FALLIDA |
 | Prefijo global de rutas HTTP | ✅ Aplicado | `/facturador-guias-backend/api` (`app.setGlobalPrefix`, `src/main.ts`) |
-| Tests unitarios | ✅ 276/276, 0 skips | 18 suites |
+| Tests unitarios | ✅ 280/280, 0 skips | 18 suites |
 
 ## Pendientes
 
-- **Hallazgo abierto — posible doble facturación real**: 40 guías reales de `empkey=1163`/junio 2026 (folios 525104-525113 y otros) están linkeadas simultáneamente a **dos** facturas `EMITIDA` distintas (gfackey 36 y 86). Detectado en el pre-flight de la Sesión 4 E2E, no corregido. Ver `gde.facturaguias`. Candidato a issue dedicado o Sesión 5.
+- **[Issue #48](https://github.com/matop/facturador-guias-backend/issues/48) corregido**: el bug de doble facturación (guías `EMITIDA` no se excluían de las queries de "guías disponibles" en `generar()`/`crearManual()`, `src/facturas/facturas.service.ts`) fue corregido en los 4 sitios afectados (líneas ~297, ~322, ~393, ~417), con 4 tests de regresión nuevos. Se confirmó que los folios SII citados como evidencia (411204/411207) son de ambiente QA, no producción real — no hubo exposición tributaria. Issues secundarios de hardening abiertos por separado, baja prioridad: [#49](https://github.com/matop/facturador-guias-backend/issues/49) (CHECK constraint en `gde.factura.estado`), [#50](https://github.com/matop/facturador-guias-backend/issues/50) (validar `estado` en `GET .../facturas/proforma?estado=`).
+- **Pregunta de producto abierta (no bug)**: `assertPuedeAnular` bloquea anular una proforma desde estado `FALLIDA` — solo se puede reintentar la emisión vía `emitirPendientes`. Parece intencional (evita anular algo que aún podría reintentarse), pero no está confirmado con el usuario. No corregir sin antes validar la intención de producto.
 - **Proxy Vite de `facturaGdes`** (repo externo) — actualizar de `/empresas → localhost:3334` a `/facturador-guias-backend/api → localhost:3334`. Bloqueante para dev local del front.
 - **Plan verificación E2E** (`docs/PLAN-verificacion-e2e-completa.md`) — sesiones 1-4 cerradas (Sesión 4 ejecutada 2026-07-13, folioSii=411236, encontró y corrigió el bug de padding de `gclirut` en recompute bulk); **sesión 5 pendiente** (cierre/consolidación final).
 - **Plan parámetros GeneXus** (`docs/PLAN-parametros-genexus.md`, PR #22 abierto, doc-only) — externalizar `MAX_GUIAS_POR_FACTURA` y otros valores hardcodeados vía el sidecar `Parameter-device-js`. Ver memoria `plan-parametros-genexus`.
