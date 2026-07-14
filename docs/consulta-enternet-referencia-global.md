@@ -179,3 +179,27 @@ global limpia, retomar con Enternet la fusión de bloques.
 (Caso 4 Global) actualizados: los 2 `it.skip` que asumían ausencia de `4:|`/`5:|`/header de
 referencia fueron reemplazados por asserts que confirman su presencia. 252/252 unit tests
 verdes.
+
+## Reintento 2026-07-14 — se confirma que la línea `5:|52|0|{fecha}` sigue siendo necesaria
+
+Se probó quitar la línea `5:|52|0|{fecha}` (dejando solo el trío del encabezado
+`TIPO/FOLIO/ACCION REFERENCIA`) para eliminar el `<Referencia>` duplicado
+(`NroLinRef` extra, mismo `TpoDocRef 52`/`FolioRef 0`, sin `RazonRef`) que
+Enternet sigue emitiendo en el XML de salida. Emisión real contra QA
+(`scripts/test-caso4-global-sintetico.js --reset --aprobar`, gfackey=178):
+
+```
+HTTP 422 [DTEErr001] No fue posible emitir el documento. |
+[FirmaErr002] Falla en el Proceso de Firma del XML, cvc-datatype-valid.1.2.1:
+'-  -' is not a valid value for 'date'.
+```
+
+Mismo error que el intento 1 de 2026-07-03, pre-hotfix: sin la línea `5:|`, el
+bloque `IndGlobal=1` armado desde el encabezado sigue sin `FchRef`. El hotfix
+de Enternet del 2026-07-08 corrigió que ambos bloques trajeran fecha válida
+*cuando la línea está presente*, pero no eliminó la dependencia de esa línea
+para poblar `FchRef` en el bloque del encabezado. **Conclusión: el
+`<Referencia>` duplicado no se puede evitar desde nuestro Mensaje V5 con el
+parser actual de Enternet — cambio revertido.** Si se quiere una sola
+`<Referencia>` global limpia, el único camino sigue siendo que Enternet fusione
+los dos bloques de su lado (ver conclusión de la sección anterior).
