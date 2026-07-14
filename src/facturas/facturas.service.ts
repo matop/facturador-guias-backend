@@ -292,7 +292,7 @@ export class FacturasService {
            WHERE fg.empkey = g.empkey
              AND fg.guitipo = g.guitipo
              AND fg.guifolio = g.guifolio
-             AND f.estado IN ('BORRADOR', 'APROBADA')
+             AND f.estado IN ('BORRADOR', 'APROBADA', 'EMITIDA')
          )`,
       [empkey, fechaInicial, fechaFinal],
     );
@@ -317,7 +317,7 @@ export class FacturasService {
         valorAgrupador,
         fechaInicial,
         fechaFinal,
-        ['BORRADOR'],
+        ['BORRADOR', 'EMITIDA'],
       );
 
       if (yaExiste) {
@@ -389,7 +389,7 @@ export class FacturasService {
            WHERE fg.empkey = g.empkey
              AND fg.guitipo = g.guitipo
              AND fg.guifolio = g.guifolio
-             AND f.estado IN ('BORRADOR', 'APROBADA')
+             AND f.estado IN ('BORRADOR', 'APROBADA', 'EMITIDA')
          )`,
       [empkey, gclirut, reglaidl, fechaInicial, fechaFinal],
     );
@@ -413,7 +413,7 @@ export class FacturasService {
         valorAgrupador,
         fechaInicial,
         fechaFinal,
-        ['BORRADOR', 'APROBADA'],
+        ['BORRADOR', 'APROBADA', 'EMITIDA'],
       );
       if (yaExiste) {
         throw new ConflictException(

@@ -927,6 +927,126 @@ describe('FacturasService', () => {
     });
   });
 
+  // ─── regresión issue #48 — exclusión de EMITIDA ────────────────────────────
+
+  describe('regresión issue #48 — exclusión de EMITIDA', () => {
+    it('generar(): la query de guías disponibles excluye EMITIDA además de BORRADOR/APROBADA', async () => {
+      let capturedSql = '';
+      mockDataSource.query.mockImplementationOnce((sql: string) => {
+        capturedSql = sql;
+        return [];
+      });
+
+      await service.generar('1', '2026-05', '921760000');
+
+      const match = capturedSql.match(/f\.estado IN \(([^)]+)\)/);
+      expect(match).not.toBeNull();
+      const estados = match![1].split(',').map((s) => s.trim());
+      expect(estados).toEqual(
+        expect.arrayContaining(["'BORRADOR'", "'APROBADA'", "'EMITIDA'"]),
+      );
+      expect(estados).not.toContain("'ANULADA'");
+      expect(estados).not.toContain("'FALLIDA'");
+    });
+
+    it('generar(): existeProformaActivaParaValor recibe EMITIDA en la lista de estados', async () => {
+      mockDataSource.query.mockResolvedValueOnce([
+        {
+          empkey: '1',
+          guitipo: 52,
+          guifolio: '100',
+          gclirut: '76123456-0',
+          guireglaidl: '1_CMNA_STGO',
+          guitotneto: '4202',
+          guitotiva: '798',
+          guitotdoc: '5000',
+        },
+      ]);
+
+      let capturedParams: unknown[] = [];
+      mockDataSource.query.mockImplementationOnce(
+        (_sql: string, params: unknown[]) => {
+          capturedParams = params;
+          return [{ count: '1' }]; // yaExiste=true -> skipped, sin más queries
+        },
+      );
+
+      await service.generar('1', '2026-05', '921760000');
+
+      expect(capturedParams[3]).toEqual(
+        expect.arrayContaining(['BORRADOR', 'EMITIDA']),
+      );
+    });
+
+    it('crearManual(): la query de guías disponibles excluye EMITIDA además de BORRADOR/APROBADA', async () => {
+      let capturedSql = '';
+      mockDataSource.query.mockImplementationOnce((sql: string) => {
+        capturedSql = sql;
+        return [];
+      });
+
+      await expect(
+        service.crearManual(
+          '1',
+          {
+            periodo: '2026-05',
+            gclirut: '76123456-0',
+            reglaidl: '1_CMNA_STGO',
+          },
+          '921760000',
+        ),
+      ).rejects.toThrow(UnprocessableEntityException);
+
+      const match = capturedSql.match(/f\.estado IN \(([^)]+)\)/);
+      expect(match).not.toBeNull();
+      const estados = match![1].split(',').map((s) => s.trim());
+      expect(estados).toEqual(
+        expect.arrayContaining(["'BORRADOR'", "'APROBADA'", "'EMITIDA'"]),
+      );
+      expect(estados).not.toContain("'ANULADA'");
+      expect(estados).not.toContain("'FALLIDA'");
+    });
+
+    it('crearManual(): existeProformaActivaParaValor recibe EMITIDA en la lista de estados', async () => {
+      mockDataSource.query.mockResolvedValueOnce([
+        {
+          empkey: '1',
+          guitipo: 52,
+          guifolio: '100',
+          gclirut: '76123456-0',
+          guireglaidl: '1_CMNA_STGO',
+          guitotneto: '4202',
+          guitotiva: '798',
+          guitotdoc: '5000',
+        },
+      ]);
+
+      let capturedParams: unknown[] = [];
+      mockDataSource.query.mockImplementationOnce(
+        (_sql: string, params: unknown[]) => {
+          capturedParams = params;
+          return [{ count: '1' }]; // yaExiste=true -> ConflictException
+        },
+      );
+
+      await expect(
+        service.crearManual(
+          '1',
+          {
+            periodo: '2026-05',
+            gclirut: '76123456-0',
+            reglaidl: '1_CMNA_STGO',
+          },
+          '921760000',
+        ),
+      ).rejects.toThrow(ConflictException);
+
+      expect(capturedParams[3]).toEqual(
+        expect.arrayContaining(['BORRADOR', 'APROBADA', 'EMITIDA']),
+      );
+    });
+  });
+
   // ─── listarProformas ───────────────────────────────────────────────────────
 
   describe('listarProformas', () => {
