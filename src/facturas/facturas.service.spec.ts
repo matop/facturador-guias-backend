@@ -18,6 +18,7 @@ import {
 import { FacturacionService } from '../facturacion/facturacion.service.js';
 import { XmlParserService } from '../xml/xml-parser.service.js';
 import { buildGuiaXml } from '../xml/xml-test-builders.js';
+import { ParametrosService } from '../parametros/parametros.service.js';
 
 const mockBackofficeAdapterService = {
   getGuias: jest.fn(),
@@ -25,6 +26,7 @@ const mockBackofficeAdapterService = {
 };
 const mockFacturacionService = { getGuiasByFactura: jest.fn() };
 const mockXmlParserService = { fetchDocument: jest.fn() };
+const mockParametrosService = { getMaximoGuias: jest.fn() };
 
 const makeRow = (
   folio: string,
@@ -114,6 +116,7 @@ describe('FacturasService', () => {
     mockFacturaRepo = { find: jest.fn(), save: jest.fn(), findOne: jest.fn() };
     mockClienteRepo = { findOne: jest.fn() };
     mockReglaRepo = { findOne: jest.fn() };
+    mockParametrosService.getMaximoGuias.mockResolvedValue(40);
     mockDataSource = {
       query: jest.fn(),
       transaction: jest.fn<
@@ -135,6 +138,7 @@ describe('FacturasService', () => {
         },
         { provide: FacturacionService, useValue: mockFacturacionService },
         { provide: XmlParserService, useValue: mockXmlParserService },
+        { provide: ParametrosService, useValue: mockParametrosService },
         {
           provide: ConfigService,
           useValue: { get: jest.fn().mockReturnValue(undefined) },
@@ -505,6 +509,40 @@ describe('FacturasService', () => {
 
       expect(result).toEqual({ created: 2, skipped: 0 });
       expect(mockDataSource.transaction).toHaveBeenCalledTimes(2);
+    });
+
+    it('usa el máximo de guías resuelto por ParametrosService en vez de un valor fijo', async () => {
+      mockParametrosService.getMaximoGuias.mockResolvedValueOnce(2);
+
+      const guias5 = Array.from({ length: 5 }, (_, i) => ({
+        empkey: '1',
+        guitipo: 52,
+        guifolio: String(200 + i),
+        gclirut: '76123456-0',
+        guireglaidl: '1_CMNA_STGO',
+        guitotneto: '1000',
+        guitotiva: '190',
+        guitotdoc: '1190',
+      }));
+
+      mockDataSource.query
+        .mockResolvedValueOnce(guias5)
+        .mockResolvedValueOnce([{ count: '0' }]);
+
+      mockDataSource.transaction.mockImplementation((cb) =>
+        cb({
+          query: jest
+            .fn()
+            .mockResolvedValueOnce([{ max: '0' }])
+            .mockResolvedValueOnce([{ gfackey: '90' }])
+            .mockResolvedValue([]),
+        }),
+      );
+
+      const result = await service.generar('1', '2026-05', '921760000');
+
+      expect(mockParametrosService.getMaximoGuias).toHaveBeenCalledWith('1');
+      expect(result).toEqual({ created: 3, skipped: 0 });
     });
 
     it('insertProforma incluye rut_emisor en el INSERT con el valor del parámetro', async () => {

@@ -32,6 +32,7 @@ import {
 } from '../mensaje/mensaje-builder.js';
 import { parseReferencias } from '../xml/xml-parser.utils.js';
 import type { FetchedDocument } from '../xml/xml-parser.utils.js';
+import { ParametrosService } from '../parametros/parametros.service.js';
 
 export interface FacturaResumenDto {
   id: string;
@@ -90,10 +91,6 @@ export interface CrearProformaBody {
   gclirut: string;
   reglaidl: string;
 }
-
-// Enternet acepta máximo 40 referencias (5:|) por Mensaje (subido de 20 el
-// 2026-07-02, confirmado con E2E real: 40 guías, folioSii=411207).
-const MAX_GUIAS_POR_FACTURA = 40;
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
   const chunks: T[][] = [];
@@ -172,6 +169,7 @@ export class FacturasService {
     private readonly facturacionService: FacturacionService,
     private readonly xmlParserService: XmlParserService,
     private readonly configService: ConfigService,
+    private readonly parametrosService: ParametrosService,
   ) {}
 
   // ─── Sync tipo 33 desde backoffice ─────────────────────────────────────────
@@ -327,7 +325,8 @@ export class FacturasService {
         continue;
       }
 
-      const chunks = chunkArray(groupGuias, MAX_GUIAS_POR_FACTURA);
+      const maximoGuias = await this.parametrosService.getMaximoGuias(empkey);
+      const chunks = chunkArray(groupGuias, maximoGuias);
       for (const chunk of chunks) {
         await this.insertProforma(empkey, gclirut, reglaidl, chunk, rutEmisor);
         created++;
@@ -425,9 +424,10 @@ export class FacturasService {
       }
     }
 
+    const maximoGuias = await this.parametrosService.getMaximoGuias(empkey);
     const gfackeys: string[] = [];
     for (const { guias: groupGuias } of groups) {
-      const chunks = chunkArray(groupGuias, MAX_GUIAS_POR_FACTURA);
+      const chunks = chunkArray(groupGuias, maximoGuias);
       for (const chunk of chunks) {
         const key = await this.insertProforma(
           empkey,

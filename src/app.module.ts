@@ -8,6 +8,7 @@ import { FacturacionModule } from './facturacion/facturacion.module.js';
 import { ReglasModule } from './reglas/reglas.module.js';
 import { EmpresasModule } from './empresas/empresas.module.js';
 import { FacturasModule } from './facturas/facturas.module.js';
+import { ParametrosModule } from './parametros/parametros.module.js';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { FacturasModule } from './facturas/facturas.module.js';
     ReglasModule,
     EmpresasModule,
     FacturasModule,
+    ParametrosModule,
   ],
 })
 export class AppModule {}

@@ -59,30 +59,38 @@ Auth por **pareo de dispositivo** (mecanismo existente del sidecar):
 - [x] Confirmar el `DispositivoId`/ambiente del servidor de producción/QA donde correrá el sidecar. → `Dispositivo: ServEmisorSB`, `Ambiente: QA` (confirmado).
 
 ### Fase 1 — Sidecar en el servidor
-- [ ] Deploy de `Parameter-device-js` (PM2, `:3002`), env apuntando al dispositivo/ambiente correcto.
+
+**Estado (2026-07-14): deploy real delegado al usuario (credenciales/PM2 fuera del alcance del agente). Fases 2 y 3 avanzaron en paralelo porque no dependen del deploy — el fallback en código las hace seguras sin sidecar arriba.**
+
+- [ ] Deploy de `Parameter-device-js` (PM2, `:3002`), env apuntando al dispositivo/ambiente correcto. — **pendiente, lo hace el usuario manualmente.**
 - [ ] Verificar en el servidor: `GET /parameter/values?app=FacturadorGuias&parametro=MaximoGuias&empkey=<E>` devuelve el valor esperado.
 - [x] Endpoint `GET /parameter/value` (valor único resuelto, `{ parametroId, valor }`) — **agregado (2026-07-14)** en `Parameter-device-js` por el usuario. Ya no es dependencia externa bloqueante; falta desplegarlo junto con el resto del sidecar y verificarlo end-to-end en el servidor.
 
 ### Fase 2 — Cliente `ParametrosModule` en guias-middleware (lo único nuevo)
-- [ ] `ParametrosModule` + `ParametrosService`: cliente HTTP al sidecar.
+
+**Estado (2026-07-14): completa vía TDD.** `src/parametros/{parametros.service.ts,parametros.module.ts,param-registry.ts}` + `parametros.service.spec.ts` (9 tests). Contrastado en vivo contra un sidecar real corriendo en `:3002` durante el desarrollo (devolvió el valor real `40` para `MaximoGuias`).
+
+- [x] `ParametrosModule` + `ParametrosService`: cliente HTTP al sidecar.
   - Config: `PARAMETROS_SIDECAR_URL` (default `http://localhost:3002`), `PARAMETROS_APP_IDL` (default `FacturadorGuias`).
   - `get(parametroId, { empkey, alcance? }): Promise<string | undefined>`.
-- [ ] **Cache TTL en memoria** (el sidecar no cachea valores → no pegarle a GeneXus en cada factura).
-- [ ] **Fallback a default en código** si el sidecar no responde o el parámetro no existe → **leer un parámetro nunca debe romper la facturación**.
-- [ ] Mini-registro tipado de parámetros conocidos (nombre + tipo + default), equivalente liviano al `REGLA_REGISTRY` que ya usa el repo. Ejemplo:
+- [x] **Cache TTL en memoria** (5 min, por `parametroId:empkey:alcance`).
+- [x] **Fallback a default en código** si el sidecar no responde (error de red o HTTP no-ok) o el valor no es numérico → nunca lanza, siempre resuelve.
+- [x] Mini-registro tipado `PARAM_REGISTRY` (`src/parametros/param-registry.ts`), equivalente liviano al `REGLA_REGISTRY` que ya usa el repo:
   ```ts
   export const PARAM_REGISTRY = {
     MaximoGuias: { tipo: 'number', default: 40 },
-    // ...
   } as const;
   ```
-- [ ] Getters tipados: `getMaximoGuias(empkey): Promise<number>`.
-- [ ] Tests unit con el HTTP mockeado (incluyendo el path de fallback).
+- [x] Getter tipado: `getMaximoGuias(empkey): Promise<number>`.
+- [x] Tests unit con `fetch` mockeado (patrón `jest.spyOn(global, 'fetch')`), incluyendo cache, aislamiento por empkey, y los 3 paths de fallback (HTTP no-ok, error de red, valor no numérico).
 
 ### Fase 3 — Primer uso real (TDD)
-- [ ] Reemplazar `MAX_GUIAS_POR_FACTURA` (constante en `facturas.service.ts:96`, usada en el chunking líneas 298 y 365) por `parametros.getMaximoGuias(empkey)`.
-- [ ] Mantener `40` como default de código (fallback) para no cambiar el comportamiento actual si el parámetro no está definido.
-- [ ] Verificar E2E en QA.
+
+**Estado (2026-07-14): completa salvo la verificación E2E real (bloqueada por Fase 1).**
+
+- [x] Reemplazar `MAX_GUIAS_POR_FACTURA` (era constante en `facturas.service.ts`, usada en el chunking de `generar` y `crearManual`) por `this.parametrosService.getMaximoGuias(empkey)`. `ParametrosService` inyectado en `FacturasService`; `ParametrosModule` importado en `FacturasModule`. El comentario de contexto de negocio (por qué 40 — límite de referencias de Enternet) se movió a `PARAM_REGISTRY`.
+- [x] Mantener `40` como default de código (fallback, vía `PARAM_REGISTRY.MaximoGuias.default`) — comportamiento actual sin cambios si el parámetro no está definido o el sidecar no responde. Test dedicado (`facturas.service.spec.ts`: "usa el máximo de guías resuelto por ParametrosService en vez de un valor fijo") confirma que el valor resuelto por el servicio efectivamente gobierna el chunking.
+- [ ] Verificar E2E en QA. — **bloqueado hasta que Fase 1 (deploy del sidecar en el servidor) esté lista.**
 
 ## Parámetros
 
@@ -98,10 +106,12 @@ Si ninguno de los candidatos aplica, el plan arranca perfectamente solo con `Max
 
 ## Pendientes / a confirmar
 
-_Actualizado 2026-07-14: Fase 0 desbloqueada, lista para ejecutar Fase 1._
+_Actualizado 2026-07-14: Fase 0 desbloqueada; Fases 2 y 3 completadas en código (vía TDD) en paralelo al deploy de Fase 1. Único pendiente real: Fase 1 (deploy manual del usuario) y la verificación E2E que depende de ella._
 
 1. `MaximoGuias` en GeneXus — **resuelto**: confirmado creado y con valor (`40`, nivel aplicación).
 2. `DispositivoId`/ambiente del servidor — **resuelto**: `ServEmisorSB` / `QA`.
-3. Endpoint `GET /parameter/value` en `Parameter-device-js` — **resuelto**: agregado por el usuario; queda pendiente el deploy/verificación end-to-end (Fase 1).
+3. Endpoint `GET /parameter/value` en `Parameter-device-js` — **resuelto**: agregado por el usuario; queda pendiente el deploy/verificación end-to-end (Fase 1, manual, a cargo del usuario).
 4. `Aplicacion_Idl` — **corregido**: es `FacturadorGuias`, no `Plugin` (dato erróneo en la versión original del plan).
 5. Candidatos a futuro (`PlazoFacturacionDias`, `PermiteReferenciaGlobal`, `OrdenReferencias`) — sin cambios, no bloquean.
+6. `ParametrosModule`/`ParametrosService` (Fase 2) — **resuelto**: implementado vía TDD, 9 tests, cache TTL + fallback + registry tipado.
+7. Reemplazo de `MAX_GUIAS_POR_FACTURA` (Fase 3) — **resuelto** en código; falta solo la verificación E2E en QA, bloqueada por Fase 1.
