@@ -16,7 +16,7 @@ El servidor de parámetros ya tiene las dimensiones que necesitamos como paráme
 
 | Nivel | Campo en la API | Valor para este proyecto |
 |---|---|---|
-| Aplicación | `Aplicacion_Idl` | `Plugin` |
+| Aplicación | `Aplicacion_Idl` | `FacturadorGuias` |
 | Empresa | `Empkey` | el `empkey`/`tenantId` del request |
 | Dispositivo (acotador opcional) | `AlcanceId` | `NULL`/vacío (todos) o un `DispositivoId` (ej. `Disp05062026151646`) para acotar solo a parámetros de dispositivos |
 | Ambiente | `AmbienteId` | derivado del dispositivo (Desarrollo/QA/Producción) |
@@ -50,19 +50,22 @@ Auth por **pareo de dispositivo** (mecanismo existente del sidecar):
 ## Fases
 
 ### Fase 0 — Confirmaciones (sin código)
-- [x] `Aplicacion_Idl` = `Plugin`.
+
+**Estado (2026-07-14): Fase 0 completa, plan desbloqueado.**
+
+- [x] `Aplicacion_Idl` = `FacturadorGuias` (corregido; el valor original `Plugin` era incorrecto para este proyecto).
 - [x] `AlcanceId` = `NULL`/vacío o un `DispositivoId` (acotador opcional).
-- [ ] Definir el parámetro `MaximoGuias` en el servidor GeneXus (igual que `DashboardTopMode`), con su valor default de aplicación y overrides por empresa donde corresponda. **Estado (2026-07-14): definición generada y escalada a trámite; sin confirmación de que ya esté creada en GeneXus.** Sigue siendo el único bloqueante real de las Fases 1-3.
+- [x] Definir el parámetro `MaximoGuias` en el servidor GeneXus. **Confirmado (2026-07-14) vía `GET /parameter/values` contra `Parameter-device-js`:** existe a nivel `01 APLICACION`, `ValorParametroValor: "40"`, vigente `2026-07-14` → `2090-12-31`. Coincide con el default actual en código (`MAX_GUIAS_POR_FACTURA = 40`), sin cambio de comportamiento al migrar.
 - [x] Confirmar el `DispositivoId`/ambiente del servidor de producción/QA donde correrá el sidecar. → `Dispositivo: ServEmisorSB`, `Ambiente: QA` (confirmado).
 
 ### Fase 1 — Sidecar en el servidor
-- [ ] Deploy de `Parameter-device-js` tal cual (PM2, `:3002`), env apuntando al dispositivo/ambiente correcto.
-- [ ] Verificar: `GET /parameter/values?app=Plugin&parametro=MaximoGuias&empkey=<E>` devuelve el valor esperado.
-- [ ] **Dependencia externa bloqueante de Fase 2:** agregar en `Parameter-device-js` un endpoint `GET /parameter/value` que devuelva **un único valor resuelto** (`{ parametroId, valor }`) en vez del SDT crudo de GeneXus. Confirmado (2026-07-14, vía `Parameter-device-sidecar.postman_collection.json`) que hoy **no existe** — solo está `GET /parameter/values` (SDT crudo). Este endpoint se construye en el repo `Parameter-device-js` (fuera de guias-middleware), a cargo del usuario por separado; `ParametrosService` (Fase 2) depende de este contrato para no acoplarse al formato interno de GeneXus.
+- [ ] Deploy de `Parameter-device-js` (PM2, `:3002`), env apuntando al dispositivo/ambiente correcto.
+- [ ] Verificar en el servidor: `GET /parameter/values?app=FacturadorGuias&parametro=MaximoGuias&empkey=<E>` devuelve el valor esperado.
+- [x] Endpoint `GET /parameter/value` (valor único resuelto, `{ parametroId, valor }`) — **agregado (2026-07-14)** en `Parameter-device-js` por el usuario. Ya no es dependencia externa bloqueante; falta desplegarlo junto con el resto del sidecar y verificarlo end-to-end en el servidor.
 
 ### Fase 2 — Cliente `ParametrosModule` en guias-middleware (lo único nuevo)
 - [ ] `ParametrosModule` + `ParametrosService`: cliente HTTP al sidecar.
-  - Config: `PARAMETROS_SIDECAR_URL` (default `http://localhost:3002`), `PARAMETROS_APP_IDL` (default `Plugin`).
+  - Config: `PARAMETROS_SIDECAR_URL` (default `http://localhost:3002`), `PARAMETROS_APP_IDL` (default `FacturadorGuias`).
   - `get(parametroId, { empkey, alcance? }): Promise<string | undefined>`.
 - [ ] **Cache TTL en memoria** (el sidecar no cachea valores → no pegarle a GeneXus en cada factura).
 - [ ] **Fallback a default en código** si el sidecar no responde o el parámetro no existe → **leer un parámetro nunca debe romper la facturación**.
@@ -95,9 +98,10 @@ Si ninguno de los candidatos aplica, el plan arranca perfectamente solo con `Max
 
 ## Pendientes / a confirmar
 
-_Actualizado tras sesión de grilling, 2026-07-14._
+_Actualizado 2026-07-14: Fase 0 desbloqueada, lista para ejecutar Fase 1._
 
-1. `MaximoGuias` en GeneXus — **abierto**, en trámite (escalado 2026-07-14, sin fecha de confirmación). Sigue bloqueando las Fases 1-3.
+1. `MaximoGuias` en GeneXus — **resuelto**: confirmado creado y con valor (`40`, nivel aplicación).
 2. `DispositivoId`/ambiente del servidor — **resuelto**: `ServEmisorSB` / `QA`.
-3. Endpoint `GET /parameter/value` en `Parameter-device-js` — nuevo pendiente explícito, dependencia externa (otro repo, a cargo del usuario), bloqueante de Fase 2.
-4. Candidatos a futuro (`PlazoFacturacionDias`, `PermiteReferenciaGlobal`, `OrdenReferencias`) — sin cambios, no bloquean.
+3. Endpoint `GET /parameter/value` en `Parameter-device-js` — **resuelto**: agregado por el usuario; queda pendiente el deploy/verificación end-to-end (Fase 1).
+4. `Aplicacion_Idl` — **corregido**: es `FacturadorGuias`, no `Plugin` (dato erróneo en la versión original del plan).
+5. Candidatos a futuro (`PlazoFacturacionDias`, `PermiteReferenciaGlobal`, `OrdenReferencias`) — sin cambios, no bloquean.
