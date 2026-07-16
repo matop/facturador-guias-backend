@@ -1,6 +1,6 @@
 # Estado del Proyecto — guias-middleware
 
-Última actualización: 2026-07-14 (cierre de sesión — auditoría de worktrees/PRs pendientes: mergeados a `main` el fix de Issue #48 (#51), Fases 2+3 del plan de parámetros GeneXus (#53, código que llevaba días como commits huérfanos sin PR propia) y un fix de CI (#54, pin exacto de `pnpm` que rompía `build-and-test` sin relación al contenido de las PRs afectadas). Historial completo de sesiones anteriores (mayo–julio 2026)
+Última actualización: 2026-07-16 (cierre de sesión — auditoría de los 8 worktrees activos: 7 ya estaban completamente capturados en `main` vía squash-merge, confirmado comparando contenido real de archivo y no solo `git merge-base`/ancestría, que en squash-merges siempre da "no ancestro" aunque el contenido ya esté adentro. El único pendiente real era PR #56 (draft, doc-only: diagrama comparativo `docs/PLAN-contexto-genexus.md` + `docs/adr/0003-motor-parametros-interno-mas-fachada-dedicada.md`, cierra la Fase 1 del plan de contexto GeneXus), mergeado hoy). Historial completo de sesiones anteriores (mayo–julio 2026)
 en `docs/archive/HISTORIAL-2026-05-a-07.md` y en `git log`/PRs cerrados en GitHub — no
 duplicar esa narrativa acá, solo el estado vigente y lo pendiente.
 
