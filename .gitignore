@@ -2,6 +2,9 @@ node_modules/
 dist/
 coverage/
 .claude/settings.local.json
+.claude/skills/consult-db-schema/
+.claude/skills/consult-sii-norms/
+.mcp.json
 .env
 .env.*
 !.env.example
