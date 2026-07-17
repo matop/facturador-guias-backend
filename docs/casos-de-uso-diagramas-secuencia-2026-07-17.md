@@ -97,7 +97,7 @@ sequenceDiagram
 
 **Flujo principal**:
 1. Operador dispara la generación para un `empkey` + `periodo` + `rutEmisor` (el RUT que se grava como emisor del DTE — no filtra clientes).
-2. El middleware toma todas las guías del período con `guireglaidl` asignado, sin importar el cliente.
+2. El middleware toma todas las guías del período con `guireglaidl` asignado, sin importar el cliente, **excluyendo las que ya estén atadas a una proforma en `BORRADOR`/`APROBADA`/`EMITIDA`** (guardrail anti-doble-facturación, fix del Issue #48).
 3. Agrupa por `(gclirut, guireglaidl, guivaloragrupador)`: cada combinación distinta (OC/HES/comuna, etc.) es una proforma propia.
 4. Si un grupo excede `maximoGuias` (parámetro resuelto vía Parameter-device-js, default 40), lo particiona en varias proformas.
 5. Inserta las proformas en `BORRADOR`.
@@ -111,6 +111,7 @@ sequenceDiagram
 
     Operador->>MW: POST /empresas/{empkey}/facturas/proforma/generar?periodo&rut=rutEmisor
     MW->>DB: SELECT guías con guireglaidl asignado (período)
+    Note over MW,DB: excluye guías ya en proforma BORRADOR/APROBADA/EMITIDA<br/>(fix doble facturación, Issue #48)
     MW->>PDJ: getMaximoGuias(empkey)
     PDJ-->>MW: maximoGuias (o default 40 si no responde)
     MW->>MW: agrupar por (gclirut, guireglaidl, guivaloragrupador)
