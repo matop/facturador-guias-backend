@@ -69,4 +69,6 @@ El sidecar no modela "Negocio" como un scope separado — lo que en la traza Gen
 4. ~~Extender el sidecar~~ — **no aplica** (ver Fase 1).
 5. Blindaje anti-regresión (grep-able check o lint que impida llamar `.get()` fuera de `src/parametros`) — diferir hasta que haya más parámetros/devs; no crear tooling prematuro para 1 solo parámetro real.
 
-Relacionado: `docs/PLAN-parametros-genexus.md` (plan cerrado que dejó el `ParametrosModule` base).
+> **Actualización 2026-07-17:** los pasos 2 y 3 quedan en pausa. Gerencia pidió extraer `src/parametros/` fuera del repo de guias-middleware — ver [ADR-0004](adr/0004-extraccion-modulo-parametros-fuera-del-repo.md). No tiene sentido "formalizar como regla" ni generalizar el registry en una ubicación que va a moverse. Retomar este roadmap una vez definido el mecanismo concreto de extracción.
+
+Relacionado: `docs/PLAN-parametros-genexus.md` (plan cerrado que dejó el `ParametrosModule` base), `docs/adr/0004-extraccion-modulo-parametros-fuera-del-repo.md` (decisión de extracción, mecanismo pendiente).
