@@ -1,6 +1,6 @@
 # Estado del Proyecto — guias-middleware
 
-Última actualización: 2026-07-16 (segundo cierre del día — corrección de un pendiente que había quedado desactualizado en la entrada anterior: el deploy del sidecar `Parameter-device-js` y su verificación E2E **ya estaban hechos desde el 2026-07-14** (PR #53), esta entrada lo decía como pendiente por error. Push de `a713cd7` a `origin/main`. Auditoría de los 9 worktrees activos confirmó que las 9 PRs asociadas ya están MERGED y sin contenido nuevo respecto a `main` — nada para mergear. Decisión de producto: el proxy Vite de `facturaGdes` queda deprioritizado, foco actual 100% en backend). Historial completo de sesiones anteriores (mayo–julio 2026)
+Última actualización: 2026-07-17 (cierre de sesión — auditoría de los 13 worktrees activos: 11 ya tenían su PR mergeada y sin contenido nuevo respecto a `main` (solo quedaban desactualizados), se limpiaron con `git worktree remove` + borrado de branch local; los 2 restantes quedaron intactos por tener sesión activa (`adr-0004-extraccion-parametros`, `demo-casos-uso-diagramas`). Nada pendiente de mergear. PR #60 (ADR-0004, draft) formaliza la decisión de gerencia del 2026-07-17 de extraer `src/parametros/` fuera del repo — queda abierta intencionalmente hasta confirmar el mecanismo concreto con el jefe, ver memoria `plan-contexto-genexus`). Historial completo de sesiones anteriores (mayo–julio 2026)
 en `docs/archive/HISTORIAL-2026-05-a-07.md` y en `git log`/PRs cerrados en GitHub — no
 duplicar esa narrativa acá, solo el estado vigente y lo pendiente.
 
