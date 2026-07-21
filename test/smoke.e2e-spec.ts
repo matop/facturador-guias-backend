@@ -344,4 +344,11 @@ describe('Smoke E2E — empkey=977', () => {
       .send({ reglaIdl: '' })
       .expect(400);
   });
+
+  it('PUT /empresas/:empkey/clientes/:rut/regla con reglaidl en minúscula → 400 (casing incorrecto)', async () => {
+    await request(app.getHttpServer())
+      .put(`/empresas/${EMPKEY}/clientes/77004250-K/regla`)
+      .send({ reglaidl: 'por_comuna' })
+      .expect(400);
+  });
 });
