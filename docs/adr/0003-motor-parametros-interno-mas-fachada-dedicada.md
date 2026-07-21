@@ -1,8 +1,10 @@
 ---
-status: accepted
+status: superseded by 0004
 ---
 
 # Acceso a parámetros/contexto GeneXus: motor interno único + fachada dedicada por parámetro
+
+> **Superseded (2026-07-17):** la parte de este ADR que ubica el motor + la fachada dedicada dentro de `src/parametros/` del propio repo quedó superada por [ADR-0004](0004-extraccion-modulo-parametros-fuera-del-repo.md), a pedido explícito del dev senior en la conversación de gerencia del 2026-07-17. El patrón "motor único + fachada dedicada tipada por parámetro" (la parte conceptual de esta decisión) sigue vigente — lo que cambia es **dónde vive el código**, no el patrón en sí.
 
 **Contexto:** gerencia (dev senior, formado en paradigmas GeneXus antiguos) cuestionó si el acceso a parámetros/contexto GeneXus en guías-middleware está suficientemente encapsulado, disparado por el patrón que existe en la KB de GeneXus EmisorV24 (`Utiles.Parametros.Get.*` — un objeto distinto por parámetro, ej. `pmMAILASUNTO`, `pathXSLTED`, 15+ en total).
 
