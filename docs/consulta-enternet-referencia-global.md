@@ -203,3 +203,74 @@ para poblar `FchRef` en el bloque del encabezado. **Conclusión: el
 parser actual de Enternet — cambio revertido.** Si se quiere una sola
 `<Referencia>` global limpia, el único camino sigue siendo que Enternet fusione
 los dos bloques de su lado (ver conclusión de la sección anterior).
+
+## Intento 5 — 2026-07-22, aviso de Enternet sobre `CODIGO REFERENCIA` (parafraseado, sin confirmar)
+
+El equipo de parser de Enternet avisó (de palabra, sin ejemplo escrito) que habían
+corregido el tema de referencias: "no hay que enviarlo duplicado, hay que
+enviarlo como referencia y agregar la etiqueta CODIGO REFERENCIA y el valor 5
+en la siguiente línea". Esta etiqueta **no existe** en la spec V5 documentada
+(`FormatodeIntegracinbasadoenEtiquetasEstndarv5.html`) — es un mecanismo nuevo
+no documentado del lado de Enternet.
+
+Probamos la interpretación más ajustada al patrón real de la spec (pares
+posicionales `4:|`/`5:|`): en vez de reenviar el trío de header
+`TIPO/FOLIO/ACCION REFERENCIA`, la referencia global va como una línea `5:|`
+normal del mismo bloque `4:|`/`5:|` que ya usan OC/HES, agregando una columna
+`CODIGO REFERENCIA` con valor `5`:
+
+```
+4:|TIPO DE REFERENCIA|FOLIO|FECHA|CODIGO REFERENCIA
+5:|52|0|22/07/2026|5
+```
+
+Emisión real contra QA (`scripts/test-caso4-global-sintetico.js --reset
+--aprobar`, gfackey=183):
+
+```
+HTTP 422 [DTEErr001] No fue posible emitir el documento. |
+[FirmaErr002] Falla en el Proceso de Firma del XML, cvc-datatype-valid.1.2.1:
+'-  -' is not a valid value for 'date'.
+```
+
+Mismo `[FirmaErr002]` de siempre, pero la traza del parser (log de
+`WS.Emision.APIEmision`) trae una línea nueva y reveladora:
+
+```
+(publicador.TxtParseTokenGenericoOff000)Se recibe 'FECHA' de la REFERENCIA y
+se ignora por ser referencia de cabecera del DTE
+```
+
+**Diagnóstico:** a diferencia de los intentos 1-4 (donde Enternet armaba *dos*
+`<Referencia>`), acá el parser reconoce la línea con `CODIGO REFERENCIA=5`
+como la referencia de cabecera única — no hay evidencia de duplicado en esta
+corrida. Pero el parser **descarta explícitamente** el valor de `FECHA` que
+viene en esa misma línea "por ser referencia de cabecera del DTE", dejando
+`FchRef` vacío igual que antes. Es decir: el mecanismo de columna extra en la
+línea `5:|` sí es reconocido como señal de "esto es la referencia de
+cabecera", pero el parser espera la fecha desde **otro lugar** que todavía no
+identificamos — no desde el campo `FECHA` de esa línea de detalle.
+
+(Ruido aparte en la traza: `CodRefPermitidos` y `SeparadorEtiquetasLibres`
+salen como "parámetro no definido" en este ambiente QA, igual que
+`MODOVISUALIZACION`, `MODOCORREO`, `MODOBATCH`, `FirmaDiferida`,
+`AseguraRecurso` — parece ruido genérico de parámetros no configurados en QA,
+no algo específico de esta referencia.)
+
+**Conclusión: NO se confirma la Hipótesis A. No se sigue iterando a ciegas** —
+cada intento real cuesta una emisión en QA y ya son 5 variantes fallidas.
+Falta la pregunta puntual a Enternet: dado que el parser confirma que ignora
+la `FECHA` de la línea `5:|` para una "referencia de cabecera del DTE",
+¿de qué campo del Mensaje V5 debe tomar `FchRef` en ese caso? ¿Hay una
+etiqueta `1:|` de cabecera separada para la fecha de la referencia global
+(análoga a `TIPO DOC REFERENCIA`/`FOLIO DOC REFERENCIA` de los intentos
+viejos), o debería tomar automáticamente `FECHA DE DOCUMENTO` del header y
+esto es un bug de su lado (similar al de `FchRef` vacío que ya corrigieron el
+2026-07-08 para el mecanismo anterior)?
+
+**Estado del código:** el bloque `if (isGlobal)` en `mensaje-builder.ts` queda
+tal cual (columna `CODIGO REFERENCIA` en la línea `5:|`), marcado como
+"Hipótesis A a validar" en el comentario — no se promueve a definitivo. Tests
+en `mensaje-builder.spec.ts` / `mensaje-builder-referencias-global.spec.ts`
+actualizados y verdes (290/290), pero reflejan un formato aún no confirmado
+contra QA real.

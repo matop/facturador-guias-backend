@@ -676,30 +676,32 @@ describe('buildMensaje — Caso 4 (Global)', () => {
     expect(detalle).toContain(`|${41 * 500}|0|${41 * 500}|`);
   });
 
-  // Bug de Enternet (FchRef vacío en el bloque IndGlobal=1) corregido de su
-  // lado el 2026-07-08, confirmado con emisión real en QA (gfackey=127,
-  // folioSii=411219) — ver enternet-v5-referencia-global-en-progreso.md.
-  it('más de 40 guías → genera 1 sola línea 4:|/5:| de Referencia Global (folio=0, TIPO=52)', () => {
+  // Mecanismo vigente desde 2026-07-22 (info de Enternet, parser corregido):
+  // la referencia global va como línea 5:| normal con columna CODIGO
+  // REFERENCIA=5, en vez del trío de encabezado 1:|TIPO/FOLIO/ACCION
+  // REFERENCIA (ese mecanismo generaba un <Referencia> duplicado — ver
+  // docs/emision-dte-historial.md y PR #47).
+  it('más de 40 guías → genera 1 sola línea 4:|/5:| de Referencia Global con columna CODIGO REFERENCIA=5', () => {
     const { mensaje } = buildMensaje(baseInput(makeGuias(41)));
     const lines = mensaje.split('\r\n');
     expect(lines.filter((l) => l.startsWith('4:|'))).toHaveLength(1);
     expect(lines.filter((l) => l.startsWith('5:|'))).toHaveLength(1);
-    expect(lines).toContain('4:|TIPO DE REFERENCIA|FOLIO|FECHA');
+    expect(lines).toContain('4:|TIPO DE REFERENCIA|FOLIO|FECHA|CODIGO REFERENCIA');
     expect(lines.find((l) => l.startsWith('5:|'))).toBe(
-      `5:|52|0|${'20/05/2026'}`,
+      `5:|52|0|${'20/05/2026'}|5`,
     );
   });
 
-  it('más de 40 guías → agrega TIPO/FOLIO/ACCION REFERENCIA en el encabezado (Referencia Global)', () => {
+  it('más de 40 guías → NO agrega el trío de encabezado TIPO/FOLIO/ACCION REFERENCIA (reemplazado por columna CODIGO REFERENCIA)', () => {
     const { mensaje } = buildMensaje(baseInput(makeGuias(41)));
     const lines = mensaje.split('\r\n');
-    expect(lines).toContain('1:|TIPO DOC REFERENCIA|52');
-    expect(lines).toContain('1:|FOLIO DOC REFERENCIA|0');
-    expect(lines).toContain('1:|ACCION REFERENCIA|5');
+    expect(lines).not.toContain('1:|TIPO DOC REFERENCIA|52');
+    expect(lines).not.toContain('1:|FOLIO DOC REFERENCIA|0');
+    expect(lines).not.toContain('1:|ACCION REFERENCIA|5');
   });
 
   // ── OC/HES como <Referencia> reales también en Global (PR #23) ──
-  it('Global + 1 OC → emite 5:|801| en la zona de referencia, header con RAZON y global con 4to campo vacío', () => {
+  it('Global + 1 OC → emite 5:|801| en la zona de referencia, header con RAZON y CODIGO REFERENCIA, global con CODIGO REFERENCIA=5', () => {
     const { mensaje } = buildMensaje(
       baseInput(makeGuias(41), {
         referenciasExternas: [makeReferenciaExterna('801', '555')],
@@ -707,12 +709,14 @@ describe('buildMensaje — Caso 4 (Global)', () => {
     );
     const lines = mensaje.split('\r\n');
     expect(lines).toContain(
-      '4:|TIPO DE REFERENCIA|FOLIO|FECHA|RAZON REFERENCIA',
+      '4:|TIPO DE REFERENCIA|FOLIO|FECHA|RAZON REFERENCIA|CODIGO REFERENCIA',
     );
-    expect(lines).toContain('5:|801|555|10/05/2026|Orden de Compra');
-    // La referencia global de guías declara el 4to campo vacío (consistencia
-    // de nº de campos exigida por Enternet, [ParseErr001]).
-    expect(lines).toContain('5:|52|0|20/05/2026|');
+    // La línea de OC declara el 5to campo (CODIGO REFERENCIA) vacío por
+    // consistencia de nº de campos exigida por Enternet ([ParseErr001]).
+    expect(lines).toContain('5:|801|555|10/05/2026|Orden de Compra|');
+    // La referencia global de guías declara el 4to campo (RAZON REFERENCIA)
+    // vacío y el 5to (CODIGO REFERENCIA) en 5.
+    expect(lines).toContain('5:|52|0|20/05/2026||5');
   });
 
   it('Global + 1 HES → emite 5:|HES| con RAZON REFERENCIA fija', () => {
@@ -723,9 +727,9 @@ describe('buildMensaje — Caso 4 (Global)', () => {
     );
     const lines = mensaje.split('\r\n');
     expect(lines).toContain(
-      '5:|HES|777|10/05/2026|Hoja de Entrada de Servicios',
+      '5:|HES|777|10/05/2026|Hoja de Entrada de Servicios|',
     );
-    expect(lines).toContain('5:|52|0|20/05/2026|');
+    expect(lines).toContain('5:|52|0|20/05/2026||5');
   });
 
   it('Global + OC + HES → orden en el bloque 5:|: OC, luego HES, luego referencia global de guías', () => {
@@ -760,12 +764,12 @@ describe('buildMensaje — Caso 4 (Global)', () => {
     expect(detalle).not.toContain('555');
   });
 
-  it('Global SIN OC/HES → bloque de referencia idéntico al actual (3 campos, sin trailing pipe) — regression guard', () => {
+  it('Global SIN OC/HES → bloque de referencia con columna CODIGO REFERENCIA=5, sin trailing pipe extra — regression guard', () => {
     const { mensaje } = buildMensaje(baseInput(makeGuias(41)));
     const lines = mensaje.split('\r\n');
-    expect(lines).toContain('4:|TIPO DE REFERENCIA|FOLIO|FECHA');
-    expect(lines).toContain('5:|52|0|20/05/2026');
-    expect(lines).not.toContain('5:|52|0|20/05/2026|');
+    expect(lines).toContain('4:|TIPO DE REFERENCIA|FOLIO|FECHA|CODIGO REFERENCIA');
+    expect(lines).toContain('5:|52|0|20/05/2026|5');
+    expect(lines).not.toContain('5:|52|0|20/05/2026||5');
   });
 
   it('Global con OC+HES que superan el tope SII de 40 → lanza error claro (D2, sin truncado silencioso)', () => {
