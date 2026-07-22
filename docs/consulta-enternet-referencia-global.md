@@ -274,3 +274,38 @@ tal cual (columna `CODIGO REFERENCIA` en la línea `5:|`), marcado como
 en `mensaje-builder.spec.ts` / `mensaje-builder-referencias-global.spec.ts`
 actualizados y verdes (290/290), pero reflejan un formato aún no confirmado
 contra QA real.
+
+## Intento 6 — 2026-07-22, A/B fecha vacía vs fecha de hoy en la línea `5:|`
+
+Para aislar si el contenido del campo `FECHA` de la línea `5:|52|0|{fecha}|5`
+influye en algo, se corrió el mismo Mensaje V5 dos veces contra QA real
+(servidor de diagnóstico levantado desde este mismo worktree en el puerto
+3335, para no interferir con el servidor `:3334` en uso), cambiando solo ese
+campo:
+
+- **Variante A — fecha vacía:** `5:|52|0||5` (gfackey=185).
+- **Variante B — fecha de hoy (control, igual al Intento 5):** `5:|52|0|22/07/2026|5` (gfackey=186).
+
+Resultado: **idéntico en ambas**, carácter por carácter:
+
+```
+HTTP 422 [DTEErr001] No fue posible emitir el documento. |
+[FirmaErr002] Falla en el Proceso de Firma del XML, cvc-datatype-valid.1.2.1:
+'-  -' is not a valid value for 'date'.
+```
+
+**Conclusión:** el contenido del campo `FECHA` en esa línea es irrelevante —
+vacío o con una fecha válida, el resultado es el mismo. Esto es consistente
+con (y refuerza) el hallazgo del Intento 5: el parser de Enternet descarta
+por completo ese valor para la referencia de cabecera, sin siquiera intentar
+parsearlo. No aporta una pista nueva sobre de dónde debería tomar `FchRef` —
+solo descarta la hipótesis de que fuera un problema de formato/contenido del
+valor enviado. Sigue pendiente la pregunta puntual a Enternet planteada en el
+Intento 5 antes de seguir iterando.
+
+(Nota de proceso: estas dos corridas no se hicieron contra el servidor
+`:3334` compartido — se levantó un segundo servidor Nest desde el worktree en
+`:3335`, apuntando a la misma BD `facturagdes2`, para no pisar el estado del
+dev server principal. Los cambios de código de esta prueba (columna `FECHA`
+forzada a vacío) fueron temporales y se revirtieron antes de comitear;
+`mensaje-builder.ts` vuelve a quedar igual al Intento 5.)
