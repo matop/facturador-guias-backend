@@ -189,9 +189,9 @@ async function main() {
     console.log(`[${syncRes.ok ? 'OK' : 'WARN'}] sync HTTP ${syncRes.status}: ${JSON.stringify(syncBody)}`);
 
     // 8. Generar proformas
-    console.log(`\n=== Paso 4: POST /empresas/${EMPKEY}/facturas/proforma/generar?rut=${RUT_EMISOR}&periodo=${PERIODO} ===`);
+    console.log(`\n=== Paso 4: POST /empresas/${EMPKEY}/facturas/proforma/generar?periodo=${PERIODO} ===`);
     const generarRes = await fetch(
-      `${BASE_URL}/empresas/${EMPKEY}/facturas/proforma/generar?rut=${RUT_EMISOR}&periodo=${PERIODO}`,
+      `${BASE_URL}/empresas/${EMPKEY}/facturas/proforma/generar?periodo=${PERIODO}`,
       { method: 'POST' },
     );
     const generarBody = await generarRes.json();

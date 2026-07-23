@@ -96,20 +96,22 @@ sequenceDiagram
 **Resultado**: N proformas en estado `BORRADOR` en `gde.factura`. Respuesta `{"created": N, "skipped": M}`.
 
 **Flujo principal**:
-1. Operador dispara la generación para un `empkey` + `periodo` + `rutEmisor` (el RUT que se grava como emisor del DTE — no filtra clientes).
+1. Operador dispara la generación para un `empkey` + `periodo` (no filtra clientes).
 2. El middleware toma todas las guías del período con `guireglaidl` asignado, sin importar el cliente, **excluyendo las que ya estén atadas a una proforma en `BORRADOR`/`APROBADA`/`EMITIDA`** (guardrail anti-doble-facturación, fix del Issue #48).
 3. Agrupa por `(gclirut, guireglaidl, guivaloragrupador)`: cada combinación distinta (OC/HES/comuna, etc.) es una proforma propia.
-4. Si un grupo excede `maximoGuias` (parámetro resuelto vía Parameter-device-js, default 40), lo particiona en varias proformas.
-5. Inserta las proformas en `BORRADOR`.
+4. Si un grupo excede `maximoGuias` (parámetro resuelto vía Parameter-device-js, default 40), lo particiona en varias proformas (cada partición es su propia unidad de emisor, ver punto 5).
+5. Por cada partición, el `rutEmisor` se deriva del propio XML de las guías (`<Encabezado><Emisor><RUTEmisor>` en `guifilepath`) — **no** es un input del operador, porque no es fijo por empresa/cliente. Si las guías de una misma partición tienen `RUTEmisor` distinto entre sí (o alguna no lo trae), se aborta esa partición con `422` en vez de adivinar.
+6. Inserta las proformas en `BORRADOR`.
 
 ```mermaid
 sequenceDiagram
     actor Operador
     participant MW as guias-middleware
     participant PDJ as Parameter-device-js
+    participant XML as XML guía (guifilepath)
     participant DB as BD (gde.*)
 
-    Operador->>MW: POST /empresas/{empkey}/facturas/proforma/generar?periodo&rut=rutEmisor
+    Operador->>MW: POST /empresas/{empkey}/facturas/proforma/generar?periodo
     MW->>DB: SELECT guías con guireglaidl asignado (período)
     Note over MW,DB: excluye guías ya en proforma BORRADOR/APROBADA/EMITIDA<br/>(fix doble facturación, Issue #48)
     MW->>PDJ: getMaximoGuias(empkey)
@@ -119,7 +121,13 @@ sequenceDiagram
         alt grupo > maximoGuias
             MW->>MW: particionar en varias proformas
         end
-        MW->>DB: INSERT factura (estado BORRADOR)
+        MW->>XML: fetchDocument(guifilepath) por cada guía de la partición
+        XML-->>MW: RUTEmisor
+        alt RUTEmisor inconsistente o ausente
+            MW-->>Operador: 422 (no se pudo determinar el emisor)
+        else RUTEmisor único
+            MW->>DB: INSERT factura (estado BORRADOR, rut_emisor derivado)
+        end
     end
     MW-->>Operador: 200 {created: N, skipped: M}
 ```
