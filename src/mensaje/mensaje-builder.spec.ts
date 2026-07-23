@@ -686,7 +686,9 @@ describe('buildMensaje — Caso 4 (Global)', () => {
     const lines = mensaje.split('\r\n');
     expect(lines.filter((l) => l.startsWith('4:|'))).toHaveLength(1);
     expect(lines.filter((l) => l.startsWith('5:|'))).toHaveLength(1);
-    expect(lines).toContain('4:|TIPO DE REFERENCIA|FOLIO|FECHA|CODIGO REFERENCIA');
+    expect(lines).toContain(
+      '4:|TIPO DE REFERENCIA|FOLIO|FECHA|CODIGO REFERENCIA',
+    );
     expect(lines.find((l) => l.startsWith('5:|'))).toBe(
       `5:|52|0|${'20/05/2026'}|5`,
     );
@@ -767,7 +769,9 @@ describe('buildMensaje — Caso 4 (Global)', () => {
   it('Global SIN OC/HES → bloque de referencia con columna CODIGO REFERENCIA=5, sin trailing pipe extra — regression guard', () => {
     const { mensaje } = buildMensaje(baseInput(makeGuias(41)));
     const lines = mensaje.split('\r\n');
-    expect(lines).toContain('4:|TIPO DE REFERENCIA|FOLIO|FECHA|CODIGO REFERENCIA');
+    expect(lines).toContain(
+      '4:|TIPO DE REFERENCIA|FOLIO|FECHA|CODIGO REFERENCIA',
+    );
     expect(lines).toContain('5:|52|0|20/05/2026|5');
     expect(lines).not.toContain('5:|52|0|20/05/2026||5');
   });
