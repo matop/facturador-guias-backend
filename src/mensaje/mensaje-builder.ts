@@ -72,19 +72,25 @@ function dedupeReferenciasExternas(
 function buildReferenciasExternasLines(
   oc: ReferenciaExternaParaMensaje[],
   hes: ReferenciaExternaParaMensaje[],
+  columnaExtra?: string,
 ): { header: string; lineas: string[]; tieneReferenciasExternas: boolean } {
   const tieneReferenciasExternas = oc.length > 0 || hes.length > 0;
-  const header = tieneReferenciasExternas
-    ? `4:|TIPO DE REFERENCIA|FOLIO|FECHA|RAZON REFERENCIA`
-    : `4:|TIPO DE REFERENCIA|FOLIO|FECHA`;
+  const columnas = ['TIPO DE REFERENCIA', 'FOLIO', 'FECHA'];
+  if (tieneReferenciasExternas) columnas.push('RAZON REFERENCIA');
+  if (columnaExtra) columnas.push(columnaExtra);
+  const header = `4:|${columnas.join('|')}`;
+  // Cuando el caller pide una columna extra (ej. CODIGO REFERENCIA para la
+  // referencia global), las líneas 5:| de OC/HES deben declarar ese campo
+  // vacío para no romper la regla de consistencia de nº de campos de Enternet.
+  const sufijo = columnaExtra ? '|' : '';
   const lineas = [
     ...oc.map(
       (r) =>
-        `5:|801|${r.folio}|${formatDateSlash(r.fecha)}|${RAZON_REFERENCIA_EXTERNA['801']}`,
+        `5:|801|${r.folio}|${formatDateSlash(r.fecha)}|${RAZON_REFERENCIA_EXTERNA['801']}${sufijo}`,
     ),
     ...hes.map(
       (r) =>
-        `5:|HES|${r.folio}|${formatDateSlash(r.fecha)}|${RAZON_REFERENCIA_EXTERNA['HES']}`,
+        `5:|HES|${r.folio}|${formatDateSlash(r.fecha)}|${RAZON_REFERENCIA_EXTERNA['HES']}${sufijo}`,
     ),
   ];
   return { header, lineas, tieneReferenciasExternas };
@@ -383,44 +389,37 @@ export function buildMensaje(input: MensajeInput): MensajeResult {
   lines.push(`1:|IMPUESTO IVA|${sumIva}`);
   lines.push(`1:|MONTO TOTAL|${sumDoc}`);
 
-  // Referencia Global (IndGlobal=1): header TIPO/FOLIO/ACCION REFERENCIA +
-  // línea 5:|52|0|{fecha}. Bug de Enternet (FchRef vacío en el bloque armado
-  // desde el header, ver enternet-v5-referencia-global-en-progreso.md)
-  // corregido de su lado el 2026-07-08 — confirmado con emisión real en QA
-  // (gfackey=127, folioSii=411219, XML con FchRef correcto en ambos bloques
-  // <Referencia>).
+  // Referencia Global (IndGlobal=1): hasta 2026-07-21 se armaba con un trío
+  // de encabezado 1:|TIPO/FOLIO/ACCION REFERENCIA, que Enternet terminaba
+  // desdoblando en dos <Referencia> separadas en el XML de salida (ver
+  // docs/emision-dte-historial.md, "Reintento 2026-07-14" y PR #47: no se
+  // pudo evitar el duplicado con ese mecanismo). Info nueva de Enternet
+  // (2026-07-22, parser corregido): la referencia global va como una línea
+  // 5:| normal del mismo bloque 4:|/5:| de OC/HES, agregando una columna
+  // CODIGO REFERENCIA=5 (mismo código que antes llevaba ACCION REFERENCIA)
+  // en vez del header separado — sin duplicar el bloque. Hipótesis A a
+  // validar con emisión real en QA antes de confirmar como definitiva.
   if (isGlobal) {
     // Tope SII: máx 40 <Referencia> por DTE. En Global las guías colapsan en
     // UNA referencia global (52 / folio 0), así que el conteo relevante es
     // OC + HES + esa global. OC/HES suelen ser pocas; si aun así superan el
     // tope, frenamos con error claro en vez de truncar en silencio (D2 del
-    // plan). (Enternet además emite hoy una <Referencia> plana redundante
-    // desde la línea 5:|52|0 — quirk transitorio de su parser, no parte del
-    // conteo lógico; ver enternet-v5-referencia-global-en-progreso.md.)
+    // plan).
     if (oc.length + hes.length + 1 > MAX_REFERENCIAS_INDIVIDUALES) {
       throw new Error(
         `Modo Global: ${oc.length} OC + ${hes.length} HES + 1 referencia global = ${oc.length + hes.length + 1} excede el tope SII de ${MAX_REFERENCIAS_INDIVIDUALES} <Referencia> por DTE`,
       );
     }
-    // El trío 1:|TIPO/FOLIO/ACCION REFERENCIA produce la referencia global
-    // (IndGlobal=1) que representa TODAS las guías. Las OC/HES van como
-    // <Referencia> individuales en el mismo bloque 4:|/5:| — el trío NO
-    // scopea a las líneas 5:| que le siguen, así que salen como TpoDocRef
-    // 801/HES limpios, no contaminados a tipo 52 (confirmado con XML real
-    // 2026-07-09, ver enternet-v5-referencia-global-en-progreso.md §PR #23).
-    // Orden en el mensaje: OC > HES > referencia global de guías. (En el XML
-    // final Enternet ubica la global primero por venir del trío del
-    // encabezado — quirk de su parser, no controlable desde acá.)
-    lines.push(`1:|TIPO DOC REFERENCIA|52`);
-    lines.push(`1:|FOLIO DOC REFERENCIA|0`);
-    lines.push(`1:|ACCION REFERENCIA|5`);
+    // OC/HES van como <Referencia> individuales en el mismo bloque 4:|/5:|
+    // que la referencia global de guías (52/0); todas comparten la columna
+    // CODIGO REFERENCIA, vacía salvo en la línea de la referencia global.
     const { header, lineas, tieneReferenciasExternas } =
-      buildReferenciasExternasLines(oc, hes);
+      buildReferenciasExternasLines(oc, hes, 'CODIGO REFERENCIA');
     lines.push(header, ...lineas);
-    // Cuando hay OC/HES, la línea de la referencia global también declara el
-    // 4to campo (vacío) por la regla de consistencia de Enternet.
-    const globalLine = `5:|52|0|${formatDateSlash(fechaDocumento)}`;
-    lines.push(tieneReferenciasExternas ? `${globalLine}|` : globalLine);
+    const globalLine = tieneReferenciasExternas
+      ? `5:|52|0|${formatDateSlash(fechaDocumento)}||5`
+      : `5:|52|0|${formatDateSlash(fechaDocumento)}|5`;
+    lines.push(globalLine);
   }
 
   return { mensaje: lines.join('\r\n') };

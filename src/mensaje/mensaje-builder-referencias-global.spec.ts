@@ -112,10 +112,10 @@ describe('buildMensaje — umbral 40 con OC/HES sumando al total', () => {
     expect(detalle).toBe(
       `3:|1|AFECTO|Segun Guias:|1|${41000}|0|${41000}|${foliosGuias}`,
     );
-    expect(lines).toContain('5:|801|900|10/05/2026|Orden de Compra');
-    expect(lines).toContain('5:|801|901|10/05/2026|Orden de Compra');
+    expect(lines).toContain('5:|801|900|10/05/2026|Orden de Compra|');
+    expect(lines).toContain('5:|801|901|10/05/2026|Orden de Compra|');
     expect(lines).toContain(
-      '5:|HES|950|10/05/2026|Hoja de Entrada de Servicios',
+      '5:|HES|950|10/05/2026|Hoja de Entrada de Servicios|',
     );
   });
 
@@ -137,7 +137,7 @@ describe('buildMensaje — umbral 40 con OC/HES sumando al total', () => {
     );
     const lines = mensaje.split('\r\n');
     const detalle = lines.find((l) => l.startsWith('3:|'))!;
-    expect(lines).toContain('5:|801|900|10/05/2026|Orden de Compra');
+    expect(lines).toContain('5:|801|900|10/05/2026|Orden de Compra|');
     expect(lines.filter((l) => l.startsWith('5:|HES|'))).toHaveLength(0);
     expect(detalle).not.toContain('OC:');
   });
@@ -152,7 +152,7 @@ describe('buildMensaje — umbral 40 con OC/HES sumando al total', () => {
     const lines = mensaje.split('\r\n');
     const detalle = lines.find((l) => l.startsWith('3:|'))!;
     expect(lines).toContain(
-      '5:|HES|950|10/05/2026|Hoja de Entrada de Servicios',
+      '5:|HES|950|10/05/2026|Hoja de Entrada de Servicios|',
     );
     expect(lines.filter((l) => l.startsWith('5:|801|'))).toHaveLength(0);
     expect(detalle).not.toContain('HES:');
