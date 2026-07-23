@@ -1206,6 +1206,7 @@ describe('FacturasService', () => {
           regladescripcion: 'SANTIAGO',
           cantidad_guias: '5',
           monto_total: '15000',
+          valor_agrupador: '555001',
         },
       ]);
 
@@ -1221,7 +1222,30 @@ describe('FacturasService', () => {
         montoTotal: '15000',
         estado: 'BORRADOR',
         fecha: '2026-05-20',
+        valorAgrupador: '555001',
       });
+    });
+
+    it('normaliza valor_agrupador null a _sin_regla', async () => {
+      mockDataSource.query.mockResolvedValueOnce([
+        {
+          gfackey: '42',
+          gfacfolio: '7',
+          gclirut: '76123456-0',
+          reglaidl: '1_CMNA_STGO',
+          estado: 'BORRADOR',
+          gfacfecha: '2026-05-20',
+          gclinom: 'FERRETERÍA TEST',
+          regladescripcion: 'SANTIAGO',
+          cantidad_guias: '5',
+          monto_total: '15000',
+          valor_agrupador: null,
+        },
+      ]);
+
+      const result = await service.listarProformas('1', '2026-05');
+
+      expect(result[0].valorAgrupador).toBe('_sin_regla');
     });
   });
 

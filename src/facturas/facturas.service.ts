@@ -72,6 +72,7 @@ export interface ProformaDto {
   montoTotal: string;
   estado: string;
   fecha: string;
+  valorAgrupador: string;
   folioSii?: number | null;
   linkPdf?: string | null;
   linkXml?: string | null;
@@ -499,13 +500,15 @@ export class FacturasService {
         regladescripcion: string | null;
         cantidad_guias: string;
         monto_total: string;
+        valor_agrupador: string | null;
       }[]
     >(
       `SELECT f.gfackey, f.gfacfolio, f.gclirut, f.reglaidl, f.estado, f.gfacfecha,
               c.gclinom,
               r.regladescripcion,
               COUNT(fg.guifolio)::text AS cantidad_guias,
-              COALESCE(SUM(g.guitotdoc::bigint), 0)::text AS monto_total
+              COALESCE(SUM(g.guitotdoc::bigint), 0)::text AS monto_total,
+              MIN(g.guivaloragrupador) AS valor_agrupador
        FROM gde.factura f
        LEFT JOIN gde.clientes c ON c.empkey = f.empkey AND c.gclirut = f.gclirut
        LEFT JOIN gde.regla r ON r.reglaidl = f.reglaidl
@@ -527,6 +530,7 @@ export class FacturasService {
       montoTotal: r.monto_total,
       estado: r.estado,
       fecha: r.gfacfecha,
+      valorAgrupador: r.valor_agrupador ?? '_sin_regla',
     }));
   }
 
@@ -903,10 +907,15 @@ export class FacturasService {
 
   private async buildProformaDto(factura: Factura): Promise<ProformaDto> {
     const [row] = await this.dataSource.query<
-      { cantidad_guias: string; monto_total: string }[]
+      {
+        cantidad_guias: string;
+        monto_total: string;
+        valor_agrupador: string | null;
+      }[]
     >(
       `SELECT COUNT(fg.guifolio)::text AS cantidad_guias,
-              COALESCE(SUM(g.guitotdoc::bigint), 0)::text AS monto_total
+              COALESCE(SUM(g.guitotdoc::bigint), 0)::text AS monto_total,
+              MIN(g.guivaloragrupador) AS valor_agrupador
        FROM gde.facturaguias fg
        LEFT JOIN gde.guia g ON g.empkey = fg.empkey AND g.guitipo = fg.guitipo AND g.guifolio = fg.guifolio
        WHERE fg.empkey = $1 AND fg.gfackey = $2`,
@@ -938,6 +947,7 @@ export class FacturasService {
       montoTotal: row.monto_total,
       estado: factura.estado,
       fecha: factura.gfacfecha,
+      valorAgrupador: row.valor_agrupador ?? '_sin_regla',
       folioSii: factura.gfacfolioSii ?? null,
       linkPdf: factura.gfaclinkPdf ?? null,
       linkXml: factura.gfaclinkXml ?? null,

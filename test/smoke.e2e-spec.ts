@@ -62,6 +62,7 @@ interface ProformaRespuesta {
   estado: string;
   montoTotal: number;
   fecha: string;
+  valorAgrupador: string;
 }
 
 interface GenerarRespuesta {
@@ -233,7 +234,7 @@ describe('Smoke E2E — empkey=977', () => {
     expect(Array.isArray(res.body)).toBe(true);
   });
 
-  it('cada proforma tiene id, folio, cliente, regla, estado, montoTotal, fecha', async () => {
+  it('cada proforma tiene id, folio, cliente, regla, estado, montoTotal, fecha, valorAgrupador', async () => {
     const res = await request(app.getHttpServer())
       .get(`/empresas/${EMPKEY}/facturas/proforma`)
       .query({ periodo: PERIODO })
@@ -261,6 +262,8 @@ describe('Smoke E2E — empkey=977', () => {
     expect(p).toHaveProperty('estado');
     expect(p).toHaveProperty('montoTotal');
     expect(p).toHaveProperty('fecha');
+    expect(p).toHaveProperty('valorAgrupador');
+    expect(typeof p.valorAgrupador).toBe('string');
     expect(typeof p.id).toBe('string');
     expect(typeof p.folio).toBe('string');
   });
