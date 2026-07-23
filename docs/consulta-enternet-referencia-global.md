@@ -354,3 +354,38 @@ puntual a Enternet el mismo día (2026-07-23) y confirman que lo están
 corrigiendo esa misma mañana. Queda pendiente reintentar cuando avisen que
 el fix está desplegado — no cambiar `mensaje-builder.ts` mientras tanto,
 sigue reflejando la Hipótesis A sin confirmar.
+
+## Intento 8 — 2026-07-23, hotfix desplegado, **emisión exitosa** ✅
+
+Reintento único (una sola corrida, no iteración) del mismo Mensaje V5 exacto
+del Intento 7 — `mensaje-builder.ts` sin cambios respecto a la Hipótesis A —
+contra el mismo servidor de diagnóstico en `:3335`
+(`node scripts/test-caso4-global-sintetico-3335.js --reset --aprobar`,
+gfackey=189, folioSii=411248).
+
+**Resultado: `estado=EMITIDA`.** Sin errores de parseo. El XML emitido
+confirma que la `<Referencia>` global quedó exactamente con la forma
+buscada desde el inicio de esta investigación (ver sección "Contexto" al
+comienzo de este documento):
+
+```xml
+<Referencia>
+  <NroLinRef>1</NroLinRef>
+  <TpoDocRef>52</TpoDocRef>
+  <IndGlobal>1</IndGlobal>
+  <FolioRef>0</FolioRef>
+  <FchRef>2026-07-23</FchRef>
+  <RazonRef>Referencia global</RazonRef>
+</Referencia>
+```
+
+**Conclusión: bug resuelto del lado de Enternet.** El hotfix de parser
+avisado la mañana del 2026-07-23 (el mismo que causó el `ParseErr0021` del
+Intento 7 como efecto secundario transitorio) corrige el problema de raíz.
+No se requiere ningún cambio de código en `mensaje-builder.ts` — la
+Hipótesis A (columna `CODIGO REFERENCIA=5` en la línea `5:|` del bloque
+`4:|`/`5:|` compartido con OC/HES) era correcta desde el Intento 5; lo que
+faltaba era exclusivamente el fix de parser del lado de Enternet.
+
+PDF: https://emi.sb.enternet.cl/EmisorV2503/ARCHIVOS/PDF/R968880004T33F411248C-RvZhRbvNlvE4h3NgjH0f.pdf
+XML: https://emi.sb.enternet.cl/EmisorV2503/ARCHIVOS/XMLPUB/202607/RutEmi-968880004-Tipo-33-ID-1163-189.xml
