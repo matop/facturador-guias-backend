@@ -117,6 +117,27 @@ describe('FacturasService', () => {
     mockClienteRepo = { findOne: jest.fn() };
     mockReglaRepo = { findOne: jest.fn() };
     mockParametrosService.getMaximoGuias.mockResolvedValue(40);
+    mockXmlParserService.fetchDocument.mockResolvedValue({
+      emisor: {
+        rutEmisor: '92176000-0',
+        razonSocial: '',
+        giro: '',
+        telefono: '',
+        acteco: '',
+      },
+      receptor: {
+        rutReceptor: '',
+        razonSocial: '',
+        cdgIntRecep: '',
+        contacto: '',
+        dirRecep: '',
+        cmnaRecep: '',
+        ciudadRecep: '',
+        giroRecep: '',
+      },
+      detalle: [],
+      rawXml: '',
+    });
     mockDataSource = {
       query: jest.fn(),
       transaction: jest.fn<
@@ -353,7 +374,7 @@ describe('FacturasService', () => {
     it('retorna { created:0, skipped:0 } cuando no hay guías disponibles', async () => {
       mockDataSource.query.mockResolvedValueOnce([]); // guias vacías
 
-      const result = await service.generar('1', '2026-05', '921760000');
+      const result = await service.generar('1', '2026-05');
 
       expect(result).toEqual({ created: 0, skipped: 0 });
     });
@@ -386,7 +407,7 @@ describe('FacturasService', () => {
         return cb(mgr);
       });
 
-      const result = await service.generar('1', '2026-05', '921760000');
+      const result = await service.generar('1', '2026-05');
 
       expect(result).toEqual({ created: 1, skipped: 0 });
     });
@@ -408,7 +429,7 @@ describe('FacturasService', () => {
       // BORRADOR ya existe → count = 1
       mockDataSource.query.mockResolvedValueOnce([{ count: '1' }]);
 
-      const result = await service.generar('1', '2026-05', '921760000');
+      const result = await service.generar('1', '2026-05');
 
       expect(result).toEqual({ created: 0, skipped: 1 });
       expect(mockDataSource.transaction).not.toHaveBeenCalled();
@@ -463,7 +484,7 @@ describe('FacturasService', () => {
           }),
         );
 
-      const result = await service.generar('1', '2026-05', '921760000');
+      const result = await service.generar('1', '2026-05');
 
       expect(result).toEqual({ created: 2, skipped: 0 });
     });
@@ -505,7 +526,7 @@ describe('FacturasService', () => {
           }),
         );
 
-      const result = await service.generar('1', '2026-05', '921760000');
+      const result = await service.generar('1', '2026-05');
 
       expect(result).toEqual({ created: 2, skipped: 0 });
       expect(mockDataSource.transaction).toHaveBeenCalledTimes(2);
@@ -539,13 +560,13 @@ describe('FacturasService', () => {
         }),
       );
 
-      const result = await service.generar('1', '2026-05', '921760000');
+      const result = await service.generar('1', '2026-05');
 
       expect(mockParametrosService.getMaximoGuias).toHaveBeenCalledWith('1');
       expect(result).toEqual({ created: 3, skipped: 0 });
     });
 
-    it('insertProforma incluye rut_emisor en el INSERT con el valor del parámetro', async () => {
+    it('insertProforma incluye rut_emisor en el INSERT con el valor derivado del XML de la guía', async () => {
       mockDataSource.query.mockResolvedValueOnce([
         {
           empkey: '1',
@@ -577,10 +598,10 @@ describe('FacturasService', () => {
         return cb(mgr);
       });
 
-      await service.generar('1', '2026-05', '921760000');
+      await service.generar('1', '2026-05');
 
       expect(capturedSql).toContain('rut_emisor');
-      expect(capturedParams).toContain('921760000');
+      expect(capturedParams).toContain('92176000-0');
     });
 
     it('particiona por guivaloragrupador: mismo cliente+regla con 2 valores distintos (OC/HES) crea 2 proformas', async () => {
@@ -633,7 +654,7 @@ describe('FacturasService', () => {
           }),
         );
 
-      const result = await service.generar('1', '2026-05', '921760000');
+      const result = await service.generar('1', '2026-05');
 
       expect(result).toEqual({ created: 2, skipped: 0 });
     });
@@ -678,9 +699,129 @@ describe('FacturasService', () => {
         }),
       );
 
-      const result = await service.generar('1', '2026-05', '921760000');
+      const result = await service.generar('1', '2026-05');
 
       expect(result).toEqual({ created: 1, skipped: 1 });
+    });
+
+    it('lanza UnprocessableEntityException si las guías del grupo tienen RUT emisor distinto entre sí', async () => {
+      mockDataSource.query.mockResolvedValueOnce([
+        {
+          empkey: '1',
+          guitipo: 52,
+          guifolio: '100',
+          gclirut: '76123456-0',
+          guireglaidl: '1_CMNA_STGO',
+          guitotneto: '1000',
+          guitotiva: '190',
+          guitotdoc: '1190',
+          guifilepath: 'http://example.com/100.xml',
+        },
+        {
+          empkey: '1',
+          guitipo: 52,
+          guifolio: '101',
+          gclirut: '76123456-0',
+          guireglaidl: '1_CMNA_STGO',
+          guitotneto: '2000',
+          guitotiva: '380',
+          guitotdoc: '2380',
+          guifilepath: 'http://example.com/101.xml',
+        },
+      ]);
+      mockDataSource.query.mockResolvedValueOnce([{ count: '0' }]);
+
+      mockXmlParserService.fetchDocument
+        .mockResolvedValueOnce({
+          emisor: {
+            rutEmisor: '92176000-0',
+            razonSocial: '',
+            giro: '',
+            telefono: '',
+            acteco: '',
+          },
+          receptor: {
+            rutReceptor: '',
+            razonSocial: '',
+            cdgIntRecep: '',
+            contacto: '',
+            dirRecep: '',
+            cmnaRecep: '',
+            ciudadRecep: '',
+            giroRecep: '',
+          },
+          detalle: [],
+          rawXml: '',
+        })
+        .mockResolvedValueOnce({
+          emisor: {
+            rutEmisor: '76407930-2',
+            razonSocial: '',
+            giro: '',
+            telefono: '',
+            acteco: '',
+          },
+          receptor: {
+            rutReceptor: '',
+            razonSocial: '',
+            cdgIntRecep: '',
+            contacto: '',
+            dirRecep: '',
+            cmnaRecep: '',
+            ciudadRecep: '',
+            giroRecep: '',
+          },
+          detalle: [],
+          rawXml: '',
+        });
+
+      await expect(service.generar('1', '2026-05')).rejects.toThrow(
+        UnprocessableEntityException,
+      );
+      expect(mockDataSource.transaction).not.toHaveBeenCalled();
+    });
+
+    it('lanza UnprocessableEntityException si ninguna guía tiene RUTEmisor en su XML', async () => {
+      mockDataSource.query.mockResolvedValueOnce([
+        {
+          empkey: '1',
+          guitipo: 52,
+          guifolio: '100',
+          gclirut: '76123456-0',
+          guireglaidl: '1_CMNA_STGO',
+          guitotneto: '1000',
+          guitotiva: '190',
+          guitotdoc: '1190',
+          guifilepath: 'http://example.com/100.xml',
+        },
+      ]);
+      mockDataSource.query.mockResolvedValueOnce([{ count: '0' }]);
+
+      mockXmlParserService.fetchDocument.mockResolvedValueOnce({
+        emisor: {
+          rutEmisor: '',
+          razonSocial: '',
+          giro: '',
+          telefono: '',
+          acteco: '',
+        },
+        receptor: {
+          rutReceptor: '',
+          razonSocial: '',
+          cdgIntRecep: '',
+          contacto: '',
+          dirRecep: '',
+          cmnaRecep: '',
+          ciudadRecep: '',
+          giroRecep: '',
+        },
+        detalle: [],
+        rawXml: '',
+      });
+
+      await expect(service.generar('1', '2026-05')).rejects.toThrow(
+        UnprocessableEntityException,
+      );
     });
   });
 
@@ -705,15 +846,11 @@ describe('FacturasService', () => {
         .mockResolvedValueOnce([{ count: '1' }]); // existing check
 
       await expect(
-        service.crearManual(
-          '1',
-          {
-            periodo: '2026-05',
-            gclirut: '76123456-0',
-            reglaidl: '1_CMNA_STGO',
-          },
-          '921760000',
-        ),
+        service.crearManual('1', {
+          periodo: '2026-05',
+          gclirut: '76123456-0',
+          reglaidl: '1_CMNA_STGO',
+        }),
       ).rejects.toThrow(ConflictException);
     });
 
@@ -721,15 +858,11 @@ describe('FacturasService', () => {
       mockDataSource.query.mockResolvedValueOnce([]); // no guías disponibles
 
       await expect(
-        service.crearManual(
-          '1',
-          {
-            periodo: '2026-05',
-            gclirut: '76123456-0',
-            reglaidl: '1_CMNA_STGO',
-          },
-          '921760000',
-        ),
+        service.crearManual('1', {
+          periodo: '2026-05',
+          gclirut: '76123456-0',
+          reglaidl: '1_CMNA_STGO',
+        }),
       ).rejects.toThrow(UnprocessableEntityException);
     });
 
@@ -781,15 +914,11 @@ describe('FacturasService', () => {
         regladescripcion: 'SANTIAGO',
       });
 
-      const result = await service.crearManual(
-        '1',
-        {
-          periodo: '2026-05',
-          gclirut: '76123456-0',
-          reglaidl: '1_CMNA_STGO',
-        },
-        '921760000',
-      );
+      const result = await service.crearManual('1', {
+        periodo: '2026-05',
+        gclirut: '76123456-0',
+        reglaidl: '1_CMNA_STGO',
+      });
 
       expect(result.id).toBe('42'); // retorna la primera proforma
       expect(mockDataSource.transaction).toHaveBeenCalledTimes(2);
@@ -833,15 +962,11 @@ describe('FacturasService', () => {
         regladescripcion: 'SANTIAGO',
       });
 
-      const result = await service.crearManual(
-        '1',
-        {
-          periodo: '2026-05',
-          gclirut: '76123456-0',
-          reglaidl: '1_CMNA_STGO',
-        },
-        '921760000',
-      );
+      const result = await service.crearManual('1', {
+        periodo: '2026-05',
+        gclirut: '76123456-0',
+        reglaidl: '1_CMNA_STGO',
+      });
 
       expect(result.id).toBe('42');
       expect(result.cliente.nombre).toBe('CLIENTE TEST');
@@ -912,15 +1037,11 @@ describe('FacturasService', () => {
         regladescripcion: 'SANTIAGO',
       });
 
-      const result = await service.crearManual(
-        '1',
-        {
-          periodo: '2026-05',
-          gclirut: '76123456-0',
-          reglaidl: '1_CMNA_STGO',
-        },
-        '921760000',
-      );
+      const result = await service.crearManual('1', {
+        periodo: '2026-05',
+        gclirut: '76123456-0',
+        reglaidl: '1_CMNA_STGO',
+      });
 
       expect(result.id).toBe('42');
       expect(mockDataSource.transaction).toHaveBeenCalledTimes(2);
@@ -937,7 +1058,7 @@ describe('FacturasService', () => {
         return [];
       });
 
-      await service.generar('1', '2026-05', '921760000');
+      await service.generar('1', '2026-05');
 
       const match = capturedSql.match(/f\.estado IN \(([^)]+)\)/);
       expect(match).not.toBeNull();
@@ -971,7 +1092,7 @@ describe('FacturasService', () => {
         },
       );
 
-      await service.generar('1', '2026-05', '921760000');
+      await service.generar('1', '2026-05');
 
       expect(capturedParams[3]).toEqual(
         expect.arrayContaining(['BORRADOR', 'EMITIDA']),
@@ -986,15 +1107,11 @@ describe('FacturasService', () => {
       });
 
       await expect(
-        service.crearManual(
-          '1',
-          {
-            periodo: '2026-05',
-            gclirut: '76123456-0',
-            reglaidl: '1_CMNA_STGO',
-          },
-          '921760000',
-        ),
+        service.crearManual('1', {
+          periodo: '2026-05',
+          gclirut: '76123456-0',
+          reglaidl: '1_CMNA_STGO',
+        }),
       ).rejects.toThrow(UnprocessableEntityException);
 
       const match = capturedSql.match(/f\.estado IN \(([^)]+)\)/);
@@ -1030,15 +1147,11 @@ describe('FacturasService', () => {
       );
 
       await expect(
-        service.crearManual(
-          '1',
-          {
-            periodo: '2026-05',
-            gclirut: '76123456-0',
-            reglaidl: '1_CMNA_STGO',
-          },
-          '921760000',
-        ),
+        service.crearManual('1', {
+          periodo: '2026-05',
+          gclirut: '76123456-0',
+          reglaidl: '1_CMNA_STGO',
+        }),
       ).rejects.toThrow(ConflictException);
 
       expect(capturedParams[3]).toEqual(

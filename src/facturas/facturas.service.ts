@@ -110,6 +110,7 @@ interface GuiaParaProformaRow {
   guitotneto: string;
   guitotiva: string;
   guitotdoc: string;
+  guifilepath: string;
 }
 
 interface GrupoProforma {
@@ -274,14 +275,13 @@ export class FacturasService {
   async generar(
     empkey: string,
     periodo: string,
-    rutEmisor: string,
   ): Promise<ProformaGenerarResult> {
     const { fechaInicial, fechaFinal } = periodoToRange(periodo);
 
     // Guías disponibles del período: con regla agrupadora asignada y no bloqueadas
     const guias = await this.dataSource.query<GuiaParaProformaRow[]>(
       `SELECT g.empkey, g.guitipo, g.guifolio, g.gclirut, g.guireglaidl, g.guivaloragrupador,
-              g.guitotneto, g.guitotiva, g.guitotdoc
+              g.guitotneto, g.guitotiva, g.guitotdoc, g.guifilepath
        FROM gde.guia g
        WHERE g.empkey = $1
          AND g.guifechaemision BETWEEN $2 AND $3
@@ -328,12 +328,46 @@ export class FacturasService {
       const maximoGuias = await this.parametrosService.getMaximoGuias(empkey);
       const chunks = chunkArray(groupGuias, maximoGuias);
       for (const chunk of chunks) {
+        const rutEmisor = await this._resolverRutEmisor(chunk);
         await this.insertProforma(empkey, gclirut, reglaidl, chunk, rutEmisor);
         created++;
       }
     }
 
     return { created, skipped };
+  }
+
+  /**
+   * El RUT emisor no es un dato que el operador elija: viene estampado en el
+   * propio XML de cada guía (`<Encabezado><Emisor><RUTEmisor>`) y puede variar
+   * de una guía a otra (distintas sucursales/cuentas del ERP legado bajo el
+   * mismo tenant). Se deriva desde las guías que van a esa proforma en vez de
+   * asumir uno por defecto — si difieren dentro del mismo grupo, es una señal
+   * real de que esas guías no deberían facturarse juntas.
+   */
+  private async _resolverRutEmisor(
+    guias: { guifolio: string; guifilepath: string }[],
+  ): Promise<string> {
+    const docs = await Promise.all(
+      guias.map((g) => this.xmlParserService.fetchDocument(g.guifilepath)),
+    );
+    const rutsEmisor = new Set(
+      docs.map((d) => d.emisor.rutEmisor).filter((rut) => rut !== ''),
+    );
+
+    if (rutsEmisor.size === 0) {
+      throw new UnprocessableEntityException(
+        `No se pudo determinar el RUT emisor: ninguna de las guías (folios ${guias
+          .map((g) => g.guifolio)
+          .join(', ')}) tiene <RUTEmisor> en su XML`,
+      );
+    }
+    if (rutsEmisor.size > 1) {
+      throw new UnprocessableEntityException(
+        `Las guías (folios ${guias.map((g) => g.guifolio).join(', ')}) tienen RUT emisor distinto entre sí (${[...rutsEmisor].join(', ')}) — no pueden agruparse en la misma factura`,
+      );
+    }
+    return [...rutsEmisor][0];
   }
 
   /** Cuenta cuántas proformas en alguno de `estados` ya cubren guías con ese `valorAgrupador`. */
@@ -371,7 +405,6 @@ export class FacturasService {
   async crearManual(
     empkey: string,
     body: CrearProformaBody,
-    rutEmisor: string,
   ): Promise<ProformaDto> {
     const { periodo, gclirut, reglaidl } = body;
     const { fechaInicial, fechaFinal } = periodoToRange(periodo);
@@ -379,7 +412,7 @@ export class FacturasService {
     // Guías disponibles para este cliente + regla + período
     const guias = await this.dataSource.query<GuiaParaProformaRow[]>(
       `SELECT g.empkey, g.guitipo, g.guifolio, g.gclirut, g.guireglaidl, g.guivaloragrupador,
-              g.guitotneto, g.guitotiva, g.guitotdoc
+              g.guitotneto, g.guitotiva, g.guitotdoc, g.guifilepath
        FROM gde.guia g
        WHERE g.empkey = $1 AND g.gclirut = $2 AND g.guireglaidl = $3
          AND g.guifechaemision BETWEEN $4 AND $5
@@ -429,6 +462,7 @@ export class FacturasService {
     for (const { guias: groupGuias } of groups) {
       const chunks = chunkArray(groupGuias, maximoGuias);
       for (const chunk of chunks) {
+        const rutEmisor = await this._resolverRutEmisor(chunk);
         const key = await this.insertProforma(
           empkey,
           gclirut,
