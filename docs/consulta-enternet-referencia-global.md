@@ -309,3 +309,48 @@ Intento 5 antes de seguir iterando.
 dev server principal. Los cambios de código de esta prueba (columna `FECHA`
 forzada a vacío) fueron temporales y se revirtieron antes de comitear;
 `mensaje-builder.ts` vuelve a quedar igual al Intento 5.)
+
+## Intento 7 — 2026-07-23, aviso de hotfix del parser, error nuevo (ParseErr0021)
+
+Enternet avisó (de palabra, parafraseado, sin ejemplo escrito) que habían
+aplicado un nuevo hotfix al parser. El código de `mensaje-builder.ts` **no
+cambió** respecto al Intento 5/6 (mismo formato `CODIGO REFERENCIA` en la
+línea `5:|`):
+
+```
+4:|TIPO DE REFERENCIA|FOLIO|FECHA|CODIGO REFERENCIA
+5:|52|0|23/07/2026|5
+```
+
+Reintentamos la emisión real contra QA dos veces, mismo servidor de
+diagnóstico en `:3335` (worktree `worktree-referencia-global-codigo-referencia`,
+sin tocar `:3334`):
+
+- gfackey=187 (`--reset --aprobar`, primera corrida).
+- gfackey=188 (`--reset --aprobar`, segunda corrida, mismo Mensaje V5 exacto).
+
+Ambas corridas dieron **el mismo error nuevo**, distinto a `[FirmaErr002]` de
+los intentos 5/6:
+
+```
+HTTP 422 [DTEErr001] No fue posible emitir el documento. |
+[ParseErr0021] Acción sobre Documento de Referencia = 5, Tipo de Dato no
+Corresponde, 5 <> DATE  , en línea 2
+```
+
+**Diagnóstico:** el hotfix sí cambió el comportamiento del parser (error
+distinto al de los intentos 5/6, reproducido de forma determinística en
+ambas corridas) — ya no descarta la fecha en silencio. El mensaje nombra un
+campo `Acción sobre Documento de Referencia` (nombre que coincide con el
+`ACCION REFERENCIA` del mecanismo viejo, pre-`CODIGO REFERENCIA`, ver
+Intentos 1-4) y dice que espera tipo `DATE` pero recibió `5` — sugiere que el
+parser post-hotfix está leyendo nuestra columna `CODIGO REFERENCIA` (valor
+`5`) en la posición donde él espera la fecha de esa "acción", es decir el
+mapeo posicional de columnas cambió con el hotfix y ya no coincide con el
+que probamos en el Intento 5.
+
+**No se itera más a ciegas sobre esto.** El usuario ya escaló este error
+puntual a Enternet el mismo día (2026-07-23) y confirman que lo están
+corrigiendo esa misma mañana. Queda pendiente reintentar cuando avisen que
+el fix está desplegado — no cambiar `mensaje-builder.ts` mientras tanto,
+sigue reflejando la Hipótesis A sin confirmar.
