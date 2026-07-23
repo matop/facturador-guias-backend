@@ -4,6 +4,9 @@ coverage/
 .claude/settings.local.json
 .claude/skills/consult-db-schema/
 .claude/skills/consult-sii-norms/
+.claude/skills/agent-browser/
+.agents/
+skills-lock.json
 .mcp.json
 .env
 .env.*
