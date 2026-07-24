@@ -2,6 +2,8 @@
 
 Complemento al guion de demo en vivo (`docs/demo-dev-senior-2026-07-17.md`). Mismos 6 flujos, en formato de casos de uso + diagrama de secuencia, para quien necesita la vista conceptual sin correr curl en vivo.
 
+Para ubicarse antes de entrar a los casos de uso, ver primero el [mapa de arquitectura de sistemas](mapa-arquitectura-sistemas.md).
+
 **Actores**:
 - **Operador**: persona/proceso que dispara las llamadas HTTP (equivalente al usuario de negocio o a un job automatizado).
 - **guias-middleware**: este backend (`:3334`).
@@ -21,26 +23,36 @@ Complemento al guion de demo en vivo (`docs/demo-dev-senior-2026-07-17.md`). Mis
 
 **Flujo principal**:
 1. Operador dispara el sync para un `empkey` + `periodo` + `rut` (credencial SOAP).
-2. Fase 1 (sin transacción): el middleware pide al legado los XML de guías en chunks de 5 en paralelo, y resuelve/crea los clientes que aparecen en las guías.
-3. Fase 2 (en transacción): inserta guías + impuestos, calcula agrupadores en batch. Todo o nada.
-4. Devuelve el conteo de guías sincronizadas y clientes creados.
+2. El middleware pide al legado el reporte completo del período con **una sola llamada** `GET /reportes` (JSON, no SOAP) — trae todas las filas de guías de una vez (`backoffice-adapter.service.ts:35-59`).
+3. Fase 1 (sin transacción): sobre los **clientes únicos** que aparecen en esas filas (no una por guía), el middleware trae en chunks de 5 en paralelo el XML DTE de cada uno (`fetch(guifilepath)` directo, no vía backoffice-adapter — `xml-parser.service.ts:24-31`), y por cada uno resuelve/crea el cliente real, **uno por uno, secuencialmente**.
+4. Fase 2 (en transacción): inserta guías + impuestos, calcula agrupadores en batch. Todo o nada.
+5. Devuelve el conteo de guías sincronizadas y clientes creados.
 
-**Nota de diseño**: el fetch de XML (I/O de red lento) queda deliberadamente fuera de la transacción para no bloquear filas de `clientes` mientras se espera al legado.
+**Nota de diseño — por qué clientes queda fuera del `BEGIN`**: el código exige el orden por FK (`guias.service.ts:96`: *"Clientes deben existir ANTES de insertar guías (FK iguia1)"*), pero además queda **fuera** de la transacción a propósito: el fetch del XML por cliente es I/O de red lento, y si estuviera dentro del `BEGIN` se mantendrían filas de `clientes` bloqueadas mientras se espera al legado. Mover el `BEGIN` antes de este paso (para acortarlo a una sola llamada, como se sugirió en la demo) reintroduciría ese problema de locking, porque hoy el fetch de XML y la resolución de clientes ocurren en el mismo loop.
+
+**Mejora identificada, no implementada** — lo que sí es una queja válida y separada del punto anterior: la resolución de clientes hace, para cada cliente único, 1 SELECT + hasta 1 INSERT (`clientes.service.ts:30-46`, método `findOrCreate`), **secuencialmente**. Para N clientes son hasta 2·N round-trips a BD, colapsables a 2 llamadas totales (1 SELECT `IN (...)` + 1 INSERT `ON CONFLICT DO NOTHING`), con el mismo patrón que el propio código ya usa para `GuiaImpuesto` (`guias.service.ts:151-159`, `.orIgnore()` sobre PK compuesta — `Cliente` también tiene PK compuesta `(empkey, gclirut)`). Nota: no hay ningún `UPDATE` sobre clientes existentes hoy — la percepción de "insert vs. update" probablemente viene del loop de agrupadores en Fase 2 (`guias.service.ts:173-191`), que sí actualiza guía por guía dentro de la transacción; es una optimización aparte. Propuesta: método `findOrCreateBatch(empkey, receptores[])` en `clientes.service.ts`, a implementar en una sesión dedicada.
+
+**Nota sobre reprocesamiento** — el fetch al legado (paso 2) siempre trae el período completo, sin cursor ni filtro incremental (`backoffice-adapter.service.ts:35-59`). Un segundo sync del mismo período reprocesa todas las guías (viejas + nuevas), no solo el delta. No se duplica nada: clientes usa el SELECT-then-INSERT ya descrito, y `Guia` recibe upsert automático e implícito de TypeORM (PK compuesta manual, sin `.orIgnore()` → TypeORM decide INSERT/UPDATE por fila). Pero sí se repite el trabajo de red y el recálculo de agrupadores sobre todo el período en cada corrida. Es una decisión de diseño abierta (no un bug); candidata a evaluar sync incremental en una sesión aparte si el volumen lo justifica.
 
 ```mermaid
 sequenceDiagram
     actor Operador
     participant MW as guias-middleware
     participant BOA as backoffice-adapter
+    participant XML as XML DTE (guifilepath)
     participant DB as BD (gde.*)
 
     Operador->>MW: POST /empresas/{empkey}/sync?periodo&rut
+    MW->>BOA: GET /reportes (rut, periodo) — una sola llamada
+    BOA-->>MW: filas de guías (JSON, período completo)
     Note over MW: Fase 1 — sin transacción
-    loop chunks de 5 guías (Promise.all)
-        MW->>BOA: fetch XML de guías (SOAP)
-        BOA-->>MW: XML guías
+    loop chunks de 5 clientes únicos (Promise.all)
+        MW->>XML: fetch(guifilepath) por cliente
+        XML-->>MW: XML DTE (receptor)
     end
-    MW->>DB: resolver/crear clientes reales
+    loop cada cliente único (secuencial)
+        MW->>DB: findOrCreate cliente (1 SELECT + hasta 1 INSERT)
+    end
     Note over MW: Fase 2 — en transacción (todo o nada)
     MW->>DB: BEGIN
     MW->>DB: insert guías + impuestos

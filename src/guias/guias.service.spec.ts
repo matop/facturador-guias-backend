@@ -10,7 +10,7 @@ import { XmlParserService } from '../xml/xml-parser.service.js';
 import { GroupingService } from '../reglas/grouping.service.js';
 
 const mockBackofficeAdapter = { getGuias: jest.fn() };
-const mockClientesService = { findOrCreate: jest.fn() };
+const mockClientesService = { findOrCreateBatch: jest.fn() };
 const mockXmlParser = { fetchDocument: jest.fn() };
 const mockGroupingService = {
   batchComputeAgrupadores: jest.fn().mockResolvedValue(new Map()),
@@ -157,9 +157,10 @@ describe('GuiasService — syncFromReporte orchestration', () => {
       makeRow('101', '33333333-3', 'http://xml/101.xml'),
     ];
     mockBackofficeAdapter.getGuias.mockResolvedValueOnce(rows);
-    mockClientesService.findOrCreate
-      .mockResolvedValueOnce({ cliente: {}, created: true })
-      .mockResolvedValueOnce({ cliente: {}, created: true });
+    mockClientesService.findOrCreateBatch.mockResolvedValueOnce({
+      clientes: [],
+      created: 2,
+    });
 
     await service.syncFromReporte(
       '1',
@@ -183,9 +184,9 @@ describe('GuiasService — syncFromReporte orchestration', () => {
       makeRow('101', '22222222-2', 'http://xml/101.xml'),
     ];
     mockBackofficeAdapter.getGuias.mockResolvedValueOnce(rows);
-    mockClientesService.findOrCreate.mockResolvedValueOnce({
-      cliente: {},
-      created: true,
+    mockClientesService.findOrCreateBatch.mockResolvedValueOnce({
+      clientes: [],
+      created: 1,
     });
 
     await service.syncFromReporte(
@@ -196,16 +197,16 @@ describe('GuiasService — syncFromReporte orchestration', () => {
     );
 
     expect(mockXmlParser.fetchDocument).toHaveBeenCalledTimes(1);
-    expect(mockClientesService.findOrCreate).toHaveBeenCalledTimes(1);
+    expect(mockClientesService.findOrCreateBatch).toHaveBeenCalledTimes(1);
   });
 
   it('incluye synced y clientesCreated en el resultado', async () => {
     mockBackofficeAdapter.getGuias.mockResolvedValueOnce([
       makeRow('100', '22222222-2'),
     ]);
-    mockClientesService.findOrCreate.mockResolvedValueOnce({
-      cliente: {},
-      created: true,
+    mockClientesService.findOrCreateBatch.mockResolvedValueOnce({
+      clientes: [],
+      created: 1,
     });
 
     const result = await service.syncFromReporte(
@@ -222,9 +223,9 @@ describe('GuiasService — syncFromReporte orchestration', () => {
     mockBackofficeAdapter.getGuias.mockResolvedValueOnce([
       makeRow('100', '22222222-2'),
     ]);
-    mockClientesService.findOrCreate.mockResolvedValueOnce({
-      cliente: {},
-      created: false,
+    mockClientesService.findOrCreateBatch.mockResolvedValueOnce({
+      clientes: [],
+      created: 0,
     });
 
     await service.syncFromReporte(
@@ -241,9 +242,9 @@ describe('GuiasService — syncFromReporte orchestration', () => {
     mockBackofficeAdapter.getGuias.mockResolvedValueOnce([
       makeRow('100', '22222222-2'),
     ]);
-    mockClientesService.findOrCreate.mockResolvedValueOnce({
-      cliente: {},
-      created: false,
+    mockClientesService.findOrCreateBatch.mockResolvedValueOnce({
+      clientes: [],
+      created: 0,
     });
 
     await service.syncFromReporte(
@@ -285,9 +286,9 @@ describe('GuiasService — syncFromReporte orchestration', () => {
   it('no guarda GuiaImpuesto cuando Monto IVA es 0', async () => {
     const rowSinIva = { ...makeRow('200', '22222222-2'), 'Monto IVA': '0' };
     mockBackofficeAdapter.getGuias.mockResolvedValueOnce([rowSinIva]);
-    mockClientesService.findOrCreate.mockResolvedValueOnce({
-      cliente: {},
-      created: false,
+    mockClientesService.findOrCreateBatch.mockResolvedValueOnce({
+      clientes: [],
+      created: 0,
     });
 
     await service.syncFromReporte(

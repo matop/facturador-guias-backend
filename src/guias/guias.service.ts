@@ -8,6 +8,7 @@ import { ClientesService } from '../clientes/clientes.service.js';
 import { XmlParserService } from '../xml/xml-parser.service.js';
 import { GroupingService } from '../reglas/grouping.service.js';
 import { normalizeToXml, toCsvRut } from '../utils/rut.js';
+import type { ReceptorData } from '../xml/xml-parser.service.js';
 
 const XML_FETCH_CHUNK_SIZE = 5;
 
@@ -105,7 +106,7 @@ export class GuiasService {
 
     const uniqueGuiasList = [...uniqueRutMap.values()];
     const seenRuts = new Map<string, { rawXml: string }>();
-    let clientesCreated = 0;
+    const receptores: ReceptorData[] = [];
 
     for (let i = 0; i < uniqueGuiasList.length; i += XML_FETCH_CHUNK_SIZE) {
       const chunk = uniqueGuiasList.slice(i, i + XML_FETCH_CHUNK_SIZE);
@@ -114,14 +115,13 @@ export class GuiasService {
       );
       for (let j = 0; j < chunk.length; j++) {
         const doc = fetched[j];
-        const result = await this.clientesService.findOrCreate(
-          empkey,
-          doc.receptor,
-        );
-        if (result.created) clientesCreated++;
+        receptores.push(doc.receptor);
         seenRuts.set(chunk[j].gclirut, { rawXml: doc.rawXml });
       }
     }
+
+    const { created: clientesCreated } =
+      await this.clientesService.findOrCreateBatch(empkey, receptores);
 
     // ── FASE 2: Guías + Impuestos + Agrupadores (en transacción) ────────────
     // Todo o nada: si falla impuestos o agrupadores, se revierte la inserción de guías.

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Cliente } from './entities/cliente.entity.js';
 import type { ReceptorData } from '../xml/xml-parser.service.js';
 
@@ -27,21 +27,45 @@ export class ClientesService {
     return cliente;
   }
 
-  async findOrCreate(
+  async findOrCreateBatch(
     empkey: string,
-    data: ReceptorData,
-  ): Promise<{ cliente: Cliente; created: boolean }> {
-    const existing = await this.clienteRepository.findOne({
-      where: { empkey, gclirut: data.rutReceptor },
+    receptores: ReceptorData[],
+  ): Promise<{ clientes: Cliente[]; created: number }> {
+    if (receptores.length === 0) return { clientes: [], created: 0 };
+
+    const uniqueReceptores = new Map<string, ReceptorData>();
+    for (const receptor of receptores) {
+      if (!uniqueReceptores.has(receptor.rutReceptor)) {
+        uniqueReceptores.set(receptor.rutReceptor, receptor);
+      }
+    }
+    const ruts = [...uniqueReceptores.keys()];
+
+    const existing = await this.clienteRepository.find({
+      where: { empkey, gclirut: In(ruts) },
     });
-    if (existing) return { cliente: existing, created: false };
+    const existingRuts = new Set(existing.map((c) => c.gclirut));
 
-    const cliente = new Cliente();
-    cliente.empkey = empkey;
-    cliente.gclirut = data.rutReceptor;
-    cliente.gclinom = data.razonSocial;
+    const nuevos = ruts
+      .filter((rut) => !existingRuts.has(rut))
+      .map((rut) => {
+        const cliente = new Cliente();
+        cliente.empkey = empkey;
+        cliente.gclirut = rut;
+        cliente.gclinom = uniqueReceptores.get(rut)!.razonSocial;
+        return cliente;
+      });
 
-    const saved = await this.clienteRepository.save(cliente);
-    return { cliente: saved, created: true };
+    if (nuevos.length > 0) {
+      await this.clienteRepository
+        .createQueryBuilder()
+        .insert()
+        .into(Cliente)
+        .values(nuevos)
+        .orIgnore()
+        .execute();
+    }
+
+    return { clientes: [...existing, ...nuevos], created: nuevos.length };
   }
 }
